@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: codeinsights-db
+    environment:
+      POSTGRES_DB: codeinsights
+      POSTGRES_USER: ${DB_USER:-codeinsights_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local_password}
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: codeinsights-mailhog
+    ports:
+      - "1026:1025" # Porta do SMTP
+      - "8026:8025" # Porta da Interface Web
+
+volumes:
+  postgres_data:

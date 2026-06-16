@@ -1,0 +1,48 @@
+package com.projeto.codeinsights.application.knowledge.usecase;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.projeto.codeinsights.application.knowledge.dto.ResolucaoResumoDTO;
+import com.projeto.codeinsights.application.knowledge.dto.SubmeterResolucaoInput;
+import com.projeto.codeinsights.domain.knowledge.model.Desafio;
+import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
+import com.projeto.codeinsights.domain.knowledge.port.DesafioRepository;
+import com.projeto.codeinsights.domain.knowledge.port.ResolucaoRepository;
+import com.projeto.codeinsights.domain.shared.exception.NegocioException;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class SubmeterResolucaoUseCase {
+
+    private final ResolucaoRepository resolucaoRepository;
+    private final DesafioRepository desafioRepository;
+
+    @Transactional
+    public ResolucaoResumoDTO execute(SubmeterResolucaoInput input) {
+        Desafio desafio = desafioRepository.buscarPorId(input.desafioId())
+                .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
+
+        if (!desafio.getAutorId().equals(input.solicitanteId())) {
+            throw new NegocioException("Apenas o autor do desafio pode submeter resolucoes.");
+        }
+
+        Resolucao resolucao = new Resolucao(
+                null,
+                input.desafioId(),
+                input.solicitanteId(),
+                input.linguagem(),
+                input.codigoFonte());
+
+        Resolucao salva = resolucaoRepository.salvar(resolucao);
+
+        return new ResolucaoResumoDTO(
+                salva.getId(),
+                salva.getDesafioId(),
+                salva.getAutorId(),
+                salva.getLinguagem(),
+                salva.getDataCriacao());
+    }
+}
