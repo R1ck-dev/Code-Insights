@@ -34,7 +34,17 @@ build/
 
 ### Env / secrets ###
 .env
+.env.*
+!.env.example
 *.local
+*.pem
+*.key
+*.p12
+*.keystore
+secrets/
+
+### Documentação interna IFSP (não versionar) ###
+docs/ifsp-documentacao/
 
 ### OS ###
 .DS_Store
