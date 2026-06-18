@@ -25,8 +25,11 @@ public class AtualizarSnippetUseCase {
             throw new NegocioException("Voce nao tem acesso a este snippet.");
         }
 
-        snippet.atualizarConteudo(input.codigo(), input.descricao());
-        snippet.recategorizar(input.categoria());
+        snippet.atualizarConteudo(
+                input.codigo() != null ? input.codigo() : snippet.getCodigo(),
+                input.descricao() != null ? input.descricao() : snippet.getDescricao());
+        snippet.recategorizar(
+                input.categoria() != null ? input.categoria() : snippet.getCategoria());
 
         snippetRepository.salvar(snippet);
     }

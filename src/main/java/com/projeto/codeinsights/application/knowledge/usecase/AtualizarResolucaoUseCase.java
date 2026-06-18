@@ -25,7 +25,9 @@ public class AtualizarResolucaoUseCase {
             throw new NegocioException("Apenas o autor pode atualizar esta resolucao.");
         }
 
-        resolucao.atualizarCodigo(input.codigoFonte(), input.linguagem());
+        resolucao.atualizarCodigo(
+                input.codigoFonte() != null ? input.codigoFonte() : resolucao.getCodigoFonte(),
+                input.linguagem() != null ? input.linguagem() : resolucao.getLinguagem());
         resolucaoRepository.salvar(resolucao);
     }
 }

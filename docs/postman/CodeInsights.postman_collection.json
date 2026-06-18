@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "c0de1a51-0001-4000-8000-000000000001",
-    "name": "CodeInsights API - v1 (Ciclo 1)",
+    "name": "CodeInsights API - Ciclo 1 (dominio V2)",
     "description": "Colecao de testes da API do CodeInsights (identity + knowledge).\n\n## Como usar\n1. Suba o backend em http://localhost:8080 (Postgres na 5434 e MailHog na 1026/8026). Defina JWT_SECRET (>= 32 bytes). Opcional: ADMIN_PASSWORD para semear o admin.\n2. Importe este arquivo no Postman. As variaveis de teste ja vem preenchidas na colecao (aba Variables).\n3. Use o Collection Runner (ou rode na ordem das pastas) para um fluxo ponta a ponta: registrar -> capturar token no MailHog -> ativar -> login -> CRUD de desafios/resolucoes/snippets -> limpeza.\n\n## Automacoes embutidas\n- O **login** salva o JWT na variavel `token` (usada por toda a colecao via Bearer) e decodifica a claim `id` para `usuarioId`/`autorId`.\n- A request **MailHog - capturar token** le a caixa do MailHog (porta 8026) e extrai o token de ativacao automaticamente para `ativacaoToken`.\n- As criacoes (desafio/resolucao/snippet) salvam os IDs gerados (`desafioId`, `resolucaoId`, `snippetId`) para as requests seguintes.\n\n## Observacoes\n- Erros de regra de negocio e validacao retornam 400; sem token -> 401; sem permissao (ADMIN) -> 403.\n- O fluxo de ativacao depende do MailHog estar no ar. Se preferir testar so com o admin, defina ADMIN_PASSWORD e use a request \"Login (admin)\".",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -25,7 +25,8 @@
     { "key": "adminPassword", "value": "", "type": "string", "description": "Use a MESMA senha definida em ADMIN_PASSWORD ao subir o backend. Deixe vazio se nao semeou o admin." },
     { "key": "desafioId", "value": "", "type": "string" },
     { "key": "resolucaoId", "value": "", "type": "string" },
-    { "key": "snippetId", "value": "", "type": "string" }
+    { "key": "snippetId", "value": "", "type": "string" },
+    { "key": "enunciadoAntes", "value": "", "type": "string", "description": "Capturado no detalhe do desafio para validar que o PATCH parcial preserva o enunciado." }
   ],
   "item": [
     {
@@ -400,7 +401,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titulo\": \"Two Sum\",\n  \"descricao\": \"Dado um array de inteiros e um alvo, retornar os indices dos dois numeros que somam o alvo.\",\n  \"origemPlataforma\": \"LeetCode\",\n  \"dificuldade\": \"MEDIO\"\n}",
+              "raw": "{\n  \"titulo\": \"Two Sum\",\n  \"enunciado\": \"Dado um array de inteiros e um alvo, retornar os indices dos dois numeros que somam o alvo.\",\n  \"plataformaOrigem\": \"LeetCode\",\n  \"identificadorExterno\": \"two-sum\",\n  \"urlExterna\": \"https://leetcode.com/problems/two-sum/\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -408,7 +409,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "desafios"]
             },
-            "description": "Cria um desafio. dificuldade aceita: FACIL, MEDIO, DIFICIL (ou null). Salva `desafioId` e `autorId`."
+            "description": "Cria um desafio. Apenas `titulo` e obrigatorio; `enunciado`, `plataformaOrigem`, `identificadorExterno` e `urlExterna` sao opcionais. Salva `desafioId` e `autorId`."
           },
           "event": [
             {
@@ -494,7 +495,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "desafios", "{{desafioId}}"]
             },
-            "description": "Detalhe de um desafio (proprio ou publico)."
+            "description": "Detalhe de um desafio (proprio ou publico). Guarda o `enunciado` atual em `enunciadoAntes` para validar, mais adiante, que o PATCH parcial nao o sobrescreve."
           },
           "event": [
             {
@@ -502,7 +503,14 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('OK (200)', function () { pm.response.to.have.status(200); });"
+                  "pm.test('OK (200)', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const d = pm.response.json();",
+                  "  if (d && typeof d.enunciado !== 'undefined') {",
+                  "    pm.collectionVariables.set('enunciadoAntes', String(d.enunciado));",
+                  "    console.log('enunciadoAntes guardado para checagem de PATCH parcial.');",
+                  "  }",
+                  "}"
                 ]
               }
             }
@@ -517,7 +525,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titulo\": \"Two Sum (otimizado)\",\n  \"descricao\": \"Versao revisada do enunciado, agora com restricoes de entrada.\",\n  \"origemPlataforma\": \"LeetCode\",\n  \"dificuldade\": \"FACIL\"\n}",
+              "raw": "{\n  \"titulo\": \"Two Sum (revisado)\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -525,7 +533,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "desafios", "{{desafioId}}"]
             },
-            "description": "Atualiza os campos do desafio (apenas o autor)."
+            "description": "PATCH parcial (apenas o autor): envia somente o `titulo`. Campos omitidos (enunciado, plataformaOrigem, identificadorExterno, urlExterna) sao preservados pelo backend - campo ausente significa 'nao alterar'. A request seguinte confirma isso."
           },
           "event": [
             {
@@ -534,6 +542,39 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('Sem conteudo (204)', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhe pos-atualizacao - valida PATCH parcial (GET /api/desafios/{id})",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/desafios/{{desafioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "desafios", "{{desafioId}}"]
+            },
+            "description": "Reconsulta o desafio apos o PATCH parcial e prova que apenas o `titulo` mudou, enquanto o `enunciado` (campo omitido no PATCH) foi preservado."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK (200)', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {",
+                  "  const d = pm.response.json();",
+                  "  pm.test('PATCH parcial alterou o titulo', function () {",
+                  "    pm.expect(d.titulo).to.eql('Two Sum (revisado)');",
+                  "  });",
+                  "  pm.test('PATCH parcial preservou o enunciado (campo omitido nao foi apagado)', function () {",
+                  "    pm.expect(String(d.enunciado)).to.eql(pm.collectionVariables.get('enunciadoAntes'));",
+                  "  });",
+                  "}"
                 ]
               }
             }
@@ -585,7 +626,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"linguagem\": \"Java\",\n  \"codigoFonte\": \"public int[] twoSum(int[] nums, int target) {\\n    Map<Integer, Integer> vistos = new HashMap<>();\\n    for (int i = 0; i < nums.length; i++) {\\n        int complemento = target - nums[i];\\n        if (vistos.containsKey(complemento)) {\\n            return new int[] { vistos.get(complemento), i };\\n        }\\n        vistos.put(nums[i], i);\\n    }\\n    return new int[0];\\n}\"\n}",
+              "raw": "{\n  \"codigoFonte\": \"public int[] twoSum(int[] nums, int target) {\\n    Map<Integer, Integer> vistos = new HashMap<>();\\n    for (int i = 0; i < nums.length; i++) {\\n        int complemento = target - nums[i];\\n        if (vistos.containsKey(complemento)) {\\n            return new int[] { vistos.get(complemento), i };\\n        }\\n        vistos.put(nums[i], i);\\n    }\\n    return new int[0];\\n}\",\n  \"linguagem\": \"JAVA\",\n  \"indiceAutonomiaIA\": 3,\n  \"descricaoApoioIA\": \"Resolvi sozinho; usei IA apenas para revisar a complexidade.\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -593,7 +634,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "desafios", "{{desafioId}}", "resolucoes"]
             },
-            "description": "Submete uma resolucao ao desafio criado. Salva `resolucaoId`."
+            "description": "Submete uma resolucao ao desafio criado. Campos obrigatorios: `codigoFonte`, `linguagem` (JAVA, PYTHON, CPP, JAVASCRIPT, C) e `indiceAutonomiaIA` (1 a 5). `descricaoApoioIA` e opcional. Salva `resolucaoId`."
           },
           "event": [
             {
@@ -672,7 +713,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"linguagem\": \"Java\",\n  \"codigoFonte\": \"// versao 2 - mesma ideia, mais enxuta\\npublic int[] twoSum(int[] nums, int target) {\\n    Map<Integer, Integer> vistos = new HashMap<>();\\n    for (int i = 0; i < nums.length; i++) {\\n        Integer j = vistos.get(target - nums[i]);\\n        if (j != null) return new int[] { j, i };\\n        vistos.put(nums[i], i);\\n    }\\n    return new int[0];\\n}\"\n}",
+              "raw": "{\n  \"codigoFonte\": \"// versao 2 - mesma ideia, mais enxuta\\npublic int[] twoSum(int[] nums, int target) {\\n    Map<Integer, Integer> vistos = new HashMap<>();\\n    for (int i = 0; i < nums.length; i++) {\\n        Integer j = vistos.get(target - nums[i]);\\n        if (j != null) return new int[] { j, i };\\n        vistos.put(nums[i], i);\\n    }\\n    return new int[0];\\n}\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -680,7 +721,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "resolucoes", "{{resolucaoId}}"]
             },
-            "description": "Atualiza linguagem/codigo da resolucao (apenas o autor)."
+            "description": "PATCH parcial (apenas o autor): envia somente o `codigoFonte`; a `linguagem` informada na submissao e mantida (campo omitido = nao altera)."
           },
           "event": [
             {
@@ -709,7 +750,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"resolucaoId\": \"{{resolucaoId}}\",\n  \"titulo\": \"Two Sum com HashMap\",\n  \"codigo\": \"Map<Integer, Integer> vistos = new HashMap<>();\\nfor (int i = 0; i < nums.length; i++) {\\n    Integer j = vistos.get(target - nums[i]);\\n    if (j != null) return new int[] { j, i };\\n    vistos.put(nums[i], i);\\n}\",\n  \"descricao\": \"Padrao de busca de par com soma alvo usando tabela hash (O(n) tempo).\",\n  \"categoriaConceito\": \"Hash Map\"\n}",
+              "raw": "{\n  \"codigo\": \"Map<Integer, Integer> vistos = new HashMap<>();\\nfor (int i = 0; i < nums.length; i++) {\\n    Integer j = vistos.get(target - nums[i]);\\n    if (j != null) return new int[] { j, i };\\n    vistos.put(nums[i], i);\\n}\",\n  \"descricao\": \"Padrao de busca de par com soma alvo usando tabela hash (O(n) tempo).\",\n  \"categoria\": \"ESTRUTURA_DADOS\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -717,7 +758,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "snippets"]
             },
-            "description": "Cria um snippet vinculado a resolucao criada (resolucaoId e opcional - pode ser null). Salva `snippetId`."
+            "description": "Cria um snippet. Campos: `codigo` (obrigatorio), `descricao` (opcional) e `categoria` (ESTRUTURA_DADOS, RECURSAO, ORDENACAO, GRAFOS, PROGRAMACAO_DINAMICA, STRINGS, MATEMATICA). Salva `snippetId`."
           },
           "event": [
             {
@@ -796,7 +837,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"titulo\": \"Two Sum com HashMap (revisado)\",\n  \"codigo\": \"Map<Integer, Integer> vistos = new HashMap<>();\\nfor (int i = 0; i < nums.length; i++) {\\n    Integer j = vistos.get(target - nums[i]);\\n    if (j != null) return new int[] { j, i };\\n    vistos.put(nums[i], i);\\n}\",\n  \"descricao\": \"Snippet revisado com nota de complexidade: O(n) tempo e O(n) espaco.\",\n  \"categoriaConceito\": \"Hash Map\"\n}",
+              "raw": "{\n  \"descricao\": \"Snippet revisado com nota de complexidade: O(n) tempo e O(n) espaco.\"\n}",
               "options": { "raw": { "language": "json" } }
             },
             "url": {
@@ -804,7 +845,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "snippets", "{{snippetId}}"]
             },
-            "description": "Atualiza titulo/codigo/descricao/categoria do snippet (apenas o autor)."
+            "description": "PATCH parcial (apenas o autor): envia somente a `descricao`; `codigo` e `categoria` sao mantidos (campo omitido = nao altera)."
           },
           "event": [
             {

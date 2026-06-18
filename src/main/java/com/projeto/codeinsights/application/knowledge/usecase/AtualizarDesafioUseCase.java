@@ -26,11 +26,11 @@ public class AtualizarDesafioUseCase {
         }
 
         desafio.atualizarDetalhes(
-                input.titulo(),
-                input.enunciado(),
-                input.plataformaOrigem(),
-                input.identificadorExterno(),
-                input.urlExterna());
+                input.titulo() != null ? input.titulo() : desafio.getTitulo(),
+                input.enunciado() != null ? input.enunciado() : desafio.getEnunciado(),
+                input.plataformaOrigem() != null ? input.plataformaOrigem() : desafio.getPlataformaOrigem(),
+                input.identificadorExterno() != null ? input.identificadorExterno() : desafio.getIdentificadorExterno(),
+                input.urlExterna() != null ? input.urlExterna() : desafio.getUrlExterna());
 
         desafioRepository.salvar(desafio);
     }
