@@ -1,16 +1,15 @@
 package com.projeto.codeinsights.application.knowledge.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
+
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 
 public record SnippetDTO(
         UUID id,
         UUID autorId,
-        UUID resolucaoId,
-        String titulo,
         String codigo,
         String descricao,
-        String categoriaConceito,
-        LocalDateTime dataCriacao,
-        LocalDateTime dataAtualizacao) {
+        CategoriaConceito categoria,
+        OffsetDateTime criadoEm) {
 }

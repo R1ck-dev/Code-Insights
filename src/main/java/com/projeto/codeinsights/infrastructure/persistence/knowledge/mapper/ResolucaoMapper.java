@@ -21,29 +21,27 @@ public class ResolucaoMapper {
         entity.setId(domain.getId());
         entity.setDesafio(entityManager.getReference(DesafioJpaEntity.class, domain.getDesafioId()));
         entity.setAutor(entityManager.getReference(UsuarioJpaEntity.class, domain.getAutorId()));
-        entity.setLinguagem(domain.getLinguagem());
         entity.setCodigoFonte(domain.getCodigoFonte());
-        entity.setIndiceAutonomiaIa(domain.getIndiceAutonomiaIa());
-        entity.setComplexidadeTempo(domain.getComplexidadeTempo());
-        entity.setComplexidadeEspaco(domain.getComplexidadeEspaco());
-        entity.setComplexidadeCiclomatica(domain.getComplexidadeCiclomatica());
-        entity.setDataCriacao(domain.getDataCriacao());
-        entity.setDataAtualizacao(domain.getDataAtualizacao());
+        entity.setLinguagem(domain.getLinguagem());
+        entity.setIndiceAutonomiaIA(domain.getIndiceAutonomiaIA());
+        entity.setDescricaoApoioIA(domain.getDescricaoApoioIA());
+        entity.setVisibilidade(domain.getVisibilidade());
+        entity.setAnalisada(domain.isAnalisada());
+        entity.setSubmetidaEm(domain.getSubmetidaEm());
         return entity;
     }
 
     public Resolucao toDomain(ResolucaoJpaEntity entity) {
         return new Resolucao(
                 entity.getId(),
-                entity.getDesafio().getId(),
                 entity.getAutor().getId(),
-                entity.getLinguagem(),
+                entity.getDesafio().getId(),
                 entity.getCodigoFonte(),
-                entity.getIndiceAutonomiaIa(),
-                entity.getComplexidadeTempo(),
-                entity.getComplexidadeEspaco(),
-                entity.getComplexidadeCiclomatica(),
-                entity.getDataCriacao(),
-                entity.getDataAtualizacao());
+                entity.getLinguagem(),
+                entity.getIndiceAutonomiaIA(),
+                entity.getDescricaoApoioIA(),
+                entity.getVisibilidade(),
+                entity.isAnalisada(),
+                entity.getSubmetidaEm());
     }
 }

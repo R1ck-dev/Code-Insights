@@ -1,20 +1,21 @@
 package com.projeto.codeinsights.application.knowledge.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.projeto.codeinsights.domain.knowledge.enums.DificuldadeDesafio;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 
 public record DesafioDetalheDTO(
         UUID id,
         UUID autorId,
         String autorUsername,
         String titulo,
-        String descricao,
-        String origemPlataforma,
-        DificuldadeDesafio dificuldade,
-        boolean publico,
+        String enunciado,
+        String plataformaOrigem,
+        String identificadorExterno,
+        String urlExterna,
+        Visibilidade visibilidade,
         long qtdResolucoes,
-        LocalDateTime dataCriacao,
-        LocalDateTime dataAtualizacao) {
+        OffsetDateTime criadoEm,
+        OffsetDateTime atualizadoEm) {
 }

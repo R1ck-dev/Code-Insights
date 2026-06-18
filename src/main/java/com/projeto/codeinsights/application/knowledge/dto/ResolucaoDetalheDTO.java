@@ -1,18 +1,20 @@
 package com.projeto.codeinsights.application.knowledge.dto;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
+
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 
 public record ResolucaoDetalheDTO(
         UUID id,
         UUID desafioId,
         UUID autorId,
-        String linguagem,
         String codigoFonte,
-        Integer indiceAutonomiaIa,
-        String complexidadeTempo,
-        String complexidadeEspaco,
-        Integer complexidadeCiclomatica,
-        LocalDateTime dataCriacao,
-        LocalDateTime dataAtualizacao) {
+        LinguagemProgramacao linguagem,
+        int indiceAutonomiaIA,
+        String descricaoApoioIA,
+        Visibilidade visibilidade,
+        boolean analisada,
+        OffsetDateTime submetidaEm) {
 }

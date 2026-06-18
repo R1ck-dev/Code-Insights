@@ -1,76 +1,65 @@
 package com.projeto.codeinsights.domain.knowledge.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 /**
  * Snippet: trecho de codigo reutilizavel e categorizado, parte da biblioteca
- * pessoal de conhecimento do usuario. Pode opcionalmente estar vinculado a uma
- * {@code Resolucao} (de onde foi extraido) via {@code resolucaoId}.
+ * pessoal de conhecimento do usuario. Referencia o autor por id e classifica o
+ * conceito via enum {@code CategoriaConceito}.
  */
 public class Snippet {
 
     private UUID id;
     private UUID autorId;
-    private UUID resolucaoId;
-    private String titulo;
     private String codigo;
     private String descricao;
-    private String categoriaConceito;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    private CategoriaConceito categoria;
+    private OffsetDateTime criadoEm;
 
     /** Construtor de criacao. */
-    public Snippet(UUID id, UUID autorId, UUID resolucaoId, String titulo, String codigo,
-            String descricao, String categoriaConceito) {
+    public Snippet(UUID id, UUID autorId, String codigo, String descricao, CategoriaConceito categoria) {
         if (autorId == null) {
             throw new NegocioException("O autor do snippet e obrigatorio.");
         }
-        validarTitulo(titulo);
         validarCodigo(codigo);
+        validarCategoria(categoria);
 
         this.id = (id != null) ? id : UUID.randomUUID();
         this.autorId = autorId;
-        this.resolucaoId = resolucaoId;
-        this.titulo = titulo.trim();
         this.codigo = codigo;
         this.descricao = descricao;
-        this.categoriaConceito = categoriaConceito;
-        this.dataCriacao = LocalDateTime.now();
-        this.dataAtualizacao = this.dataCriacao;
+        this.categoria = categoria;
+        this.criadoEm = OffsetDateTime.now();
     }
 
     /** Construtor de reconstituicao. */
-    public Snippet(UUID id, UUID autorId, UUID resolucaoId, String titulo, String codigo,
-            String descricao, String categoriaConceito, LocalDateTime dataCriacao,
-            LocalDateTime dataAtualizacao) {
+    public Snippet(UUID id, UUID autorId, String codigo, String descricao, CategoriaConceito categoria,
+            OffsetDateTime criadoEm) {
         this.id = id;
         this.autorId = autorId;
-        this.resolucaoId = resolucaoId;
-        this.titulo = titulo;
         this.codigo = codigo;
         this.descricao = descricao;
-        this.categoriaConceito = categoriaConceito;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.categoria = categoria;
+        this.criadoEm = criadoEm;
     }
 
-    public void atualizar(String titulo, String codigo, String descricao, String categoriaConceito) {
-        validarTitulo(titulo);
+    public void atualizarConteudo(String codigo, String descricao) {
         validarCodigo(codigo);
-        this.titulo = titulo.trim();
         this.codigo = codigo;
         this.descricao = descricao;
-        this.categoriaConceito = categoriaConceito;
-        marcarAtualizacao();
     }
 
-    private void validarTitulo(String titulo) {
-        if (titulo == null || titulo.isBlank()) {
-            throw new NegocioException("O titulo do snippet e obrigatorio.");
-        }
+    public void recategorizar(CategoriaConceito nova) {
+        validarCategoria(nova);
+        this.categoria = nova;
+    }
+
+    public boolean pertenceA(UUID usuarioId) {
+        return this.autorId.equals(usuarioId);
     }
 
     private void validarCodigo(String codigo) {
@@ -79,8 +68,10 @@ public class Snippet {
         }
     }
 
-    private void marcarAtualizacao() {
-        this.dataAtualizacao = LocalDateTime.now();
+    private void validarCategoria(CategoriaConceito categoria) {
+        if (categoria == null) {
+            throw new NegocioException("A categoria do snippet e obrigatoria.");
+        }
     }
 
     public UUID getId() {
@@ -91,14 +82,6 @@ public class Snippet {
         return autorId;
     }
 
-    public UUID getResolucaoId() {
-        return resolucaoId;
-    }
-
-    public String getTitulo() {
-        return titulo;
-    }
-
     public String getCodigo() {
         return codigo;
     }
@@ -107,15 +90,11 @@ public class Snippet {
         return descricao;
     }
 
-    public String getCategoriaConceito() {
-        return categoriaConceito;
+    public CategoriaConceito getCategoria() {
+        return categoria;
     }
 
-    public LocalDateTime getDataCriacao() {
-        return dataCriacao;
-    }
-
-    public LocalDateTime getDataAtualizacao() {
-        return dataAtualizacao;
+    public OffsetDateTime getCriadoEm() {
+        return criadoEm;
     }
 }

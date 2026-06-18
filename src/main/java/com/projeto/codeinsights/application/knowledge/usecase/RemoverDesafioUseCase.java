@@ -22,7 +22,7 @@ public class RemoverDesafioUseCase {
         Desafio desafio = desafioRepository.buscarPorId(desafioId)
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.getAutorId().equals(solicitanteId)) {
+        if (!desafio.pertenceA(solicitanteId)) {
             throw new NegocioException("Voce nao tem permissao para remover este desafio.");
         }
 

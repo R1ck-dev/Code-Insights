@@ -1,11 +1,12 @@
 package com.projeto.codeinsights.infrastructure.web.knowledge.dto;
 
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
+
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
 
 public record AtualizarSnippetRequest(
-        @NotBlank @Size(max = 255) String titulo,
         @NotBlank String codigo,
         String descricao,
-        @Size(max = 100) String categoriaConceito) {
+        @NotNull CategoriaConceito categoria) {
 }

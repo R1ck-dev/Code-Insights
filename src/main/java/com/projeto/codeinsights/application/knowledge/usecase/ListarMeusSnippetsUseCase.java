@@ -27,13 +27,10 @@ public class ListarMeusSnippetsUseCase {
                         .map(snippet -> new SnippetDTO(
                                 snippet.getId(),
                                 snippet.getAutorId(),
-                                snippet.getResolucaoId(),
-                                snippet.getTitulo(),
                                 snippet.getCodigo(),
                                 snippet.getDescricao(),
-                                snippet.getCategoriaConceito(),
-                                snippet.getDataCriacao(),
-                                snippet.getDataAtualizacao()))
+                                snippet.getCategoria(),
+                                snippet.getCriadoEm()))
                         .toList(),
                 pagina_.paginaAtual(),
                 pagina_.totalPaginas(),

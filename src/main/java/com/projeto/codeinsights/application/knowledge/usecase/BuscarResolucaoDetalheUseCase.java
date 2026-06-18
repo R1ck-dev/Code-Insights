@@ -29,7 +29,7 @@ public class BuscarResolucaoDetalheUseCase {
         Desafio desafio = desafioRepository.buscarPorId(resolucao.getDesafioId())
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!resolucao.getAutorId().equals(solicitanteId) && !desafio.isPublico()) {
+        if (!resolucao.pertenceA(solicitanteId) && !desafio.ehPublico()) {
             throw new NegocioException("Voce nao tem permissao para ver esta resolucao.");
         }
 
@@ -37,13 +37,12 @@ public class BuscarResolucaoDetalheUseCase {
                 resolucao.getId(),
                 resolucao.getDesafioId(),
                 resolucao.getAutorId(),
-                resolucao.getLinguagem(),
                 resolucao.getCodigoFonte(),
-                resolucao.getIndiceAutonomiaIa(),
-                resolucao.getComplexidadeTempo(),
-                resolucao.getComplexidadeEspaco(),
-                resolucao.getComplexidadeCiclomatica(),
-                resolucao.getDataCriacao(),
-                resolucao.getDataAtualizacao());
+                resolucao.getLinguagem(),
+                resolucao.getIndiceAutonomiaIA(),
+                resolucao.getDescricaoApoioIA(),
+                resolucao.getVisibilidade(),
+                resolucao.isAnalisada(),
+                resolucao.getSubmetidaEm());
     }
 }

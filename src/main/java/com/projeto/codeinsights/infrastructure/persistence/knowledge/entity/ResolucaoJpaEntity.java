@@ -1,12 +1,16 @@
 package com.projeto.codeinsights.infrastructure.persistence.knowledge.entity;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.infrastructure.persistence.identity.entity.UsuarioJpaEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -32,27 +36,26 @@ public class ResolucaoJpaEntity {
     @JoinColumn(name = "autor_id", nullable = false)
     private UsuarioJpaEntity autor;
 
-    @Column(length = 50)
-    private String linguagem;
-
     @Column(name = "codigo_fonte", nullable = false, columnDefinition = "TEXT")
     private String codigoFonte;
 
-    @Column(name = "indice_autonomia_ia")
-    private Integer indiceAutonomiaIa;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private LinguagemProgramacao linguagem;
 
-    @Column(name = "complexidade_tempo", length = 50)
-    private String complexidadeTempo;
+    @Column(name = "indice_autonomia_ia", nullable = false)
+    private int indiceAutonomiaIA;
 
-    @Column(name = "complexidade_espaco", length = 50)
-    private String complexidadeEspaco;
+    @Column(name = "descricao_apoio_ia", columnDefinition = "TEXT")
+    private String descricaoApoioIA;
 
-    @Column(name = "complexidade_ciclomatica")
-    private Integer complexidadeCiclomatica;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Visibilidade visibilidade;
 
-    @Column(name = "data_criacao", nullable = false, updatable = false)
-    private LocalDateTime dataCriacao;
+    @Column(nullable = false)
+    private boolean analisada;
 
-    @Column(name = "data_atualizacao", nullable = false)
-    private LocalDateTime dataAtualizacao;
+    @Column(name = "submetida_em", nullable = false, updatable = false)
+    private OffsetDateTime submetidaEm;
 }

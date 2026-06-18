@@ -46,11 +46,9 @@ public class SnippetController {
             @RequestBody @Valid CriarSnippetRequest request) {
         CriarSnippetInput input = new CriarSnippetInput(
                 autorId,
-                request.resolucaoId(),
-                request.titulo(),
                 request.codigo(),
                 request.descricao(),
-                request.categoriaConceito());
+                request.categoria());
         SnippetDTO snippet = criarSnippetUseCase.execute(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(snippet);
     }
@@ -75,10 +73,9 @@ public class SnippetController {
         AtualizarSnippetInput input = new AtualizarSnippetInput(
                 snippetId,
                 solicitanteId,
-                request.titulo(),
                 request.codigo(),
                 request.descricao(),
-                request.categoriaConceito());
+                request.categoria());
         atualizarSnippetUseCase.execute(input);
         return ResponseEntity.noContent().build();
     }

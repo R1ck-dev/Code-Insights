@@ -29,9 +29,10 @@ public class CriarDesafioUseCase {
                 null,
                 input.autorId(),
                 input.titulo(),
-                input.descricao(),
-                input.origemPlataforma(),
-                input.dificuldade());
+                input.enunciado(),
+                input.plataformaOrigem(),
+                input.identificadorExterno(),
+                input.urlExterna());
 
         Desafio salvo = desafioRepository.salvar(desafio);
 
@@ -40,9 +41,8 @@ public class CriarDesafioUseCase {
                 salvo.getAutorId(),
                 autor.getUsername(),
                 salvo.getTitulo(),
-                salvo.getOrigemPlataforma(),
-                salvo.getDificuldade(),
-                salvo.isPublico(),
-                salvo.getDataCriacao());
+                salvo.getPlataformaOrigem(),
+                salvo.getVisibilidade(),
+                salvo.getCriadoEm());
     }
 }

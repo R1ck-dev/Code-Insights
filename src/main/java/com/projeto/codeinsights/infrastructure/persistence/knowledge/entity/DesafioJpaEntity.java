@@ -1,9 +1,9 @@
 package com.projeto.codeinsights.infrastructure.persistence.knowledge.entity;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.projeto.codeinsights.domain.knowledge.enums.DificuldadeDesafio;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.infrastructure.persistence.identity.entity.UsuarioJpaEntity;
 
 import jakarta.persistence.Column;
@@ -35,21 +35,24 @@ public class DesafioJpaEntity {
     private String titulo;
 
     @Column(columnDefinition = "TEXT")
-    private String descricao;
+    private String enunciado;
 
-    @Column(name = "origem_plataforma", length = 100)
-    private String origemPlataforma;
+    @Column(name = "plataforma_origem", length = 100)
+    private String plataformaOrigem;
+
+    @Column(name = "identificador_externo", length = 100)
+    private String identificadorExterno;
+
+    @Column(name = "url_externa", length = 500)
+    private String urlExterna;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 50)
-    private DificuldadeDesafio dificuldade;
+    @Column(nullable = false, length = 20)
+    private Visibilidade visibilidade;
 
-    @Column(nullable = false)
-    private boolean publico;
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private OffsetDateTime criadoEm;
 
-    @Column(name = "data_criacao", nullable = false, updatable = false)
-    private LocalDateTime dataCriacao;
-
-    @Column(name = "data_atualizacao", nullable = false)
-    private LocalDateTime dataAtualizacao;
+    @Column(name = "atualizado_em", nullable = false)
+    private OffsetDateTime atualizadoEm;
 }

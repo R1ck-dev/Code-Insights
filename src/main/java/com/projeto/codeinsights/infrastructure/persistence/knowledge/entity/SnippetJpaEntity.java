@@ -1,12 +1,15 @@
 package com.projeto.codeinsights.infrastructure.persistence.knowledge.entity;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 import com.projeto.codeinsights.infrastructure.persistence.identity.entity.UsuarioJpaEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -28,25 +31,16 @@ public class SnippetJpaEntity {
     @JoinColumn(name = "autor_id", nullable = false)
     private UsuarioJpaEntity autor;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resolucao_id")
-    private ResolucaoJpaEntity resolucao;
-
-    @Column(nullable = false)
-    private String titulo;
-
     @Column(nullable = false, columnDefinition = "TEXT")
     private String codigo;
 
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
-    @Column(name = "categoria_conceito", length = 100)
-    private String categoriaConceito;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private CategoriaConceito categoria;
 
-    @Column(name = "data_criacao", nullable = false, updatable = false)
-    private LocalDateTime dataCriacao;
-
-    @Column(name = "data_atualizacao", nullable = false)
-    private LocalDateTime dataAtualizacao;
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private OffsetDateTime criadoEm;
 }

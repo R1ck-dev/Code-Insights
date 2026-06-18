@@ -22,7 +22,7 @@ public class RemoverResolucaoUseCase {
         Resolucao resolucao = resolucaoRepository.buscarPorId(resolucaoId)
                 .orElseThrow(() -> new NegocioException("Resolucao nao encontrada."));
 
-        if (!resolucao.getAutorId().equals(solicitanteId)) {
+        if (!resolucao.pertenceA(solicitanteId)) {
             throw new NegocioException("Apenas o autor pode remover esta resolucao.");
         }
 

@@ -48,8 +48,10 @@ public class ResolucaoController {
         ResolucaoResumoDTO resumo = submeterResolucaoUseCase.execute(new SubmeterResolucaoInput(
                 desafioId,
                 usuarioId,
+                request.codigoFonte(),
                 request.linguagem(),
-                request.codigoFonte()));
+                request.indiceAutonomiaIA(),
+                request.descricaoApoioIA()));
         return ResponseEntity.status(HttpStatus.CREATED).body(resumo);
     }
 
@@ -78,8 +80,8 @@ public class ResolucaoController {
         atualizarResolucaoUseCase.execute(new AtualizarResolucaoInput(
                 resolucaoId,
                 usuarioId,
-                request.linguagem(),
-                request.codigoFonte()));
+                request.codigoFonte(),
+                request.linguagem()));
         return ResponseEntity.noContent().build();
     }
 

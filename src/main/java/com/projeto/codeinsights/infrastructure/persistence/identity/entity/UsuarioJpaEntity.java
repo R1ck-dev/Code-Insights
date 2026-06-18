@@ -1,10 +1,11 @@
 package com.projeto.codeinsights.infrastructure.persistence.identity.entity;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.projeto.codeinsights.domain.identity.enums.RoleUsuario;
-import com.projeto.codeinsights.domain.identity.enums.StatusUsuario;
+import com.projeto.codeinsights.domain.identity.enums.Role;
+import com.projeto.codeinsights.domain.identity.enums.StatusConta;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,20 +34,21 @@ public class UsuarioJpaEntity {
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
 
-    @Column(name = "perfil_publico", nullable = false)
-    private boolean perfilPublico;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibilidade_perfil", nullable = false)
+    private Visibilidade visibilidadePerfil;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatusUsuario status;
+    private StatusConta status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private RoleUsuario role;
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private OffsetDateTime criadoEm;
 
-    @Column(name = "data_criacao", nullable = false, updatable = false)
-    private LocalDateTime dataCriacao;
-
-    @Column(name = "data_atualizacao", nullable = false)
-    private LocalDateTime dataAtualizacao;
+    @Column(name = "atualizado_em", nullable = false)
+    private OffsetDateTime atualizadoEm;
 }

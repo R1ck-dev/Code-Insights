@@ -40,10 +40,9 @@ public class ListarMeusDesafiosUseCase {
                                 desafio.getAutorId(),
                                 autorUsername,
                                 desafio.getTitulo(),
-                                desafio.getOrigemPlataforma(),
-                                desafio.getDificuldade(),
-                                desafio.isPublico(),
-                                desafio.getDataCriacao()))
+                                desafio.getPlataformaOrigem(),
+                                desafio.getVisibilidade(),
+                                desafio.getCriadoEm()))
                         .toList(),
                 resultado.paginaAtual(),
                 resultado.totalPaginas(),

@@ -21,15 +21,12 @@ public class AtualizarSnippetUseCase {
         Snippet snippet = snippetRepository.buscarPorId(input.snippetId())
                 .orElseThrow(() -> new NegocioException("Snippet nao encontrado."));
 
-        if (!snippet.getAutorId().equals(input.solicitanteId())) {
+        if (!snippet.pertenceA(input.solicitanteId())) {
             throw new NegocioException("Voce nao tem acesso a este snippet.");
         }
 
-        snippet.atualizar(
-                input.titulo(),
-                input.codigo(),
-                input.descricao(),
-                input.categoriaConceito());
+        snippet.atualizarConteudo(input.codigo(), input.descricao());
+        snippet.recategorizar(input.categoria());
 
         snippetRepository.salvar(snippet);
     }

@@ -1,10 +1,11 @@
 package com.projeto.codeinsights.domain.identity.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.projeto.codeinsights.domain.identity.enums.RoleUsuario;
-import com.projeto.codeinsights.domain.identity.enums.StatusUsuario;
+import com.projeto.codeinsights.domain.identity.enums.Role;
+import com.projeto.codeinsights.domain.identity.enums.StatusConta;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 /**
@@ -18,11 +19,11 @@ public class Usuario {
     private String username;
     private String email;
     private String senhaHash;
-    private boolean perfilPublico;
-    private StatusUsuario status;
-    private RoleUsuario role;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    private Role role;
+    private Visibilidade visibilidadePerfil;
+    private StatusConta status;
+    private OffsetDateTime criadoEm;
+    private OffsetDateTime atualizadoEm;
 
     /** Construtor de criacao: gera id, aplica defaults e valida invariantes. */
     public Usuario(UUID id, String username, String email, String senhaHash) {
@@ -38,42 +39,38 @@ public class Usuario {
         this.username = username.trim();
         this.email = email.trim().toLowerCase();
         this.senhaHash = senhaHash;
-        this.perfilPublico = false;
-        this.status = StatusUsuario.PENDENTE_VERIFICACAO;
-        this.role = RoleUsuario.USER;
-        this.dataCriacao = LocalDateTime.now();
-        this.dataAtualizacao = this.dataCriacao;
+        this.role = Role.ALUNO;
+        this.visibilidadePerfil = Visibilidade.PRIVADO;
+        this.status = StatusConta.PENDENTE_VERIFICACAO;
+        this.criadoEm = OffsetDateTime.now();
+        this.atualizadoEm = this.criadoEm;
     }
 
     /** Construtor de reconstituicao: estado completo, usado pelo mapper ao carregar do banco. */
-    public Usuario(UUID id, String username, String email, String senhaHash, boolean perfilPublico,
-            StatusUsuario status, RoleUsuario role, LocalDateTime dataCriacao, LocalDateTime dataAtualizacao) {
+    public Usuario(UUID id, String username, String email, String senhaHash, Role role,
+            Visibilidade visibilidadePerfil, StatusConta status, OffsetDateTime criadoEm,
+            OffsetDateTime atualizadoEm) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.senhaHash = senhaHash;
-        this.perfilPublico = perfilPublico;
-        this.status = status;
         this.role = role;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.visibilidadePerfil = visibilidadePerfil;
+        this.status = status;
+        this.criadoEm = criadoEm;
+        this.atualizadoEm = atualizadoEm;
     }
 
     public void ativarConta() {
-        this.status = StatusUsuario.ATIVO;
+        this.status = StatusConta.ATIVO;
         marcarAtualizacao();
     }
 
-    public void promoverParaAdmin() {
-        this.role = RoleUsuario.ADMIN;
-        marcarAtualizacao();
-    }
-
-    public void definirSenha(String novaSenhaHash) {
-        if (novaSenhaHash == null || novaSenhaHash.isBlank()) {
+    public void definirSenha(String novoHash) {
+        if (novoHash == null || novoHash.isBlank()) {
             throw new NegocioException("A senha e obrigatoria.");
         }
-        this.senhaHash = novaSenhaHash;
+        this.senhaHash = novoHash;
         marcarAtualizacao();
     }
 
@@ -84,13 +81,27 @@ public class Usuario {
     }
 
     public void tornarPerfilPublico() {
-        this.perfilPublico = true;
+        this.visibilidadePerfil = Visibilidade.PUBLICO;
         marcarAtualizacao();
     }
 
     public void tornarPerfilPrivado() {
-        this.perfilPublico = false;
+        this.visibilidadePerfil = Visibilidade.PRIVADO;
         marcarAtualizacao();
+    }
+
+    public void promoverParaPesquisador() {
+        this.role = Role.PESQUISADOR;
+        marcarAtualizacao();
+    }
+
+    public void promoverParaAdmin() {
+        this.role = Role.ADMIN;
+        marcarAtualizacao();
+    }
+
+    public boolean ehAdmin() {
+        return this.role == Role.ADMIN;
     }
 
     private void validarUsername(String username) {
@@ -100,7 +111,7 @@ public class Usuario {
     }
 
     private void marcarAtualizacao() {
-        this.dataAtualizacao = LocalDateTime.now();
+        this.atualizadoEm = OffsetDateTime.now();
     }
 
     public UUID getId() {
@@ -119,23 +130,23 @@ public class Usuario {
         return senhaHash;
     }
 
-    public boolean isPerfilPublico() {
-        return perfilPublico;
-    }
-
-    public StatusUsuario getStatus() {
-        return status;
-    }
-
-    public RoleUsuario getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public LocalDateTime getDataCriacao() {
-        return dataCriacao;
+    public Visibilidade getVisibilidadePerfil() {
+        return visibilidadePerfil;
     }
 
-    public LocalDateTime getDataAtualizacao() {
-        return dataAtualizacao;
+    public StatusConta getStatus() {
+        return status;
+    }
+
+    public OffsetDateTime getCriadoEm() {
+        return criadoEm;
+    }
+
+    public OffsetDateTime getAtualizadoEm() {
+        return atualizadoEm;
     }
 }

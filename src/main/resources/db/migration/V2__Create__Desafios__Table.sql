@@ -1,16 +1,17 @@
--- V2: Contexto knowledge - desafios (enunciado do problema)
+-- V2: Contexto knowledge - desafios (exercicio de Online Judge externo, no portfolio do usuario)
 
 CREATE TABLE desafios (
     id UUID PRIMARY KEY,
     autor_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     titulo VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    origem_plataforma VARCHAR(100),     -- ex: LeetCode, HackerRank
-    dificuldade VARCHAR(50),            -- FACIL, MEDIO, DIFICIL
-    publico BOOLEAN NOT NULL DEFAULT FALSE,
-    data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_atualizacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    enunciado TEXT,
+    plataforma_origem VARCHAR(100),         -- ex: NepsAcademy, LeetCode, Codeforces
+    identificador_externo VARCHAR(100),     -- id do problema na plataforma de origem
+    url_externa VARCHAR(500),
+    visibilidade VARCHAR(20) NOT NULL,      -- PUBLICO, PRIVADO
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_desafios_autor ON desafios(autor_id);
-CREATE INDEX idx_desafios_publico ON desafios(publico) WHERE publico = TRUE;
+CREATE INDEX idx_desafios_visibilidade ON desafios(autor_id, visibilidade);

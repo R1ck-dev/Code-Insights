@@ -14,11 +14,11 @@ public class UsuarioMapper {
         entity.setUsername(usuario.getUsername());
         entity.setEmail(usuario.getEmail());
         entity.setSenhaHash(usuario.getSenhaHash());
-        entity.setPerfilPublico(usuario.isPerfilPublico());
-        entity.setStatus(usuario.getStatus());
         entity.setRole(usuario.getRole());
-        entity.setDataCriacao(usuario.getDataCriacao());
-        entity.setDataAtualizacao(usuario.getDataAtualizacao());
+        entity.setVisibilidadePerfil(usuario.getVisibilidadePerfil());
+        entity.setStatus(usuario.getStatus());
+        entity.setCriadoEm(usuario.getCriadoEm());
+        entity.setAtualizadoEm(usuario.getAtualizadoEm());
         return entity;
     }
 
@@ -28,10 +28,10 @@ public class UsuarioMapper {
                 entity.getUsername(),
                 entity.getEmail(),
                 entity.getSenhaHash(),
-                entity.isPerfilPublico(),
-                entity.getStatus(),
                 entity.getRole(),
-                entity.getDataCriacao(),
-                entity.getDataAtualizacao());
+                entity.getVisibilidadePerfil(),
+                entity.getStatus(),
+                entity.getCriadoEm(),
+                entity.getAtualizadoEm());
     }
 }

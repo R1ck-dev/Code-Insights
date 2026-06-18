@@ -20,12 +20,13 @@ public class DesafioMapper {
         entity.setId(domain.getId());
         entity.setAutor(entityManager.getReference(UsuarioJpaEntity.class, domain.getAutorId()));
         entity.setTitulo(domain.getTitulo());
-        entity.setDescricao(domain.getDescricao());
-        entity.setOrigemPlataforma(domain.getOrigemPlataforma());
-        entity.setDificuldade(domain.getDificuldade());
-        entity.setPublico(domain.isPublico());
-        entity.setDataCriacao(domain.getDataCriacao());
-        entity.setDataAtualizacao(domain.getDataAtualizacao());
+        entity.setEnunciado(domain.getEnunciado());
+        entity.setPlataformaOrigem(domain.getPlataformaOrigem());
+        entity.setIdentificadorExterno(domain.getIdentificadorExterno());
+        entity.setUrlExterna(domain.getUrlExterna());
+        entity.setVisibilidade(domain.getVisibilidade());
+        entity.setCriadoEm(domain.getCriadoEm());
+        entity.setAtualizadoEm(domain.getAtualizadoEm());
         return entity;
     }
 
@@ -34,11 +35,12 @@ public class DesafioMapper {
                 entity.getId(),
                 entity.getAutor().getId(),
                 entity.getTitulo(),
-                entity.getDescricao(),
-                entity.getOrigemPlataforma(),
-                entity.getDificuldade(),
-                entity.isPublico(),
-                entity.getDataCriacao(),
-                entity.getDataAtualizacao());
+                entity.getEnunciado(),
+                entity.getPlataformaOrigem(),
+                entity.getIdentificadorExterno(),
+                entity.getUrlExterna(),
+                entity.getVisibilidade(),
+                entity.getCriadoEm(),
+                entity.getAtualizadoEm());
     }
 }

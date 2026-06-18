@@ -25,16 +25,18 @@ public class SubmeterResolucaoUseCase {
         Desafio desafio = desafioRepository.buscarPorId(input.desafioId())
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.getAutorId().equals(input.solicitanteId())) {
+        if (!desafio.pertenceA(input.solicitanteId())) {
             throw new NegocioException("Apenas o autor do desafio pode submeter resolucoes.");
         }
 
         Resolucao resolucao = new Resolucao(
                 null,
-                input.desafioId(),
                 input.solicitanteId(),
+                input.desafioId(),
+                input.codigoFonte(),
                 input.linguagem(),
-                input.codigoFonte());
+                input.indiceAutonomiaIA(),
+                input.descricaoApoioIA());
 
         Resolucao salva = resolucaoRepository.salvar(resolucao);
 
@@ -43,6 +45,8 @@ public class SubmeterResolucaoUseCase {
                 salva.getDesafioId(),
                 salva.getAutorId(),
                 salva.getLinguagem(),
-                salva.getDataCriacao());
+                salva.getIndiceAutonomiaIA(),
+                salva.isAnalisada(),
+                salva.getSubmetidaEm());
     }
 }

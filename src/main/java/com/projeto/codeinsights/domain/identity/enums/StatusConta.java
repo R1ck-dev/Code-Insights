@@ -1,6 +1,9 @@
 package com.projeto.codeinsights.domain.identity.enums;
 
-public enum StatusUsuario {
+/**
+ * Ciclo de vida da conta de um {@code Usuario}.
+ */
+public enum StatusConta {
     PENDENTE_VERIFICACAO,
     ATIVO,
     INATIVO,

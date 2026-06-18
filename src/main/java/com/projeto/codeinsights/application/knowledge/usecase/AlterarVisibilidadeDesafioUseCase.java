@@ -21,14 +21,14 @@ public class AlterarVisibilidadeDesafioUseCase {
         Desafio desafio = desafioRepository.buscarPorId(input.desafioId())
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.getAutorId().equals(input.solicitanteId())) {
+        if (!desafio.pertenceA(input.solicitanteId())) {
             throw new NegocioException("Voce nao tem permissao para alterar este desafio.");
         }
 
         if (input.publico()) {
             desafio.publicar();
         } else {
-            desafio.despublicar();
+            desafio.ocultar();
         }
 
         desafioRepository.salvar(desafio);

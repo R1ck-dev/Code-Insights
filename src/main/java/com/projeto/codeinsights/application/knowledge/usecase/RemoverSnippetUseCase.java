@@ -22,7 +22,7 @@ public class RemoverSnippetUseCase {
         Snippet snippet = snippetRepository.buscarPorId(snippetId)
                 .orElseThrow(() -> new NegocioException("Snippet nao encontrado."));
 
-        if (!snippet.getAutorId().equals(solicitanteId)) {
+        if (!snippet.pertenceA(solicitanteId)) {
             throw new NegocioException("Voce nao tem acesso a este snippet.");
         }
 

@@ -1,13 +1,14 @@
 package com.projeto.codeinsights.domain.knowledge.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.projeto.codeinsights.domain.knowledge.enums.DificuldadeDesafio;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 /**
- * Desafio: o enunciado de um problema de programacao no portfolio de um usuario.
+ * Desafio: um exercicio resolvido pelo usuario num Online Judge externo
+ * (NepsAcademy, LeetCode, Codeforces...), registrado no seu portfolio pessoal.
  * Aggregate root. As solucoes ficam em {@code Resolucao} (1 Desafio : N Resolucoes),
  * referenciadas por id; a visibilidade publico/privado vive aqui.
  */
@@ -16,16 +17,17 @@ public class Desafio {
     private UUID id;
     private UUID autorId;
     private String titulo;
-    private String descricao;
-    private String origemPlataforma;
-    private DificuldadeDesafio dificuldade;
-    private boolean publico;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    private String enunciado;
+    private String plataformaOrigem;
+    private String identificadorExterno;
+    private String urlExterna;
+    private Visibilidade visibilidade;
+    private OffsetDateTime criadoEm;
+    private OffsetDateTime atualizadoEm;
 
     /** Construtor de criacao. */
-    public Desafio(UUID id, UUID autorId, String titulo, String descricao,
-            String origemPlataforma, DificuldadeDesafio dificuldade) {
+    public Desafio(UUID id, UUID autorId, String titulo, String enunciado, String plataformaOrigem,
+            String identificadorExterno, String urlExterna) {
         if (autorId == null) {
             throw new NegocioException("O autor do desafio e obrigatorio.");
         }
@@ -34,47 +36,63 @@ public class Desafio {
         this.id = (id != null) ? id : UUID.randomUUID();
         this.autorId = autorId;
         this.titulo = titulo.trim();
-        this.descricao = descricao;
-        this.origemPlataforma = origemPlataforma;
-        this.dificuldade = dificuldade;
-        this.publico = false;
-        this.dataCriacao = LocalDateTime.now();
-        this.dataAtualizacao = this.dataCriacao;
+        this.enunciado = enunciado;
+        this.plataformaOrigem = plataformaOrigem;
+        this.identificadorExterno = identificadorExterno;
+        this.urlExterna = urlExterna;
+        this.visibilidade = Visibilidade.PRIVADO;
+        this.criadoEm = OffsetDateTime.now();
+        this.atualizadoEm = this.criadoEm;
     }
 
     /** Construtor de reconstituicao. */
-    public Desafio(UUID id, UUID autorId, String titulo, String descricao, String origemPlataforma,
-            DificuldadeDesafio dificuldade, boolean publico, LocalDateTime dataCriacao,
-            LocalDateTime dataAtualizacao) {
+    public Desafio(UUID id, UUID autorId, String titulo, String enunciado, String plataformaOrigem,
+            String identificadorExterno, String urlExterna, Visibilidade visibilidade,
+            OffsetDateTime criadoEm, OffsetDateTime atualizadoEm) {
         this.id = id;
         this.autorId = autorId;
         this.titulo = titulo;
-        this.descricao = descricao;
-        this.origemPlataforma = origemPlataforma;
-        this.dificuldade = dificuldade;
-        this.publico = publico;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.enunciado = enunciado;
+        this.plataformaOrigem = plataformaOrigem;
+        this.identificadorExterno = identificadorExterno;
+        this.urlExterna = urlExterna;
+        this.visibilidade = visibilidade;
+        this.criadoEm = criadoEm;
+        this.atualizadoEm = atualizadoEm;
     }
 
-    public void atualizarDetalhes(String titulo, String descricao, String origemPlataforma,
-            DificuldadeDesafio dificuldade) {
+    public void atualizarDetalhes(String titulo, String enunciado, String plataformaOrigem,
+            String identificadorExterno, String urlExterna) {
         validarTitulo(titulo);
         this.titulo = titulo.trim();
-        this.descricao = descricao;
-        this.origemPlataforma = origemPlataforma;
-        this.dificuldade = dificuldade;
+        this.enunciado = enunciado;
+        this.plataformaOrigem = plataformaOrigem;
+        this.identificadorExterno = identificadorExterno;
+        this.urlExterna = urlExterna;
+        marcarAtualizacao();
+    }
+
+    public void atualizarEnunciado(String texto) {
+        this.enunciado = texto;
         marcarAtualizacao();
     }
 
     public void publicar() {
-        this.publico = true;
+        this.visibilidade = Visibilidade.PUBLICO;
         marcarAtualizacao();
     }
 
-    public void despublicar() {
-        this.publico = false;
+    public void ocultar() {
+        this.visibilidade = Visibilidade.PRIVADO;
         marcarAtualizacao();
+    }
+
+    public boolean pertenceA(UUID usuarioId) {
+        return this.autorId.equals(usuarioId);
+    }
+
+    public boolean ehPublico() {
+        return this.visibilidade == Visibilidade.PUBLICO;
     }
 
     private void validarTitulo(String titulo) {
@@ -84,7 +102,7 @@ public class Desafio {
     }
 
     private void marcarAtualizacao() {
-        this.dataAtualizacao = LocalDateTime.now();
+        this.atualizadoEm = OffsetDateTime.now();
     }
 
     public UUID getId() {
@@ -99,27 +117,31 @@ public class Desafio {
         return titulo;
     }
 
-    public String getDescricao() {
-        return descricao;
+    public String getEnunciado() {
+        return enunciado;
     }
 
-    public String getOrigemPlataforma() {
-        return origemPlataforma;
+    public String getPlataformaOrigem() {
+        return plataformaOrigem;
     }
 
-    public DificuldadeDesafio getDificuldade() {
-        return dificuldade;
+    public String getIdentificadorExterno() {
+        return identificadorExterno;
     }
 
-    public boolean isPublico() {
-        return publico;
+    public String getUrlExterna() {
+        return urlExterna;
     }
 
-    public LocalDateTime getDataCriacao() {
-        return dataCriacao;
+    public Visibilidade getVisibilidade() {
+        return visibilidade;
     }
 
-    public LocalDateTime getDataAtualizacao() {
-        return dataAtualizacao;
+    public OffsetDateTime getCriadoEm() {
+        return criadoEm;
+    }
+
+    public OffsetDateTime getAtualizadoEm() {
+        return atualizadoEm;
     }
 }

@@ -3,7 +3,7 @@ package com.projeto.codeinsights.infrastructure.config.security;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.projeto.codeinsights.domain.identity.enums.StatusUsuario;
+import com.projeto.codeinsights.domain.identity.enums.StatusConta;
 import com.projeto.codeinsights.domain.identity.model.Usuario;
 import com.projeto.codeinsights.domain.identity.port.AuthenticationPort;
 import com.projeto.codeinsights.domain.identity.port.UsuarioRepository;
@@ -27,7 +27,7 @@ public class SpringAuthenticationAdapter implements AuthenticationPort {
             throw new NegocioException("Credenciais invalidas.");
         }
 
-        if (usuario.getStatus() != StatusUsuario.ATIVO) {
+        if (usuario.getStatus() != StatusConta.ATIVO) {
             throw new NegocioException("Conta pendente. Por favor, verifique o seu e-mail.");
         }
 

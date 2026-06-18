@@ -23,19 +23,16 @@ public class BuscarSnippetDetalheUseCase {
         Snippet snippet = snippetRepository.buscarPorId(snippetId)
                 .orElseThrow(() -> new NegocioException("Snippet nao encontrado."));
 
-        if (!snippet.getAutorId().equals(solicitanteId)) {
+        if (!snippet.pertenceA(solicitanteId)) {
             throw new NegocioException("Voce nao tem acesso a este snippet.");
         }
 
         return new SnippetDTO(
                 snippet.getId(),
                 snippet.getAutorId(),
-                snippet.getResolucaoId(),
-                snippet.getTitulo(),
                 snippet.getCodigo(),
                 snippet.getDescricao(),
-                snippet.getCategoriaConceito(),
-                snippet.getDataCriacao(),
-                snippet.getDataAtualizacao());
+                snippet.getCategoria(),
+                snippet.getCriadoEm());
     }
 }

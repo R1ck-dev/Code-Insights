@@ -29,7 +29,7 @@ public class BuscarMeuPerfilUseCase {
                 usuario.getEmail(),
                 usuario.getRole(),
                 usuario.getStatus(),
-                usuario.isPerfilPublico(),
-                usuario.getDataCriacao());
+                usuario.getVisibilidadePerfil(),
+                usuario.getCriadoEm());
     }
 }

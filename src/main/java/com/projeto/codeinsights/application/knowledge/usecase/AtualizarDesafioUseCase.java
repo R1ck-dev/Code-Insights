@@ -21,15 +21,16 @@ public class AtualizarDesafioUseCase {
         Desafio desafio = desafioRepository.buscarPorId(input.desafioId())
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.getAutorId().equals(input.solicitanteId())) {
+        if (!desafio.pertenceA(input.solicitanteId())) {
             throw new NegocioException("Voce nao tem permissao para alterar este desafio.");
         }
 
         desafio.atualizarDetalhes(
                 input.titulo(),
-                input.descricao(),
-                input.origemPlataforma(),
-                input.dificuldade());
+                input.enunciado(),
+                input.plataformaOrigem(),
+                input.identificadorExterno(),
+                input.urlExterna());
 
         desafioRepository.salvar(desafio);
     }

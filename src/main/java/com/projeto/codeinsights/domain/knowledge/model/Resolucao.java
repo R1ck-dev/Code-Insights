@@ -1,90 +1,110 @@
 package com.projeto.codeinsights.domain.knowledge.model;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 /**
  * Resolucao: uma solucao submetida por um usuario para um {@code Desafio}.
- * Guarda o codigo-fonte e os campos de metrica de aprendizado.
+ * Guarda o codigo-fonte, a linguagem e o Indice de Autonomia IA (1-5,
+ * autodeclarado pelo aluno no momento da submissao).
  * <p>
- * As metricas (indice de autonomia IA 1-5, complexidade de tempo/espaco e
- * ciclomatica) sao o nucleo da pesquisa, mas neste ciclo NAO sao calculadas:
- * nascem nulas e so serao preenchidas quando a extracao/analise for adicionada.
- * O metodo {@link #registrarMetricas} ja existe como ponto de extensao.
+ * As metricas estaticas (Big O, ciclomatica, espaco) sao calculadas por analise
+ * da AST e materializadas como {@code ResultadoMetrica} (ainda nao implementado);
+ * a flag {@link #analisada} marca quando a analise ja rodou.
  */
 public class Resolucao {
 
-    private UUID id;
-    private UUID desafioId;
-    private UUID autorId;
-    private String linguagem;
-    private String codigoFonte;
-    private Integer indiceAutonomiaIa;
-    private String complexidadeTempo;
-    private String complexidadeEspaco;
-    private Integer complexidadeCiclomatica;
-    private LocalDateTime dataCriacao;
-    private LocalDateTime dataAtualizacao;
+    /** Limites do Indice de Autonomia IA (autodeclarado). */
+    private static final int AUTONOMIA_MINIMA = 1;
+    private static final int AUTONOMIA_MAXIMA = 5;
 
-    /** Construtor de criacao: metricas comecam vazias. */
-    public Resolucao(UUID id, UUID desafioId, UUID autorId, String linguagem, String codigoFonte) {
-        if (desafioId == null) {
-            throw new NegocioException("O desafio da resolucao e obrigatorio.");
-        }
+    private UUID id;
+    private UUID autorId;
+    private UUID desafioId;
+    private String codigoFonte;
+    private LinguagemProgramacao linguagem;
+    private int indiceAutonomiaIA;
+    private String descricaoApoioIA;
+    private Visibilidade visibilidade;
+    private boolean analisada;
+    private OffsetDateTime submetidaEm;
+
+    /** Construtor de criacao: captura o codigo e o indice autodeclarado. */
+    public Resolucao(UUID id, UUID autorId, UUID desafioId, String codigoFonte,
+            LinguagemProgramacao linguagem, int indiceAutonomiaIA, String descricaoApoioIA) {
         if (autorId == null) {
             throw new NegocioException("O autor da resolucao e obrigatorio.");
         }
+        if (desafioId == null) {
+            throw new NegocioException("O desafio da resolucao e obrigatorio.");
+        }
+        if (linguagem == null) {
+            throw new NegocioException("A linguagem da resolucao e obrigatoria.");
+        }
         validarCodigoFonte(codigoFonte);
+        validarAutonomia(indiceAutonomiaIA);
 
         this.id = (id != null) ? id : UUID.randomUUID();
-        this.desafioId = desafioId;
         this.autorId = autorId;
-        this.linguagem = linguagem;
+        this.desafioId = desafioId;
         this.codigoFonte = codigoFonte;
-        this.dataCriacao = LocalDateTime.now();
-        this.dataAtualizacao = this.dataCriacao;
+        this.linguagem = linguagem;
+        this.indiceAutonomiaIA = indiceAutonomiaIA;
+        this.descricaoApoioIA = descricaoApoioIA;
+        this.visibilidade = Visibilidade.PRIVADO;
+        this.analisada = false;
+        this.submetidaEm = OffsetDateTime.now();
     }
 
     /** Construtor de reconstituicao. */
-    public Resolucao(UUID id, UUID desafioId, UUID autorId, String linguagem, String codigoFonte,
-            Integer indiceAutonomiaIa, String complexidadeTempo, String complexidadeEspaco,
-            Integer complexidadeCiclomatica, LocalDateTime dataCriacao, LocalDateTime dataAtualizacao) {
+    public Resolucao(UUID id, UUID autorId, UUID desafioId, String codigoFonte,
+            LinguagemProgramacao linguagem, int indiceAutonomiaIA, String descricaoApoioIA,
+            Visibilidade visibilidade, boolean analisada, OffsetDateTime submetidaEm) {
         this.id = id;
-        this.desafioId = desafioId;
         this.autorId = autorId;
-        this.linguagem = linguagem;
+        this.desafioId = desafioId;
         this.codigoFonte = codigoFonte;
-        this.indiceAutonomiaIa = indiceAutonomiaIa;
-        this.complexidadeTempo = complexidadeTempo;
-        this.complexidadeEspaco = complexidadeEspaco;
-        this.complexidadeCiclomatica = complexidadeCiclomatica;
-        this.dataCriacao = dataCriacao;
-        this.dataAtualizacao = dataAtualizacao;
+        this.linguagem = linguagem;
+        this.indiceAutonomiaIA = indiceAutonomiaIA;
+        this.descricaoApoioIA = descricaoApoioIA;
+        this.visibilidade = visibilidade;
+        this.analisada = analisada;
+        this.submetidaEm = submetidaEm;
     }
 
-    public void atualizarCodigo(String linguagem, String codigoFonte) {
+    public void atualizarCodigo(String codigoFonte, LinguagemProgramacao linguagem) {
         validarCodigoFonte(codigoFonte);
-        this.linguagem = linguagem;
+        if (linguagem == null) {
+            throw new NegocioException("A linguagem da resolucao e obrigatoria.");
+        }
         this.codigoFonte = codigoFonte;
-        marcarAtualizacao();
+        this.linguagem = linguagem;
+        this.analisada = false;
     }
 
-    /**
-     * Ponto de extensao para as metricas de aprendizado (a ser usado quando a
-     * analise for implementada). O indice de autonomia IA deve estar entre 1 e 5.
-     */
-    public void registrarMetricas(Integer indiceAutonomiaIa, String complexidadeTempo,
-            String complexidadeEspaco, Integer complexidadeCiclomatica) {
-        if (indiceAutonomiaIa != null && (indiceAutonomiaIa < 1 || indiceAutonomiaIa > 5)) {
-            throw new NegocioException("O indice de autonomia IA deve estar entre 1 e 5.");
-        }
-        this.indiceAutonomiaIa = indiceAutonomiaIa;
-        this.complexidadeTempo = complexidadeTempo;
-        this.complexidadeEspaco = complexidadeEspaco;
-        this.complexidadeCiclomatica = complexidadeCiclomatica;
-        marcarAtualizacao();
+    public void registrarAutonomia(int valor) {
+        validarAutonomia(valor);
+        this.indiceAutonomiaIA = valor;
+    }
+
+    public void marcarComoAnalisada() {
+        this.analisada = true;
+    }
+
+    public void publicar() {
+        this.visibilidade = Visibilidade.PUBLICO;
+    }
+
+    public boolean pertenceA(UUID usuarioId) {
+        return this.autorId.equals(usuarioId);
+    }
+
+    public boolean ehPublica() {
+        return this.visibilidade == Visibilidade.PUBLICO;
     }
 
     private void validarCodigoFonte(String codigoFonte) {
@@ -93,51 +113,49 @@ public class Resolucao {
         }
     }
 
-    private void marcarAtualizacao() {
-        this.dataAtualizacao = LocalDateTime.now();
+    private void validarAutonomia(int valor) {
+        if (valor < AUTONOMIA_MINIMA || valor > AUTONOMIA_MAXIMA) {
+            throw new NegocioException("O Indice de Autonomia IA deve estar entre 1 e 5.");
+        }
     }
 
     public UUID getId() {
         return id;
     }
 
-    public UUID getDesafioId() {
-        return desafioId;
-    }
-
     public UUID getAutorId() {
         return autorId;
     }
 
-    public String getLinguagem() {
-        return linguagem;
+    public UUID getDesafioId() {
+        return desafioId;
     }
 
     public String getCodigoFonte() {
         return codigoFonte;
     }
 
-    public Integer getIndiceAutonomiaIa() {
-        return indiceAutonomiaIa;
+    public LinguagemProgramacao getLinguagem() {
+        return linguagem;
     }
 
-    public String getComplexidadeTempo() {
-        return complexidadeTempo;
+    public int getIndiceAutonomiaIA() {
+        return indiceAutonomiaIA;
     }
 
-    public String getComplexidadeEspaco() {
-        return complexidadeEspaco;
+    public String getDescricaoApoioIA() {
+        return descricaoApoioIA;
     }
 
-    public Integer getComplexidadeCiclomatica() {
-        return complexidadeCiclomatica;
+    public Visibilidade getVisibilidade() {
+        return visibilidade;
     }
 
-    public LocalDateTime getDataCriacao() {
-        return dataCriacao;
+    public boolean isAnalisada() {
+        return analisada;
     }
 
-    public LocalDateTime getDataAtualizacao() {
-        return dataAtualizacao;
+    public OffsetDateTime getSubmetidaEm() {
+        return submetidaEm;
     }
 }

@@ -28,7 +28,7 @@ public class BuscarDesafioDetalheUseCase {
         Desafio desafio = desafioRepository.buscarPorId(desafioId)
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.getAutorId().equals(solicitanteId) && !desafio.isPublico()) {
+        if (!desafio.pertenceA(solicitanteId) && !desafio.ehPublico()) {
             throw new NegocioException("Voce nao tem acesso a este desafio.");
         }
 
@@ -42,12 +42,13 @@ public class BuscarDesafioDetalheUseCase {
                 desafio.getAutorId(),
                 autor.getUsername(),
                 desafio.getTitulo(),
-                desafio.getDescricao(),
-                desafio.getOrigemPlataforma(),
-                desafio.getDificuldade(),
-                desafio.isPublico(),
+                desafio.getEnunciado(),
+                desafio.getPlataformaOrigem(),
+                desafio.getIdentificadorExterno(),
+                desafio.getUrlExterna(),
+                desafio.getVisibilidade(),
                 qtdResolucoes,
-                desafio.getDataCriacao(),
-                desafio.getDataAtualizacao());
+                desafio.getCriadoEm(),
+                desafio.getAtualizadoEm());
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.projeto.codeinsights.domain.knowledge.model.Desafio;
 import com.projeto.codeinsights.domain.knowledge.port.DesafioRepository;
 import com.projeto.codeinsights.domain.shared.Pagina;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.infrastructure.persistence.knowledge.entity.DesafioJpaEntity;
 import com.projeto.codeinsights.infrastructure.persistence.knowledge.mapper.DesafioMapper;
 import com.projeto.codeinsights.infrastructure.persistence.knowledge.repository.SpringDataDesafioRepository;
@@ -47,7 +48,8 @@ public class DesafioRepositoryAdapter implements DesafioRepository {
     @Override
     public Pagina<Desafio> listarPublicosPorAutor(UUID autorId, int pagina, int tamanho) {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho);
-        Page<DesafioJpaEntity> page = springDataDesafioRepository.findByAutorIdAndPublicoTrue(autorId, pageRequest);
+        Page<DesafioJpaEntity> page = springDataDesafioRepository.findByAutorIdAndVisibilidade(
+                autorId, Visibilidade.PUBLICO, pageRequest);
         List<Desafio> itens = page.getContent().stream().map(desafioMapper::toDomain).toList();
         return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
     }

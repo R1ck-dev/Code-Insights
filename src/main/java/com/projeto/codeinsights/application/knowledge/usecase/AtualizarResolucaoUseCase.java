@@ -21,11 +21,11 @@ public class AtualizarResolucaoUseCase {
         Resolucao resolucao = resolucaoRepository.buscarPorId(input.resolucaoId())
                 .orElseThrow(() -> new NegocioException("Resolucao nao encontrada."));
 
-        if (!resolucao.getAutorId().equals(input.solicitanteId())) {
+        if (!resolucao.pertenceA(input.solicitanteId())) {
             throw new NegocioException("Apenas o autor pode atualizar esta resolucao.");
         }
 
-        resolucao.atualizarCodigo(input.linguagem(), input.codigoFonte());
+        resolucao.atualizarCodigo(input.codigoFonte(), input.linguagem());
         resolucaoRepository.salvar(resolucao);
     }
 }

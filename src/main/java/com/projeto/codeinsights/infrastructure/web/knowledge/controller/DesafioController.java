@@ -54,9 +54,10 @@ public class DesafioController {
         CriarDesafioInput input = new CriarDesafioInput(
                 autorId,
                 request.titulo(),
-                request.descricao(),
-                request.origemPlataforma(),
-                request.dificuldade());
+                request.enunciado(),
+                request.plataformaOrigem(),
+                request.identificadorExterno(),
+                request.urlExterna());
         DesafioResumoDTO criado = criarDesafioUseCase.execute(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(criado);
     }
@@ -89,9 +90,10 @@ public class DesafioController {
                 desafioId,
                 solicitanteId,
                 request.titulo(),
-                request.descricao(),
-                request.origemPlataforma(),
-                request.dificuldade());
+                request.enunciado(),
+                request.plataformaOrigem(),
+                request.identificadorExterno(),
+                request.urlExterna());
         atualizarDesafioUseCase.execute(input);
         return ResponseEntity.noContent().build();
     }

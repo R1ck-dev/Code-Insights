@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.projeto.codeinsights.application.identity.dto.UsuarioPublicoDTO;
 import com.projeto.codeinsights.domain.identity.model.Usuario;
 import com.projeto.codeinsights.domain.identity.port.UsuarioRepository;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 import lombok.RequiredArgsConstructor;
@@ -25,13 +26,13 @@ public class BuscarUsuarioPublicoUseCase {
 
         // A visibilidade do perfil e respeitada: perfis privados nao sao expostos
         // publicamente. O proprio dono ve seus dados via GET /api/usuarios/me.
-        if (!usuario.isPerfilPublico()) {
+        if (usuario.getVisibilidadePerfil() != Visibilidade.PUBLICO) {
             throw new NegocioException("Perfil nao encontrado ou e privado.");
         }
 
         return new UsuarioPublicoDTO(
                 usuario.getId(),
                 usuario.getUsername(),
-                usuario.isPerfilPublico());
+                usuario.getVisibilidadePerfil());
     }
 }
