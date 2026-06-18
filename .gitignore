@@ -32,6 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+### Claude Code (ferramentas locais, não versionar) ###
+.claude/
+
 ### Env / secrets ###
 .env
 .env.*
