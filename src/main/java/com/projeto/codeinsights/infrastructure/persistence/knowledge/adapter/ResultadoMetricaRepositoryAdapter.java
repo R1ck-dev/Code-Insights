@@ -1,0 +1,42 @@
+package com.projeto.codeinsights.infrastructure.persistence.knowledge.adapter;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Component;
+
+import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
+import com.projeto.codeinsights.domain.knowledge.port.ResultadoMetricaRepository;
+import com.projeto.codeinsights.infrastructure.persistence.knowledge.entity.ResultadoMetricaJpaEntity;
+import com.projeto.codeinsights.infrastructure.persistence.knowledge.mapper.ResultadoMetricaMapper;
+import com.projeto.codeinsights.infrastructure.persistence.knowledge.repository.SpringDataResultadoMetricaRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Component
+@RequiredArgsConstructor
+public class ResultadoMetricaRepositoryAdapter implements ResultadoMetricaRepository {
+
+    private final SpringDataResultadoMetricaRepository springDataResultadoMetricaRepository;
+    private final ResultadoMetricaMapper resultadoMetricaMapper;
+
+    @Override
+    public void salvarTodos(List<ResultadoMetrica> resultados) {
+        List<ResultadoMetricaJpaEntity> entidades = resultados.stream()
+                .map(resultadoMetricaMapper::toEntity)
+                .toList();
+        springDataResultadoMetricaRepository.saveAll(entidades);
+    }
+
+    @Override
+    public List<ResultadoMetrica> listarPorResolucao(UUID resolucaoId) {
+        return springDataResultadoMetricaRepository.findByResolucaoId(resolucaoId).stream()
+                .map(resultadoMetricaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void removerPorResolucao(UUID resolucaoId) {
+        springDataResultadoMetricaRepository.deleteByResolucaoId(resolucaoId);
+    }
+}

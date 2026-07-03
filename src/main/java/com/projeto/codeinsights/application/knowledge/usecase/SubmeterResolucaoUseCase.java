@@ -1,10 +1,12 @@
 package com.projeto.codeinsights.application.knowledge.usecase;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.projeto.codeinsights.application.knowledge.dto.ResolucaoResumoDTO;
 import com.projeto.codeinsights.application.knowledge.dto.SubmeterResolucaoInput;
+import com.projeto.codeinsights.application.knowledge.event.ResolucaoParaAnalisarEvent;
 import com.projeto.codeinsights.domain.knowledge.model.Desafio;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.knowledge.port.DesafioRepository;
@@ -19,6 +21,7 @@ public class SubmeterResolucaoUseCase {
 
     private final ResolucaoRepository resolucaoRepository;
     private final DesafioRepository desafioRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ResolucaoResumoDTO execute(SubmeterResolucaoInput input) {
@@ -39,6 +42,7 @@ public class SubmeterResolucaoUseCase {
                 input.descricaoApoioIA());
 
         Resolucao salva = resolucaoRepository.salvar(resolucao);
+        eventPublisher.publishEvent(new ResolucaoParaAnalisarEvent(salva.getId()));
 
         return new ResolucaoResumoDTO(
                 salva.getId(),

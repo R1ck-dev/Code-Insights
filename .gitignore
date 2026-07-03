@@ -34,6 +34,7 @@ build/
 
 ### Claude Code (ferramentas locais, não versionar) ###
 .claude/
+CLAUDE.md
 
 ### Env / secrets ###
 .env
@@ -47,8 +48,11 @@ build/
 secrets/
 
 ### Documentação interna IFSP (não versionar) ###
-docs/ifsp-documentacao/
+docs/
 
 ### OS ###
 .DS_Store
 Thumbs.db
+
+### Arquivos PDF ###
+*.pdf
