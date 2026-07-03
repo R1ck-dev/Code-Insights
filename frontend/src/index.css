@@ -1,0 +1,190 @@
+@import 'tailwindcss';
+
+/* Modo escuro é o padrão (o <html> nasce com class="dark"); alternar remove/adiciona .dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Tokens de design do CodeInsights — estética dev-tool, marca índigo.
+ * Neutros trocam entre claro/escuro; marca, semânticos, complexidade e
+ * linguagens são fixos nos dois modos. Extraídos das referências do Claude Design.
+ */
+@layer base {
+  :root {
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+    /* Marca — índigo/violeta */
+    --brand: #6e5ff6;
+    --brand-hover: #5b4fd8;
+    --brand-pressed: #4a3fb5;
+    --brand-deep: #2a2472;
+    --brand-strong: #8b85ff; /* realce/links no escuro */
+    --brand-on: #c7c3ff; /* texto sobre superfícies de marca (avatar) */
+
+    /* Semânticos (fixos nos dois modos) */
+    --success: #2fb863;
+    --danger: #f0563f;
+    --warning: #e0a21e;
+    --info: #4c9aff;
+    --neutral: #8a94a6;
+
+    /* Escala de complexidade — verde (simples) → vermelho (custoso) */
+    --cx-0: #2fb863; /* O(1) */
+    --cx-1: #59c36a; /* O(log n) */
+    --cx-2: #9cc15a; /* O(n) */
+    --cx-3: #e0a21e; /* O(n log n) */
+    --cx-4: #ec8a3c; /* O(n^2) */
+    --cx-5: #f0563f; /* O(n^3) */
+    --cx-6: #e23d5a; /* O(2^n) */
+    --cx-7: #c2304e; /* O(n!) */
+    --cx-unknown: #666b7a;
+
+    /* Linguagens */
+    --lang-java: #e76f00;
+    --lang-python: #4b8bbe;
+    --lang-cpp: #4c93d6;
+    --lang-javascript: #e9c500;
+    --lang-c: #659ad2;
+
+    /* Neutros — CLARO (padrão do :root; sobrescrito por .dark) */
+    --bg: #f7f8fa;
+    --bg-deep: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f3f4f7;
+    --input: #fbfbfd;
+    --border: #e7e8ec;
+    --border-subtle: #edeef2;
+    --border-strong: #dee0e6;
+    --heading: #14151a;
+    --fg: #1f2430;
+    --label: #3a3f4c;
+    --muted: #565b69;
+    --subtle: #868c99;
+    --accent: #5b4fd8; /* links/ativos no claro (índigo mais escuro p/ contraste) */
+    --ring: #6e5ff6;
+    --brand-tint: rgba(110, 95, 246, 0.1);
+  }
+
+  .dark {
+    --bg: #0c0d11;
+    --bg-deep: #0a0b0e;
+    --surface: #15161c;
+    --surface-2: #1b1d25;
+    --input: #0e0f14;
+    --border: #24262f;
+    --border-subtle: #1b1d25;
+    --border-strong: #31343f;
+    --heading: #f2f3f7;
+    --fg: #e7e8ee;
+    --label: #c9ccd6;
+    --muted: #9b9fad;
+    --subtle: #666b7a;
+    --accent: #8b85ff;
+    --ring: #6e5ff6;
+    --brand-tint: rgba(110, 95, 246, 0.13);
+  }
+}
+
+/* Expõe os tokens como utilitários Tailwind (bg-surface, text-muted, border-strong…). */
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-heading: var(--heading);
+  --color-fg: var(--fg);
+  --color-label: var(--label);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-pressed: var(--brand-pressed);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-on: var(--brand-on);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-neutral: var(--neutral);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(110, 95, 246, 0.32);
+  }
+
+  /* Foco visível consistente (acessibilidade AA). */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar discreta, estilo IDE. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--subtle);
+    background-clip: content-box;
+  }
+}
+
+@keyframes ci-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ci-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.ci-spin {
+  animation: ci-spin 0.8s linear infinite;
+}
+.ci-pulse {
+  animation: ci-pulse 1.4s ease-in-out infinite;
+}
