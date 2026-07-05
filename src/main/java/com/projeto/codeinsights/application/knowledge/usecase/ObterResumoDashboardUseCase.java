@@ -10,6 +10,7 @@ import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO.AtividadeRecenteDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO.DistribuicaoItemDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO.EvolucaoMensalDTO;
+import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
 import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.port.DesafioRepository;
 import com.projeto.codeinsights.domain.knowledge.port.ResolucaoRepository;
@@ -43,9 +44,10 @@ public class ObterResumoDashboardUseCase {
         List<DistribuicaoItemDTO> bigO = distribuir(autorId, TipoMetrica.BIG_O_TEMPO);
         List<DistribuicaoItemDTO> espaco = distribuir(autorId, TipoMetrica.COMPLEXIDADE_ESPACO);
 
-        List<EvolucaoMensalDTO> evolucao = resolucaoRepository.evolucaoMensalPorAutor(autorId).stream()
-                .map(p -> new EvolucaoMensalDTO(p.ano(), p.mes(), p.mediaAutonomia(), p.totalResolucoes(),
-                        p.mediaComplexidade()))
+        List<EvolucaoMensalDTO> evolucao = resolucaoRepository
+                .evolucaoPorAutor(autorId, GranularidadeTempo.MENSAL).stream()
+                .map(p -> new EvolucaoMensalDTO(p.ano(), p.mes(), p.dia(), p.mediaAutonomia(),
+                        p.totalResolucoes(), p.mediaComplexidade()))
                 .toList();
 
         List<AtividadeRecenteDTO> atividadeRecente = resolucaoRepository

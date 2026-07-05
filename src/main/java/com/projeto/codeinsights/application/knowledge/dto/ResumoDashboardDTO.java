@@ -27,8 +27,11 @@ public record ResumoDashboardDTO(
     public record DistribuicaoItemDTO(String rotulo, int ordem, long total) {
     }
 
-    /** {@code mediaComplexidade} = media da ordem de Big O (tempo) das resolucoes do mes; null se nenhuma analisada. */
-    public record EvolucaoMensalDTO(int ano, int mes, Double mediaAutonomia, long totalResolucoes,
+    /**
+     * Ponto da serie de evolucao no inicio do periodo (dia/semana/mes). {@code dia} = 1 quando mensal.
+     * {@code mediaComplexidade} = media da ordem de Big O (tempo) das resolucoes do periodo; null se nenhuma analisada.
+     */
+    public record EvolucaoMensalDTO(int ano, int mes, int dia, Double mediaAutonomia, long totalResolucoes,
             Double mediaComplexidade) {
     }
 

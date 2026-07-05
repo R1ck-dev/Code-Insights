@@ -23,6 +23,8 @@ export type CategoriaConceito =
 
 export type TipoMetrica = 'COMPLEXIDADE_CICLOMATICA' | 'BIG_O_TEMPO' | 'COMPLEXIDADE_ESPACO'
 
+export type GranularidadeTempo = 'DIARIO' | 'SEMANAL' | 'MENSAL'
+
 // ---- Envelope de paginação ----
 export interface Pagina<T> {
   itens: T[]
@@ -124,9 +126,11 @@ export interface DistribuicaoItemDTO {
 export interface EvolucaoMensalDTO {
   ano: number
   mes: number
+  /** dia do início do período (1 quando mensal; início da semana quando semanal). */
+  dia: number
   mediaAutonomia: number | null
   totalResolucoes: number
-  /** média da ordem de Big O (tempo) das resoluções do mês; null se nenhuma analisada. */
+  /** média da ordem de Big O (tempo) das resoluções do período; null se nenhuma analisada. */
   mediaComplexidade: number | null
 }
 

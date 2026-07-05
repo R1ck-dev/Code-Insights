@@ -33,23 +33,24 @@ public interface SpringDataResolucaoRepository extends JpaRepository<ResolucaoJp
     @Query("select avg(r.indiceAutonomiaIA) from ResolucaoJpaEntity r where r.autor.id = :autorId")
     Double mediaAutonomiaPorAutor(@Param("autorId") UUID autorId);
 
-    // Serie temporal por mes de submissao. Nativa (Postgres) para agrupar por mes de forma direta.
-    // O left join traz a media da ordem de Big O (tempo) das resolucoes analisadas do mes; ha no
+    // Serie temporal de submissao agrupada por :campo do date_trunc ('day'/'week'/'month'). Nativa (Postgres).
+    // O left join traz a media da ordem de Big O (tempo) das resolucoes analisadas do periodo; ha no
     // maximo 1 metrica BIG_O_TEMPO por resolucao, entao a juncao nao infla a media de autonomia nem a contagem.
     @Query(value = """
-            select extract(year  from r.submetida_em) as ano,
-                   extract(month from r.submetida_em) as mes,
-                   avg(r.indice_autonomia_ia)         as media_autonomia,
-                   count(*)                           as total_resolucoes,
-                   avg(m.valor)                       as media_complexidade
+            select extract(year  from date_trunc(:campo, r.submetida_em)) as ano,
+                   extract(month from date_trunc(:campo, r.submetida_em)) as mes,
+                   extract(day   from date_trunc(:campo, r.submetida_em)) as dia,
+                   avg(r.indice_autonomia_ia)                             as media_autonomia,
+                   count(*)                                               as total_resolucoes,
+                   avg(m.valor)                                           as media_complexidade
             from resolucoes r
             left join resultados_metrica m
                    on m.resolucao_id = r.id and m.tipo = 'BIG_O_TEMPO' and m.valor >= 0
             where r.autor_id = :autorId
-            group by ano, mes
-            order by ano, mes
+            group by 1, 2, 3
+            order by 1, 2, 3
             """, nativeQuery = true)
-    List<Object[]> evolucaoMensalPorAutor(@Param("autorId") UUID autorId);
+    List<Object[]> evolucaoPorAutor(@Param("autorId") UUID autorId, @Param("campo") String campo);
 
     // Atividade recente: resolucoes + titulo do desafio + Big O de tempo (left join, pode faltar).
     // Limite aplicado via Pageable (PageRequest.of(0, limite)).

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { Braces, Code2, Minus, Plus, Target, TrendingDown, TrendingUp } from 'lucide-react'
@@ -10,18 +11,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
 import { AnalysisStatus, ComplexityBadge, LanguageBadge } from '@/components/domain/badges'
 import { useAuth } from '@/auth/useAuth'
-import { useResumoDashboard } from '@/features/metricas/hooks'
+import { useEvolucao, useResumoDashboard } from '@/features/metricas/hooks'
 import {
   COMPLEXIDADE_ORDEM_MAX,
   complexityHexByOrdinal,
   complexityRotuloByOrdinal,
   prettyBigO,
 } from '@/domain/enums'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import type {
   AtividadeRecenteDTO,
   DistribuicaoItemDTO,
   EvolucaoMensalDTO,
+  GranularidadeTempo,
   ResumoDashboardDTO,
 } from '@/types/api'
 
@@ -161,8 +163,14 @@ function ComplexidadeTipicaCard({ query }: { query: ResumoQuery }) {
   )
 }
 
-/** Gráfico de linhas da evolução: autonomia (sólida) × complexidade típica (tracejada) por mês. */
-function EvolucaoChart({ pontos }: { pontos: EvolucaoMensalDTO[] }) {
+/** Gráfico de linhas da evolução: autonomia (sólida) × complexidade típica (tracejada). */
+function EvolucaoChart({
+  pontos,
+  granularidade,
+}: {
+  pontos: EvolucaoMensalDTO[]
+  granularidade: GranularidadeTempo
+}) {
   const n = pontos.length
   const px = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100)
   const yAut = (v: number) => 100 - (Math.max(0, Math.min(5, v)) / 5) * 100
@@ -170,18 +178,39 @@ function EvolucaoChart({ pontos }: { pontos: EvolucaoMensalDTO[] }) {
     100 - (Math.max(0, Math.min(COMPLEXIDADE_ORDEM_MAX, v)) / COMPLEXIDADE_ORDEM_MAX) * 100
 
   const autPts = pontos.map((p, i) =>
-    p.mediaAutonomia == null ? null : { x: px(i), y: yAut(p.mediaAutonomia), v: p.mediaAutonomia },
+    p.mediaAutonomia == null
+      ? null
+      : {
+          x: px(i),
+          y: yAut(p.mediaAutonomia),
+          label: p.mediaAutonomia.toFixed(1).replace('.', ','),
+          title: `Autonomia ${p.mediaAutonomia.toFixed(1).replace('.', ',')} / 5`,
+        },
   )
   const cxPts = pontos.map((p, i) =>
     p.mediaComplexidade == null
       ? null
-      : { x: px(i), y: yCx(p.mediaComplexidade), v: p.mediaComplexidade },
+      : {
+          x: px(i),
+          y: yCx(p.mediaComplexidade),
+          label: prettyBigO(complexityRotuloByOrdinal(Math.round(p.mediaComplexidade))),
+          title: `Complexidade típica ≈ ${prettyBigO(
+            complexityRotuloByOrdinal(Math.round(p.mediaComplexidade)),
+          )}`,
+        },
   )
   const toPolyline = (pts: ({ x: number; y: number } | null)[]) =>
     pts
       .filter((p): p is { x: number; y: number } => p != null)
       .map((p) => `${p.x},${p.y}`)
       .join(' ')
+
+  // Rótulos de valor quando há poucos pontos (evita o ponto "solto"); a linha só desenha com ≥ 2 pontos.
+  const esparso = n <= 3
+  const fmtLabel = (p: EvolucaoMensalDTO) =>
+    granularidade === 'MENSAL'
+      ? `${String(p.mes).padStart(2, '0')}/${String(p.ano).slice(2)}`
+      : `${String(p.dia).padStart(2, '0')}/${String(p.mes).padStart(2, '0')}`
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -199,11 +228,31 @@ function EvolucaoChart({ pontos }: { pontos: EvolucaoMensalDTO[] }) {
               y1={y}
               x2="100"
               y2={y}
-              stroke="var(--border-subtle)"
+              stroke="var(--border)"
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
           ))}
+          {n === 1 &&
+            [
+              { p: cxPts[0], color: 'var(--warning)' },
+              { p: autPts[0], color: 'var(--brand-strong)' },
+            ].map(({ p, color }, k) =>
+              p == null ? null : (
+                <line
+                  key={k}
+                  x1="0"
+                  y1={p.y}
+                  x2="100"
+                  y2={p.y}
+                  stroke={color}
+                  strokeWidth="1.5"
+                  strokeDasharray="3 3"
+                  strokeOpacity="0.5"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ),
+            )}
           {n > 1 && (
             <>
               <polyline
@@ -230,32 +279,50 @@ function EvolucaoChart({ pontos }: { pontos: EvolucaoMensalDTO[] }) {
         </svg>
         {cxPts.map((p, i) =>
           p == null ? null : (
-            <span
-              key={`c${i}`}
-              className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--warning)' }}
-              title={`Complexidade típica ≈ ${prettyBigO(complexityRotuloByOrdinal(Math.round(p.v)))}`}
-            />
+            <span key={`c${i}`}>
+              <span
+                className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--warning)' }}
+                title={p.title}
+              />
+              {esparso && (
+                <span
+                  className="absolute -translate-x-1/2 translate-y-1.5 whitespace-nowrap font-mono text-[10px] font-semibold"
+                  style={{ left: `${p.x}%`, top: `${p.y}%`, color: 'var(--warning)' }}
+                >
+                  {p.label}
+                </span>
+              )}
+            </span>
           ),
         )}
         {autPts.map((p, i) =>
           p == null ? null : (
-            <span
-              key={`a${i}`}
-              className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
-              style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--brand-strong)' }}
-              title={`Autonomia ${p.v.toFixed(1).replace('.', ',')} / 5`}
-            />
+            <span key={`a${i}`}>
+              <span
+                className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+                style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--brand-strong)' }}
+                title={p.title}
+              />
+              {esparso && (
+                <span
+                  className="absolute -translate-x-1/2 -translate-y-[15px] whitespace-nowrap font-mono text-[10px] font-semibold text-brand-strong"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                >
+                  {p.label}
+                </span>
+              )}
+            </span>
           ),
         )}
       </div>
       <div className="flex w-full">
         {pontos.map((p) => (
           <span
-            key={`${p.ano}-${p.mes}`}
+            key={`${p.ano}-${p.mes}-${p.dia}`}
             className="flex-1 text-center font-mono text-[10px] text-subtle"
           >
-            {String(p.mes).padStart(2, '0')}/{String(p.ano).slice(2)}
+            {fmtLabel(p)}
           </span>
         ))}
       </div>
@@ -279,21 +346,52 @@ function LegendSwatch({ color, dashed, label }: { color: string; dashed?: boolea
   )
 }
 
-/** Evolução: gráfico de linhas + legenda. */
-function EvolucaoCard({ query }: { query: ResumoQuery }) {
-  const pontos = query.data?.evolucao ?? []
+const GRANULARIDADES: { valor: GranularidadeTempo; label: string }[] = [
+  { valor: 'MENSAL', label: 'Mês' },
+  { valor: 'SEMANAL', label: 'Semana' },
+  { valor: 'DIARIO', label: 'Dia' },
+]
+
+/** Evolução: gráfico de linhas + legenda + seletor de granularidade (mês/semana/dia). */
+function EvolucaoCard() {
+  const [gran, setGran] = useState<GranularidadeTempo>('MENSAL')
+  const query = useEvolucao(gran)
+  const pontos = query.data ?? []
+  const escala = gran === 'MENSAL' ? 'mês' : gran === 'SEMANAL' ? 'semana' : 'dia'
   return (
     <Card className="flex flex-col gap-4 p-[18px]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[14px] font-bold text-heading">Evolução</span>
           <span className="text-[12px] text-subtle">
-            Autonomia IA × complexidade típica ao longo dos meses
+            Autonomia IA × complexidade típica por {escala}
           </span>
         </div>
-        <div className="flex gap-3.5">
-          <LegendSwatch color="var(--brand-strong)" label="Autonomia" />
-          <LegendSwatch color="var(--warning)" dashed label="Complexidade" />
+        <div className="flex flex-col items-end gap-2">
+          <div
+            role="group"
+            aria-label="Granularidade do gráfico"
+            className="inline-flex rounded-lg border border-border bg-surface-2 p-0.5"
+          >
+            {GRANULARIDADES.map((g) => (
+              <button
+                key={g.valor}
+                type="button"
+                onClick={() => setGran(g.valor)}
+                aria-pressed={gran === g.valor}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-[12px] font-semibold transition-colors',
+                  gran === g.valor ? 'bg-brand text-white' : 'text-muted hover:text-fg',
+                )}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-3.5">
+            <LegendSwatch color="var(--brand-strong)" label="Autonomia" />
+            <LegendSwatch color="var(--warning)" dashed label="Complexidade" />
+          </div>
         </div>
       </div>
       {query.isPending ? (
@@ -307,7 +405,7 @@ function EvolucaoCard({ query }: { query: ResumoQuery }) {
           </span>
         </div>
       ) : (
-        <EvolucaoChart pontos={pontos} />
+        <EvolucaoChart pontos={pontos} granularidade={gran} />
       )}
     </Card>
   )
@@ -521,7 +619,7 @@ export function DashboardPage() {
 
       {/* Evolução (variável central da pesquisa) + resumo de autonomia/complexidade. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.62fr_1fr]">
-        <EvolucaoCard query={resumoQuery} />
+        <EvolucaoCard />
         <div className="flex flex-col gap-4">
           <AutonomiaCard query={resumoQuery} />
           <ComplexidadeTipicaCard query={resumoQuery} />

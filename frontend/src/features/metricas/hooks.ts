@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
+import type { GranularidadeTempo } from '@/types/api'
 import { metricasApi } from './api'
 
 export const metricasKeys = {
   daResolucao: (resolucaoId: string) => ['metricas', resolucaoId] as const,
   resumo: ['metricas', 'resumo'] as const,
+  evolucao: (granularidade: GranularidadeTempo) => ['metricas', 'evolucao', granularidade] as const,
 }
 
 export function useMetricasDaResolucao(
@@ -23,5 +25,14 @@ export function useResumoDashboard() {
   return useQuery({
     queryKey: metricasKeys.resumo,
     queryFn: () => metricasApi.resumoDashboard(),
+  })
+}
+
+/** Série de evolução (autonomia + complexidade típica) na granularidade escolhida (dia/semana/mês). */
+export function useEvolucao(granularidade: GranularidadeTempo) {
+  return useQuery({
+    queryKey: metricasKeys.evolucao(granularidade),
+    queryFn: () => metricasApi.evolucao(granularidade),
+    placeholderData: (prev) => prev,
   })
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.AtividadeRecente;
@@ -85,14 +86,15 @@ public class ResolucaoRepositoryAdapter implements ResolucaoRepository {
     }
 
     @Override
-    public List<PontoEvolucaoMensal> evolucaoMensalPorAutor(UUID autorId) {
-        return springDataResolucaoRepository.evolucaoMensalPorAutor(autorId).stream()
+    public List<PontoEvolucaoMensal> evolucaoPorAutor(UUID autorId, GranularidadeTempo granularidade) {
+        return springDataResolucaoRepository.evolucaoPorAutor(autorId, granularidade.getSqlTrunc()).stream()
                 .map(r -> new PontoEvolucaoMensal(
                         ((Number) r[0]).intValue(),
                         ((Number) r[1]).intValue(),
-                        r[2] == null ? null : ((Number) r[2]).doubleValue(),
-                        ((Number) r[3]).longValue(),
-                        r[4] == null ? null : ((Number) r[4]).doubleValue()))
+                        ((Number) r[2]).intValue(),
+                        r[3] == null ? null : ((Number) r[3]).doubleValue(),
+                        ((Number) r[4]).longValue(),
+                        r[5] == null ? null : ((Number) r[5]).doubleValue()))
                 .toList();
     }
 

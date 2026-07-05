@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
 import com.projeto.codeinsights.domain.knowledge.model.AtividadeRecente;
 import com.projeto.codeinsights.domain.knowledge.model.PontoEvolucaoMensal;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
@@ -30,7 +31,7 @@ public interface ResolucaoRepository {
     /** Media do Indice de Autonomia IA das resolucoes do autor; null se nao houver resolucoes. */
     Double mediaAutonomiaPorAutor(UUID autorId);
 
-    List<PontoEvolucaoMensal> evolucaoMensalPorAutor(UUID autorId);
+    List<PontoEvolucaoMensal> evolucaoPorAutor(UUID autorId, GranularidadeTempo granularidade);
 
     /** As {@code limite} resolucoes mais recentes do autor, com titulo do desafio e Big O de tempo. */
     List<AtividadeRecente> listarAtividadeRecentePorAutor(UUID autorId, int limite);
