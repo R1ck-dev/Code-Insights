@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.projeto.codeinsights.application.knowledge.dto.SnippetDTO;
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 import com.projeto.codeinsights.domain.knowledge.model.Snippet;
 import com.projeto.codeinsights.domain.knowledge.port.SnippetRepository;
 import com.projeto.codeinsights.domain.shared.Pagina;
@@ -19,8 +20,10 @@ public class ListarMeusSnippetsUseCase {
     private final SnippetRepository snippetRepository;
 
     @Transactional(readOnly = true)
-    public Pagina<SnippetDTO> execute(UUID autorId, int pagina, int tamanho) {
-        Pagina<Snippet> pagina_ = snippetRepository.listarPorAutor(autorId, pagina, tamanho);
+    public Pagina<SnippetDTO> execute(UUID autorId, CategoriaConceito categoria, int pagina, int tamanho) {
+        Pagina<Snippet> pagina_ = (categoria == null)
+                ? snippetRepository.listarPorAutor(autorId, pagina, tamanho)
+                : snippetRepository.listarPorAutorECategoria(autorId, categoria, pagina, tamanho);
 
         return new Pagina<>(
                 pagina_.itens().stream()

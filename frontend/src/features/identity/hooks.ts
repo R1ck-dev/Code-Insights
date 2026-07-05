@@ -46,3 +46,17 @@ export function useAlterarVisibilidadePerfil() {
     mutationFn: (publico: boolean) => identityApi.alterarVisibilidade({ publico }),
   })
 }
+
+export function useEsqueciSenha() {
+  return useMutation({ mutationFn: (email: string) => identityApi.esqueciSenha(email) })
+}
+
+export function useRedefinirSenha() {
+  return useMutation({
+    mutationFn: (body: { token: string; novaSenha: string }) => identityApi.redefinirSenha(body),
+  })
+}
+
+export function useReenviarAtivacao() {
+  return useMutation({ mutationFn: (email: string) => identityApi.reenviarAtivacao(email) })
+}

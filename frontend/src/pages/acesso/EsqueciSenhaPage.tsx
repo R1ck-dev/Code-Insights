@@ -5,18 +5,25 @@ import { AuthLayout } from '@/layouts/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/ui/form-field'
+import { useEsqueciSenha } from '@/features/identity/hooks'
+import { apiErrorMessage } from '@/lib/api'
 
-/**
- * Fluxo previsto (ainda sem endpoint no backend — ver lacuna nº 3 da API).
- * Mostra sempre a mensagem neutra, sem revelar se o e-mail existe.
- */
+/** Solicita o link de redefinição. Mensagem sempre neutra (não revela se o e-mail existe). */
 export function EsqueciSenhaPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const esqueci = useEsqueciSenha()
 
-  function onSubmit(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault()
-    setSent(true)
+    setError(null)
+    try {
+      await esqueci.mutateAsync(email)
+      setSent(true)
+    } catch (err) {
+      setError(apiErrorMessage(err, 'Não foi possível enviar o link. Tente novamente.'))
+    }
   }
 
   return (
@@ -43,7 +50,13 @@ export function EsqueciSenhaPage() {
           />
         </FormField>
 
-        <Button type="submit" size="lg" className="w-full">
+        {error && (
+          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12.5px] text-danger">
+            {error}
+          </div>
+        )}
+
+        <Button type="submit" size="lg" loading={esqueci.isPending} className="w-full">
           Enviar link
         </Button>
 

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.infrastructure.persistence.knowledge.entity.ResultadoMetricaJpaEntity;
 
 @Repository
@@ -24,4 +25,14 @@ public interface SpringDataResultadoMetricaRepository extends JpaRepository<Resu
     @Modifying
     @Query("delete from ResultadoMetricaJpaEntity r where r.resolucao.id = :resolucaoId")
     void deleteByResolucaoId(@Param("resolucaoId") UUID resolucaoId);
+
+    // Distribuicao por rotulo/ordinal de um tipo de metrica entre as resolucoes do autor.
+    @Query("""
+            select m.rotulo, m.valor, count(m)
+            from ResultadoMetricaJpaEntity m
+            where m.resolucao.autor.id = :autorId and m.tipo = :tipo
+            group by m.rotulo, m.valor
+            order by m.valor
+            """)
+    List<Object[]> contarPorRotulo(@Param("autorId") UUID autorId, @Param("tipo") TipoMetrica tipo);
 }

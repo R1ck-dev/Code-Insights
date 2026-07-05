@@ -3,6 +3,7 @@ package com.projeto.codeinsights.infrastructure.config.security;
 import java.util.UUID;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -24,9 +25,14 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
             NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalStateException("Nenhum usuario autenticado no contexto de seguranca.");
+        // Visitante anonimo (rota publica sem token): retorna null -> o use case o trata como nao-dono.
+        // Rotas protegidas sao barradas antes do controller (401), entao o resolver nem roda nelas.
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken
+                || !(authentication.getPrincipal() instanceof String principal)) {
+            return null;
         }
-        return UUID.fromString((String) authentication.getPrincipal());
+        return UUID.fromString(principal);
     }
 }

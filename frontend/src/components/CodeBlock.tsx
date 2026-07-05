@@ -187,10 +187,20 @@ interface CodeBlockProps {
   lines?: boolean
   maxHeight?: number | string
   className?: string
+  /** Exibe o botão "Copiar" no cabeçalho. Desligue em previews clicáveis (evita interativo aninhado). */
+  showCopy?: boolean
 }
 
 /** Bloco de código com syntax highlighting, numeração e botão copiar. */
-export function CodeBlock({ code, lang = 'java', label, lines = true, maxHeight, className }: CodeBlockProps) {
+export function CodeBlock({
+  code,
+  lang = 'java',
+  label,
+  lines = true,
+  maxHeight,
+  className,
+  showCopy = true,
+}: CodeBlockProps) {
   const { theme } = useTheme()
   const [copied, setCopied] = useState(false)
   const COL = COLORS[theme]
@@ -207,14 +217,14 @@ export function CodeBlock({ code, lang = 'java', label, lines = true, maxHeight,
     })
   }
 
-  const copy = () => {
+  const copy = async () => {
     try {
-      void navigator.clipboard?.writeText(code)
+      await navigator.clipboard?.writeText(code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1200)
     } catch {
-      /* ignore */
+      /* clipboard indisponível (contexto inseguro/sem permissão): não confirma cópia */
     }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1200)
   }
 
   return (
@@ -232,14 +242,16 @@ export function CodeBlock({ code, lang = 'java', label, lines = true, maxHeight,
             {label ?? langName}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={copy}
-          className="cursor-pointer rounded-md px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-brand-strong/10"
-          style={{ color: copied ? '#2FB863' : P.hdSoft }}
-        >
-          {copied ? 'Copiado' : 'Copiar'}
-        </button>
+        {showCopy && (
+          <button
+            type="button"
+            onClick={copy}
+            className="cursor-pointer rounded-md px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-brand-strong/10"
+            style={{ color: copied ? '#2FB863' : P.hdSoft }}
+          >
+            {copied ? 'Copiado' : 'Copiar'}
+          </button>
+        )}
       </div>
       <div className="overflow-auto py-3.5 pl-1 pr-4" style={{ maxHeight }}>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1.7 }}>

@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
+import com.projeto.codeinsights.domain.knowledge.model.ContagemMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
 import com.projeto.codeinsights.domain.knowledge.port.ResultadoMetricaRepository;
 import com.projeto.codeinsights.infrastructure.persistence.knowledge.entity.ResultadoMetricaJpaEntity;
@@ -32,6 +34,16 @@ public class ResultadoMetricaRepositoryAdapter implements ResultadoMetricaReposi
     public List<ResultadoMetrica> listarPorResolucao(UUID resolucaoId) {
         return springDataResultadoMetricaRepository.findByResolucaoId(resolucaoId).stream()
                 .map(resultadoMetricaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<ContagemMetrica> contarPorRotulo(UUID autorId, TipoMetrica tipo) {
+        return springDataResultadoMetricaRepository.contarPorRotulo(autorId, tipo).stream()
+                .map(r -> new ContagemMetrica(
+                        (String) r[0],
+                        ((Number) r[1]).intValue(),
+                        ((Number) r[2]).longValue()))
                 .toList();
     }
 

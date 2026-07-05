@@ -32,7 +32,12 @@ public class BuscarDesafioDetalheUseCase {
             throw new NegocioException("Voce nao tem acesso a este desafio.");
         }
 
-        long qtdResolucoes = resolucaoRepository.contarPorDesafio(desafioId);
+        // Nao-dono/anonimo veem apenas a contagem de resolucoes PUBLICAS
+        // (o total incluiria as privadas e vazaria sua existencia/quantidade).
+        boolean dono = desafio.pertenceA(solicitanteId);
+        long qtdResolucoes = dono
+                ? resolucaoRepository.contarPorDesafio(desafioId)
+                : resolucaoRepository.contarPublicasPorDesafio(desafioId);
 
         Usuario autor = usuarioRepository.buscarPorId(desafio.getAutorId())
                 .orElseThrow(() -> new NegocioException("Usuario nao encontrado."));

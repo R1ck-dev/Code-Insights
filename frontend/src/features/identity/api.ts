@@ -29,6 +29,15 @@ export const identityApi = {
   alterarVisibilidade: (body: AlterarVisibilidadePerfilRequest) =>
     api.patch<void>('/api/usuarios/me/visibilidade', body).then((r) => r.data),
 
+  esqueciSenha: (email: string) =>
+    api.post<{ mensagem: string }>('/api/auth/esqueci-senha', { email }).then((r) => r.data),
+
+  redefinirSenha: (body: { token: string; novaSenha: string }) =>
+    api.post<{ mensagem: string }>('/api/auth/redefinir-senha', body).then((r) => r.data),
+
+  reenviarAtivacao: (email: string) =>
+    api.post<{ mensagem: string }>('/api/usuarios/reenviar-ativacao', { email }).then((r) => r.data),
+
   buscarUsuarioPublico: (usuarioId: string) =>
     api.get<UsuarioPublicoDTO>(`/api/usuarios/${usuarioId}`).then((r) => r.data),
 }

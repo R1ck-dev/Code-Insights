@@ -15,6 +15,7 @@ import { DefinirNovaSenhaPage } from '@/pages/acesso/DefinirNovaSenhaPage'
 import { LandingPage } from '@/pages/visitante/LandingPage'
 import { PortfolioAutorPage } from '@/pages/visitante/PortfolioAutorPage'
 import { DesafioPublicoPage } from '@/pages/visitante/DesafioPublicoPage'
+import { ResolucaoPublicaPage } from '@/pages/visitante/ResolucaoPublicaPage'
 
 // Aluno
 import { DashboardPage } from '@/pages/aluno/DashboardPage'
@@ -33,6 +34,10 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/u/:usuarioId" element={<PortfolioAutorPage />} />
         <Route path="/u/:usuarioId/desafios/:desafioId" element={<DesafioPublicoPage />} />
+        <Route
+          path="/u/:usuarioId/desafios/:desafioId/resolucoes/:resolucaoId"
+          element={<ResolucaoPublicaPage />}
+        />
       </Route>
 
       {/* Acesso (AuthLayout é interno a cada página) */}

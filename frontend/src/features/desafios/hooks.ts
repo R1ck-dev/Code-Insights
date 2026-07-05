@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { desafiosApi } from './api'
 import type { AtualizarDesafioRequest, CriarDesafioRequest } from '@/types/api'
 
@@ -14,6 +14,7 @@ export function useMeusDesafios(pagina: number, tamanho = 12) {
   return useQuery({
     queryKey: desafiosKeys.meus(pagina, tamanho),
     queryFn: () => desafiosApi.listarMeus(pagina, tamanho),
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -22,6 +23,7 @@ export function useDesafiosPublicosDoAutor(autorId: string, pagina: number, tama
     queryKey: desafiosKeys.publicosDoAutor(autorId, pagina, tamanho),
     queryFn: () => desafiosApi.listarPublicosDoAutor(autorId, pagina, tamanho),
     enabled: !!autorId,
+    placeholderData: keepPreviousData,
   })
 }
 

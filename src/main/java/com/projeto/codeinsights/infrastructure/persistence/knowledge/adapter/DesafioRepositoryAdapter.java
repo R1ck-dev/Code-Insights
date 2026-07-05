@@ -55,6 +55,16 @@ public class DesafioRepositoryAdapter implements DesafioRepository {
     }
 
     @Override
+    public long contarPorAutor(UUID autorId) {
+        return springDataDesafioRepository.countByAutorId(autorId);
+    }
+
+    @Override
+    public long contarPublicosPorAutor(UUID autorId) {
+        return springDataDesafioRepository.countByAutorIdAndVisibilidade(autorId, Visibilidade.PUBLICO);
+    }
+
+    @Override
     public void remover(UUID id) {
         springDataDesafioRepository.deleteById(id);
     }

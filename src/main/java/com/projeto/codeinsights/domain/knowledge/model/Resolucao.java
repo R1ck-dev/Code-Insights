@@ -99,6 +99,10 @@ public class Resolucao {
         this.visibilidade = Visibilidade.PUBLICO;
     }
 
+    public void ocultar() {
+        this.visibilidade = Visibilidade.PRIVADO;
+    }
+
     public boolean pertenceA(UUID usuarioId) {
         return this.autorId.equals(usuarioId);
     }

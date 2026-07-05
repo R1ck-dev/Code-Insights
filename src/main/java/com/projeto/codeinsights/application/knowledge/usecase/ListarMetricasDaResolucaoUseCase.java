@@ -32,7 +32,9 @@ public class ListarMetricasDaResolucaoUseCase {
         Desafio desafio = desafioRepository.buscarPorId(resolucao.getDesafioId())
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!resolucao.pertenceA(solicitanteId) && !desafio.ehPublico()) {
+        boolean dono = resolucao.pertenceA(solicitanteId);
+        boolean acessoPublico = desafio.ehPublico() && resolucao.ehPublica();
+        if (!dono && !acessoPublico) {
             throw new NegocioException("Voce nao tem permissao para ver estas metricas.");
         }
 

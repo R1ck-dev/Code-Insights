@@ -1,15 +1,18 @@
 import { api } from '@/lib/api'
 import type {
   AtualizarSnippetRequest,
+  CategoriaConceito,
   CriarSnippetRequest,
   Pagina,
   SnippetDTO,
 } from '@/types/api'
 
 export const snippetsApi = {
-  listarMeus: (pagina: number, tamanho: number) =>
+  listarMeus: (pagina: number, tamanho: number, categoria?: CategoriaConceito | null) =>
     api
-      .get<Pagina<SnippetDTO>>('/api/snippets', { params: { pagina, tamanho } })
+      .get<Pagina<SnippetDTO>>('/api/snippets', {
+        params: { pagina, tamanho, ...(categoria ? { categoria } : {}) },
+      })
       .then((r) => r.data),
 
   buscarDetalhe: (id: string) => api.get<SnippetDTO>(`/api/snippets/${id}`).then((r) => r.data),

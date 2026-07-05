@@ -153,6 +153,22 @@ export function complexityHexByRotulo(rotulo: string): string {
   return ord === undefined ? CX_UNKNOWN : CX_HEX[ord]
 }
 
+/** Maior ordinal da escala (O(n!) = 7); usado para normalizar gráficos de complexidade. */
+export const COMPLEXIDADE_ORDEM_MAX = CX_HEX.length - 1
+
+const ORDINAL_ROTULO: string[] = Object.entries(ROTULO_ORDINAL).reduce<string[]>(
+  (acc, [rotulo, ord]) => {
+    acc[ord] = rotulo
+    return acc
+  },
+  [],
+)
+
+/** Rótulo textual da classe pelo ordinal (0 = "O(1)" … 7 = "O(n!)"); "?" fora da escala. */
+export function complexityRotuloByOrdinal(ordinal: number): string {
+  return ordinal >= 0 && ordinal < ORDINAL_ROTULO.length ? ORDINAL_ROTULO[ordinal] : '?'
+}
+
 /** "O(n^2)" → "O(n²)" para exibição. */
 export function prettyBigO(rotulo: string): string {
   return rotulo

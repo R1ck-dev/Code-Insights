@@ -50,6 +50,7 @@ public class SubmeterResolucaoUseCase {
                 salva.getAutorId(),
                 salva.getLinguagem(),
                 salva.getIndiceAutonomiaIA(),
+                salva.getVisibilidade(),
                 salva.isAnalisada(),
                 salva.getSubmetidaEm());
     }

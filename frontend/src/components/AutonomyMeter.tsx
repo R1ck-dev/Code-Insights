@@ -24,7 +24,7 @@ interface AutonomyMeterProps {
  */
 export function AutonomyMeter({ value, size = 'md', showLabel = true, className }: AutonomyMeterProps) {
   const { theme } = useTheme()
-  const v = Math.max(0, Math.min(5, Math.round(value)))
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(5, Math.round(value))) : 0
   const [w, h, gap, fs] = DIMS[size]
 
   const on = '#6E5FF6'

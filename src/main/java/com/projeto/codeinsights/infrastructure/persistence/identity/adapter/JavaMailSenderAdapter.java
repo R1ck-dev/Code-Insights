@@ -38,4 +38,22 @@ public class JavaMailSenderAdapter implements EmailSenderPort {
 
         mailSender.send(message);
     }
+
+    @Override
+    public void enviarEmailRedefinicaoSenha(String destinatario, String nome, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(remetente);
+        message.setTo(destinatario);
+        message.setSubject("Redefinicao de senha no CodeInsights");
+
+        String urlRedefinicao = webBaseUrl + "/definir-senha?token=" + token;
+
+        message.setText("Ola, " + nome + "!\n\n"
+                + "Recebemos um pedido para redefinir a sua senha. Clique no link abaixo para "
+                + "escolher uma nova senha:\n"
+                + urlRedefinicao + "\n\n"
+                + "Se voce nao solicitou, ignore este e-mail. O link e valido por 24 horas.");
+
+        mailSender.send(message);
+    }
 }

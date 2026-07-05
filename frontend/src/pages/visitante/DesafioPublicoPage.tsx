@@ -82,7 +82,7 @@ export function DesafioPublicoPage() {
       {/* Cabeçalho: título, chips, visibilidade, datas, link externo */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-3">
-          <h2 className="text-2xl font-bold tracking-tight text-heading">{desafio.titulo}</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-heading">{desafio.titulo}</h1>
           <div className="flex flex-wrap items-center gap-2">
             {desafio.plataformaOrigem && <Chip>{desafio.plataformaOrigem}</Chip>}
             {desafio.identificadorExterno && <Chip mono>#{desafio.identificadorExterno}</Chip>}
@@ -172,19 +172,24 @@ export function DesafioPublicoPage() {
                 <ul className="flex flex-col gap-3">
                   {dados.itens.map((r) => (
                     <li key={r.id}>
-                      <Card className="flex flex-wrap items-center justify-between gap-4 p-4">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <LanguageBadge linguagem={r.linguagem} />
-                          <AnalysisStatus analisada={r.analisada} />
-                          <span className="font-mono text-[11.5px] text-subtle">
-                            {formatDate(r.submetidaEm)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span className="text-xs text-muted">Autonomia</span>
-                          <AutonomyMeter size="sm" value={r.indiceAutonomiaIA} />
-                        </div>
-                      </Card>
+                      <Link
+                        to={`/u/${usuarioId ?? ''}/desafios/${desafioId ?? ''}/resolucoes/${r.id}`}
+                        className="block"
+                      >
+                        <Card className="flex flex-wrap items-center justify-between gap-4 p-4 transition-colors hover:border-border-strong hover:bg-surface-2">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <LanguageBadge linguagem={r.linguagem} />
+                            <AnalysisStatus analisada={r.analisada} />
+                            <span className="font-mono text-[11.5px] text-subtle">
+                              {formatDate(r.submetidaEm)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-xs text-muted">Autonomia</span>
+                            <AutonomyMeter size="sm" value={r.indiceAutonomiaIA} />
+                          </div>
+                        </Card>
+                      </Link>
                     </li>
                   ))}
                 </ul>

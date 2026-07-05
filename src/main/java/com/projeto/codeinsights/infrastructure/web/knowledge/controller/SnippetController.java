@@ -22,6 +22,7 @@ import com.projeto.codeinsights.application.knowledge.usecase.BuscarSnippetDetal
 import com.projeto.codeinsights.application.knowledge.usecase.CriarSnippetUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.ListarMeusSnippetsUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.RemoverSnippetUseCase;
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 import com.projeto.codeinsights.domain.shared.Pagina;
 import com.projeto.codeinsights.infrastructure.config.security.CurrentUserId;
 import com.projeto.codeinsights.infrastructure.web.knowledge.dto.AtualizarSnippetRequest;
@@ -55,9 +56,10 @@ public class SnippetController {
 
     @GetMapping
     public ResponseEntity<Pagina<SnippetDTO>> listarMeus(@CurrentUserId UUID autorId,
+            @RequestParam(required = false) CategoriaConceito categoria,
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "10") int tamanho) {
-        return ResponseEntity.ok(listarMeusSnippetsUseCase.execute(autorId, pagina, tamanho));
+        return ResponseEntity.ok(listarMeusSnippetsUseCase.execute(autorId, categoria, pagina, tamanho));
     }
 
     @GetMapping("/{snippetId}")

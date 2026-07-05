@@ -27,11 +27,15 @@ public class ListarResolucoesDoDesafioUseCase {
         Desafio desafio = desafioRepository.buscarPorId(desafioId)
                 .orElseThrow(() -> new NegocioException("Desafio nao encontrado."));
 
-        if (!desafio.pertenceA(solicitanteId) && !desafio.ehPublico()) {
+        boolean dono = desafio.pertenceA(solicitanteId);
+        if (!dono && !desafio.ehPublico()) {
             throw new NegocioException("Voce nao tem permissao para ver as resolucoes deste desafio.");
         }
 
-        Pagina<Resolucao> resolucoes = resolucaoRepository.listarPorDesafio(desafioId, pagina, tamanho);
+        // Dono ve todas as suas resolucoes; visitante/nao-dono ve apenas as publicas.
+        Pagina<Resolucao> resolucoes = dono
+                ? resolucaoRepository.listarPorDesafio(desafioId, pagina, tamanho)
+                : resolucaoRepository.listarPublicasPorDesafio(desafioId, pagina, tamanho);
 
         return new Pagina<>(
                 resolucoes.itens().stream().map(this::toResumo).toList(),
@@ -47,6 +51,7 @@ public class ListarResolucoesDoDesafioUseCase {
                 resolucao.getAutorId(),
                 resolucao.getLinguagem(),
                 resolucao.getIndiceAutonomiaIA(),
+                resolucao.getVisibilidade(),
                 resolucao.isAnalisada(),
                 resolucao.getSubmetidaEm());
     }

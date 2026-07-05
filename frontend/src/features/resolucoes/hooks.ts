@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { resolucoesApi } from './api'
 import { desafiosKeys } from '@/features/desafios/hooks'
 import { metricasKeys } from '@/features/metricas/hooks'
@@ -20,6 +20,7 @@ export function useResolucoesDoDesafio(desafioId: string | undefined, pagina: nu
     queryKey: resolucoesKeys.doDesafio(desafioId ?? '', pagina, tamanho),
     queryFn: () => resolucoesApi.listarDoDesafio(desafioId!, pagina, tamanho),
     enabled: !!desafioId,
+    placeholderData: keepPreviousData,
   })
 }
 
@@ -55,6 +56,17 @@ export function useAtualizarResolucao(id: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: resolucoesKeys.detalhe(id) })
       void qc.invalidateQueries({ queryKey: metricasKeys.daResolucao(id) })
+    },
+  })
+}
+
+export function useAlterarVisibilidadeResolucao(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (publico: boolean) => resolucoesApi.alterarVisibilidade(id, publico),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: resolucoesKeys.detalhe(id) })
+      void qc.invalidateQueries({ queryKey: resolucoesKeys.all })
     },
   })
 }

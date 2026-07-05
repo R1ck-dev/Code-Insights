@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.shared.enums.Visibilidade;
 
 public record ResolucaoResumoDTO(
         UUID id,
@@ -11,6 +12,7 @@ public record ResolucaoResumoDTO(
         UUID autorId,
         LinguagemProgramacao linguagem,
         int indiceAutonomiaIA,
+        Visibilidade visibilidade,
         boolean analisada,
         OffsetDateTime submetidaEm) {
 }

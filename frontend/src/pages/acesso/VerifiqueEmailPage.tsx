@@ -4,10 +4,23 @@ import { AuthLayout } from '@/layouts/AuthLayout'
 import { Badge } from '@/components/ui/badge'
 import { Button, buttonClasses } from '@/components/ui/button'
 import { toast } from '@/components/ui/toaster'
+import { useReenviarAtivacao } from '@/features/identity/hooks'
+import { apiErrorMessage } from '@/lib/api'
 
 export function VerifiqueEmailPage() {
   const location = useLocation()
   const email = (location.state as { email?: string } | null)?.email
+  const reenviar = useReenviarAtivacao()
+
+  async function handleReenviar() {
+    if (!email) return
+    try {
+      await reenviar.mutateAsync(email)
+      toast.success('Se a conta estiver pendente, reenviamos o e-mail de ativação.')
+    } catch (err) {
+      toast.error(apiErrorMessage(err, 'Não foi possível reenviar agora. Tente mais tarde.'))
+    }
+  }
 
   return (
     <AuthLayout>
@@ -36,7 +49,9 @@ export function VerifiqueEmailPage() {
           <Button
             variant="secondary"
             className="flex-1"
-            onClick={() => toast.info('Confira sua caixa de entrada e a pasta de spam.')}
+            loading={reenviar.isPending}
+            disabled={!email}
+            onClick={handleReenviar}
           >
             Reenviar e-mail
           </Button>

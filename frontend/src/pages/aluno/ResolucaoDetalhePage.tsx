@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, Info, Pencil, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, Globe, Info, Pencil, Sparkles, Trash2 } from 'lucide-react'
 import {
+  useAlterarVisibilidadeResolucao,
   useAtualizarResolucao,
   useRemoverResolucao,
   useResolucaoDetalhe,
@@ -92,12 +93,14 @@ export function ResolucaoDetalhePage() {
 
   const atualizar = useAtualizarResolucao(resolucaoId ?? '')
   const remover = useRemoverResolucao()
+  const alterarVisibilidade = useAlterarVisibilidadeResolucao(resolucaoId ?? '')
 
   // Diálogo de edição de código (pré-preenchido ao abrir).
   const [editOpen, setEditOpen] = useState(false)
   const [editCodigo, setEditCodigo] = useState('')
   const [editLinguagem, setEditLinguagem] = useState<LinguagemProgramacao>('JAVA')
   const [removerOpen, setRemoverOpen] = useState(false)
+  const [visibilidadeOpen, setVisibilidadeOpen] = useState(false)
 
   function abrirEdicao(r: ResolucaoDetalheDTO) {
     setEditCodigo(r.codigoFonte)
@@ -125,6 +128,18 @@ export function ResolucaoDetalhePage() {
     }
   }
 
+  async function confirmarVisibilidade(r: ResolucaoDetalheDTO) {
+    try {
+      await alterarVisibilidade.mutateAsync(r.visibilidade !== 'PUBLICO')
+      toast.success(
+        r.visibilidade === 'PUBLICO' ? 'Resolução tornada privada.' : 'Resolução publicada.',
+      )
+      setVisibilidadeOpen(false)
+    } catch (e) {
+      toast.error(apiErrorMessage(e))
+    }
+  }
+
   return (
     <PageContainer>
       <QueryBoundary query={resolucaoQuery}>
@@ -133,6 +148,7 @@ export function ResolucaoDetalhePage() {
           const porTipo = new Map(metricas.map((m) => [m.tipo, m]))
           const semMetricas = metricas.length === 0
           const naoJava = resolucao.linguagem !== 'JAVA'
+          const ehPublica = resolucao.visibilidade === 'PUBLICO'
 
           return (
             <>
@@ -150,9 +166,9 @@ export function ResolucaoDetalhePage() {
               {/* Cabeçalho */}
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-2.5">
-                  <h2 className="text-[25px] font-bold tracking-tight text-heading">
+                  <h1 className="text-[25px] font-bold tracking-tight text-heading">
                     {tituloDesafio ?? 'Resolução'}
-                  </h2>
+                  </h1>
                   <div className="flex flex-wrap items-center gap-2.5">
                     <LanguageBadge linguagem={resolucao.linguagem} />
                     <VisibilityBadge visibilidade={resolucao.visibilidade} />
@@ -284,6 +300,20 @@ export function ResolucaoDetalhePage() {
                         {formatDateTime(resolucao.submetidaEm)}
                       </span>
                     </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-1 w-full"
+                      onClick={() => setVisibilidadeOpen(true)}
+                    >
+                      <Globe size={15} />
+                      {ehPublica ? 'Tornar privada' : 'Publicar resolução'}
+                    </Button>
+                    <p className="text-[11px] leading-relaxed text-subtle">
+                      {ehPublica
+                        ? 'Visível a visitantes no portfólio público (quando o desafio é público).'
+                        : 'Privada: só você vê. Publique para exibi-la no portfólio.'}
+                    </p>
                   </Card>
 
                   <div className="flex gap-2.5 rounded-xl border border-warning/25 bg-warning/[.06] p-3.5">
@@ -356,6 +386,22 @@ export function ResolucaoDetalhePage() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+
+              {/* Diálogo: alterar visibilidade */}
+              <ConfirmDialog
+                open={visibilidadeOpen}
+                onOpenChange={setVisibilidadeOpen}
+                icon={Globe}
+                title={ehPublica ? 'Tornar privada?' : 'Publicar resolução?'}
+                description={
+                  ehPublica
+                    ? 'Ela deixará de aparecer no portfólio público deste desafio.'
+                    : 'Ela ficará visível para visitantes no portfólio público (quando o desafio for público).'
+                }
+                confirmLabel={ehPublica ? 'Tornar privada' : 'Publicar'}
+                loading={alterarVisibilidade.isPending}
+                onConfirm={() => void confirmarVisibilidade(resolucao)}
+              />
 
               {/* Diálogo: remover resolução */}
               <ConfirmDialog

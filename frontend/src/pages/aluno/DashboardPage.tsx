@@ -1,42 +1,79 @@
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
-import {
-  BarChart3,
-  Braces,
-  ChevronRight,
-  Gauge,
-  LineChart,
-  Plus,
-  Target,
-  TrendingUp,
-} from 'lucide-react'
+import { Braces, Code2, Minus, Plus, Target, TrendingDown, TrendingUp } from 'lucide-react'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
-import { QueryBoundary } from '@/components/page/states'
 import { Card } from '@/components/ui/card'
-import { Chip } from '@/components/ui/badge'
 import { buttonClasses } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/ui/empty-state'
-import { VisibilityBadge } from '@/components/domain/badges'
+import { AutonomyMeter } from '@/components/AutonomyMeter'
+import { AnalysisStatus, ComplexityBadge, LanguageBadge } from '@/components/domain/badges'
 import { useAuth } from '@/auth/useAuth'
-import { useMeusDesafios } from '@/features/desafios/hooks'
-import { useMeusSnippets } from '@/features/snippets/hooks'
+import { useResumoDashboard } from '@/features/metricas/hooks'
+import {
+  COMPLEXIDADE_ORDEM_MAX,
+  complexityHexByOrdinal,
+  complexityRotuloByOrdinal,
+  prettyBigO,
+} from '@/domain/enums'
 import { formatDate } from '@/lib/utils'
-import type { DesafioResumoDTO, Pagina } from '@/types/api'
+import type {
+  AtividadeRecenteDTO,
+  DistribuicaoItemDTO,
+  EvolucaoMensalDTO,
+  ResumoDashboardDTO,
+} from '@/types/api'
 
-/** Card de resumo com um número agregado (totalItens de uma listagem paginada). */
-function CountCard<T>({
+type ResumoQuery = UseQueryResult<ResumoDashboardDTO>
+
+// ---- helpers de derivação (puros) ----
+
+type Tendencia = 'alta' | 'baixa' | 'estavel' | 'insuficiente'
+
+/** Sinal da variação entre o primeiro e o último valor não-nulo de uma série. */
+function tendencia(valores: (number | null)[]): Tendencia {
+  const v = valores.filter((x): x is number => x != null)
+  if (v.length < 2) return 'insuficiente'
+  const delta = v[v.length - 1] - v[0]
+  if (delta > 0.05) return 'alta'
+  if (delta < -0.05) return 'baixa'
+  return 'estavel'
+}
+
+/** Mediana ponderada da complexidade a partir da distribuição (por ordinal). */
+function medianaComplexidade(itens: DistribuicaoItemDTO[]): { rotulo: string; ordem: number } | null {
+  const total = itens.reduce((s, i) => s + i.total, 0)
+  if (total === 0) return null
+  const ordenados = [...itens].sort((a, b) => a.ordem - b.ordem)
+  const alvo = Math.ceil(total / 2)
+  let acc = 0
+  for (const i of ordenados) {
+    acc += i.total
+    if (acc >= alvo) return { rotulo: i.rotulo, ordem: i.ordem }
+  }
+  return ordenados[ordenados.length - 1] ?? null
+}
+
+function plural(n: number, singular: string, pluralForma: string): string {
+  return `${n} ${n === 1 ? singular : pluralForma}`
+}
+
+// ---- cards ----
+
+/** Card de um número agregado (Desafios / Resoluções / Snippets) + legenda. */
+function StatCard({
   icon: Icon,
   label,
-  sub,
   query,
+  select,
+  caption,
 }: {
   icon: LucideIcon
   label: string
-  sub?: string
-  query: UseQueryResult<Pagina<T>>
+  query: ResumoQuery
+  select: (r: ResumoDashboardDTO) => number
+  caption: (r: ResumoDashboardDTO) => string
 }) {
   return (
     <Card className="flex flex-col gap-2.5 p-[18px]">
@@ -46,61 +83,397 @@ function CountCard<T>({
           <Icon size={17} className="text-brand-strong" />
         </div>
       </div>
-      <QueryBoundary query={query} loading={<Skeleton className="h-[34px] w-16" />}>
-        {(pagina) => (
+      {query.isPending ? (
+        <Skeleton className="h-[34px] w-16" />
+      ) : query.isError ? (
+        <span className="font-mono text-[28px] font-bold text-subtle">—</span>
+      ) : (
+        <>
           <span className="font-mono text-[34px] font-bold leading-none text-heading tabular-nums">
-            {pagina.totalItens}
+            {select(query.data)}
           </span>
-        )}
-      </QueryBoundary>
-      {sub && <span className="text-[12px] text-subtle">{sub}</span>}
+          <span className="text-[12px] text-subtle">{caption(query.data)}</span>
+        </>
+      )}
     </Card>
   )
 }
 
-/** Chip sóbrio de painel de analytics ainda não disponível. */
-function FutureChip({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+/** Autonomia IA média: número preciso + medidor de 5 segmentos + tendência. */
+function AutonomiaCard({ query }: { query: ResumoQuery }) {
+  const media = query.data?.mediaAutonomia
+  const trend = tendencia(query.data?.evolucao.map((p) => p.mediaAutonomia) ?? [])
+  const trendLabel: Record<Tendencia, string> = {
+    alta: 'em alta nos últimos meses',
+    baixa: 'em queda nos últimos meses',
+    estavel: 'estável nos últimos meses',
+    insuficiente: 'sua média atual',
+  }
   return (
-    <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-border px-2.5 py-1.5 text-[12px] text-label">
-      <Icon size={14} className="text-subtle" />
+    <Card className="flex flex-col gap-3 p-[18px]">
+      <span className="text-[13px] font-semibold text-muted">Autonomia IA média</span>
+      {query.isPending ? (
+        <Skeleton className="h-[30px] w-24" />
+      ) : query.isError ? (
+        <span className="font-mono text-[26px] font-bold text-subtle">—</span>
+      ) : media == null ? (
+        <span className="text-[13px] text-subtle">Sem resoluções ainda</span>
+      ) : (
+        <>
+          <div className="flex items-baseline gap-1">
+            <span className="font-mono text-[32px] font-bold leading-none text-heading tabular-nums">
+              {media.toFixed(1).replace('.', ',')}
+            </span>
+            <span className="font-mono text-[17px] text-subtle">/5</span>
+          </div>
+          <AutonomyMeter value={media} size="md" showLabel={false} />
+          <span className="text-[11.5px] text-subtle">{trendLabel[trend]}</span>
+        </>
+      )}
+    </Card>
+  )
+}
+
+/** Complexidade típica: mediana das resoluções analisadas. */
+function ComplexidadeTipicaCard({ query }: { query: ResumoQuery }) {
+  const mediana = query.data ? medianaComplexidade(query.data.distribuicaoBigO) : null
+  return (
+    <Card className="flex flex-1 flex-col justify-center gap-2 p-[18px]">
+      <span className="text-[13px] font-semibold text-muted">Complexidade típica</span>
+      {query.isPending ? (
+        <Skeleton className="h-[28px] w-28" />
+      ) : query.isError ? (
+        <span className="font-mono text-[24px] font-semibold text-subtle">—</span>
+      ) : mediana == null ? (
+        <span className="text-[13px] leading-relaxed text-subtle">Sem análises ainda.</span>
+      ) : (
+        <>
+          <span
+            className="font-mono text-[30px] font-semibold leading-none"
+            style={{ color: complexityHexByOrdinal(mediana.ordem) }}
+          >
+            {prettyBigO(mediana.rotulo)}
+          </span>
+          <span className="text-[11.5px] text-subtle">mediana das suas resoluções analisadas</span>
+        </>
+      )}
+    </Card>
+  )
+}
+
+/** Gráfico de linhas da evolução: autonomia (sólida) × complexidade típica (tracejada) por mês. */
+function EvolucaoChart({ pontos }: { pontos: EvolucaoMensalDTO[] }) {
+  const n = pontos.length
+  const px = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100)
+  const yAut = (v: number) => 100 - (Math.max(0, Math.min(5, v)) / 5) * 100
+  const yCx = (v: number) =>
+    100 - (Math.max(0, Math.min(COMPLEXIDADE_ORDEM_MAX, v)) / COMPLEXIDADE_ORDEM_MAX) * 100
+
+  const autPts = pontos.map((p, i) =>
+    p.mediaAutonomia == null ? null : { x: px(i), y: yAut(p.mediaAutonomia), v: p.mediaAutonomia },
+  )
+  const cxPts = pontos.map((p, i) =>
+    p.mediaComplexidade == null
+      ? null
+      : { x: px(i), y: yCx(p.mediaComplexidade), v: p.mediaComplexidade },
+  )
+  const toPolyline = (pts: ({ x: number; y: number } | null)[]) =>
+    pts
+      .filter((p): p is { x: number; y: number } => p != null)
+      .map((p) => `${p.x},${p.y}`)
+      .join(' ')
+
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="relative h-44 w-full">
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden
+        >
+          {[0, 25, 50, 75, 100].map((y) => (
+            <line
+              key={y}
+              x1="0"
+              y1={y}
+              x2="100"
+              y2={y}
+              stroke="var(--border-subtle)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          {n > 1 && (
+            <>
+              <polyline
+                points={toPolyline(cxPts)}
+                fill="none"
+                stroke="var(--warning)"
+                strokeWidth="2"
+                strokeDasharray="4 3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <polyline
+                points={toPolyline(autPts)}
+                fill="none"
+                stroke="var(--brand-strong)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </>
+          )}
+        </svg>
+        {cxPts.map((p, i) =>
+          p == null ? null : (
+            <span
+              key={`c${i}`}
+              className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--warning)' }}
+              title={`Complexidade típica ≈ ${prettyBigO(complexityRotuloByOrdinal(Math.round(p.v)))}`}
+            />
+          ),
+        )}
+        {autPts.map((p, i) =>
+          p == null ? null : (
+            <span
+              key={`a${i}`}
+              className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
+              style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--brand-strong)' }}
+              title={`Autonomia ${p.v.toFixed(1).replace('.', ',')} / 5`}
+            />
+          ),
+        )}
+      </div>
+      <div className="flex w-full">
+        {pontos.map((p) => (
+          <span
+            key={`${p.ano}-${p.mes}`}
+            className="flex-1 text-center font-mono text-[10px] text-subtle"
+          >
+            {String(p.mes).padStart(2, '0')}/{String(p.ano).slice(2)}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function LegendSwatch({ color, dashed, label }: { color: string; dashed?: boolean; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5 text-[12px] text-muted">
+      <span
+        className="inline-block w-3.5"
+        style={
+          dashed
+            ? { borderTop: `2px dashed ${color}`, height: 0 }
+            : { height: 3, borderRadius: 2, background: color }
+        }
+      />
       {label}
-      <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10.5px] font-medium uppercase tracking-wide text-subtle">
-        em breve
-      </span>
     </span>
   )
 }
 
-/** Linha de um desafio na lista "Desafios recentes". */
-function RecentRow({ desafio }: { desafio: DesafioResumoDTO }) {
+/** Evolução: gráfico de linhas + legenda. */
+function EvolucaoCard({ query }: { query: ResumoQuery }) {
+  const pontos = query.data?.evolucao ?? []
+  return (
+    <Card className="flex flex-col gap-4 p-[18px]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[14px] font-bold text-heading">Evolução</span>
+          <span className="text-[12px] text-subtle">
+            Autonomia IA × complexidade típica ao longo dos meses
+          </span>
+        </div>
+        <div className="flex gap-3.5">
+          <LegendSwatch color="var(--brand-strong)" label="Autonomia" />
+          <LegendSwatch color="var(--warning)" dashed label="Complexidade" />
+        </div>
+      </div>
+      {query.isPending ? (
+        <Skeleton className="h-44 w-full rounded" />
+      ) : query.isError ? (
+        <span className="text-[13px] text-subtle">Não foi possível carregar.</span>
+      ) : pontos.length === 0 ? (
+        <div className="flex h-44 items-center justify-center">
+          <span className="max-w-xs text-center text-[13px] leading-relaxed text-subtle">
+            Sem resoluções ainda — o gráfico de evolução aparece conforme você submete soluções.
+          </span>
+        </div>
+      ) : (
+        <EvolucaoChart pontos={pontos} />
+      )}
+    </Card>
+  )
+}
+
+/** Uma linha da lista "Atividade recente". */
+function AtividadeRow({ a }: { a: AtividadeRecenteDTO }) {
   return (
     <Link
-      to={`/app/desafios/${desafio.id}`}
-      className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-2"
+      to={`/app/resolucoes/${a.resolucaoId}`}
+      className="flex items-center gap-3.5 border-t border-border-subtle px-3.5 py-[11px] transition-colors first:border-t-0 hover:bg-surface-2"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/[.08]">
-        <Target size={15} className="text-brand-strong" />
-      </div>
-      <span className="flex-1 truncate text-[14px] font-medium text-fg">{desafio.titulo}</span>
-      <VisibilityBadge visibilidade={desafio.visibilidade} />
-      {desafio.plataformaOrigem && (
-        <Chip className="hidden sm:inline-flex">{desafio.plataformaOrigem}</Chip>
-      )}
-      <span className="hidden w-[76px] shrink-0 text-right font-mono text-[11.5px] text-subtle tabular-nums sm:inline">
-        {formatDate(desafio.criadoEm)}
-      </span>
-      <ChevronRight
-        size={16}
-        className="shrink-0 text-subtle transition-colors group-hover:text-fg"
+      <LanguageBadge linguagem={a.linguagem} className="shrink-0" />
+      <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">{a.desafioTitulo}</span>
+      <AutonomyMeter
+        value={a.indiceAutonomiaIA}
+        size="sm"
+        showLabel={false}
+        className="hidden sm:inline-flex"
       />
+      <span className="shrink-0">
+        {!a.analisada ? (
+          <AnalysisStatus analisada={false} />
+        ) : a.complexidadeRotulo ? (
+          <ComplexityBadge rotulo={a.complexidadeRotulo} valor={a.complexidadeOrdem ?? undefined} />
+        ) : (
+          <span className="font-mono text-[11px] text-neutral">sem métrica</span>
+        )}
+      </span>
+      <span className="hidden w-[76px] shrink-0 text-right font-mono text-[11.5px] text-subtle tabular-nums sm:inline">
+        {formatDate(a.submetidaEm)}
+      </span>
     </Link>
+  )
+}
+
+/** Atividade recente: últimas resoluções submetidas. */
+function AtividadeRecenteCard({ query }: { query: ResumoQuery }) {
+  const itens = query.data?.atividadeRecente ?? []
+  return (
+    <Card className="flex flex-col overflow-hidden p-0">
+      <div className="flex items-center justify-between px-3.5 pb-2.5 pt-3">
+        <span className="text-[14px] font-bold text-heading">Atividade recente</span>
+        <Link to="/app/desafios" className="text-[12px] font-medium text-brand-strong hover:underline">
+          Ver tudo
+        </Link>
+      </div>
+      {query.isPending ? (
+        <div className="flex flex-col gap-2 p-3.5 pt-1">
+          {[0, 1, 2, 3].map((k) => (
+            <Skeleton key={k} className="h-9 w-full rounded" />
+          ))}
+        </div>
+      ) : query.isError ? (
+        <span className="px-3.5 py-6 text-[13px] text-subtle">Não foi possível carregar.</span>
+      ) : itens.length === 0 ? (
+        <span className="px-3.5 py-8 text-center text-[13px] leading-relaxed text-subtle">
+          Nenhuma resolução ainda — submeta uma solução para ver sua atividade aqui.
+        </span>
+      ) : (
+        <div className="flex flex-col">
+          {itens.map((a) => (
+            <AtividadeRow key={a.resolucaoId} a={a} />
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/** Distribuição de complexidade (Big O de tempo) em barras horizontais + rodapé de leitura. */
+function DistribuicaoCard({ query }: { query: ResumoQuery }) {
+  const itens = query.data ? [...query.data.distribuicaoBigO].sort((a, b) => a.ordem - b.ordem) : []
+  const max = Math.max(1, ...itens.map((i) => i.total))
+  const cxTrend = tendencia(query.data?.evolucao.map((p) => p.mediaComplexidade) ?? [])
+  const rodape: Record<Tendencia, { Icon: LucideIcon; color: string; texto: string }> = {
+    baixa: {
+      Icon: TrendingDown,
+      color: 'var(--success)',
+      texto: 'Suas soluções estão ficando mais eficientes.',
+    },
+    alta: {
+      Icon: TrendingUp,
+      color: 'var(--warning)',
+      texto: 'A complexidade típica das suas soluções vem subindo.',
+    },
+    estavel: {
+      Icon: Minus,
+      color: 'var(--subtle)',
+      texto: 'Complexidade típica estável entre os meses.',
+    },
+    insuficiente: {
+      Icon: Minus,
+      color: 'var(--subtle)',
+      texto: 'Distribuição das suas resoluções analisadas.',
+    },
+  }
+  const foot = rodape[cxTrend]
+
+  return (
+    <Card className="flex flex-col gap-3.5 p-[18px]">
+      <span className="text-[14px] font-bold text-heading">Distribuição de complexidade</span>
+      {query.isPending ? (
+        <div className="flex flex-col gap-2.5">
+          {[0, 1, 2, 3].map((k) => (
+            <Skeleton key={k} className="h-5 w-full rounded" />
+          ))}
+        </div>
+      ) : query.isError ? (
+        <span className="text-[13px] text-subtle">Não foi possível carregar.</span>
+      ) : itens.length === 0 ? (
+        <span className="text-[13px] leading-relaxed text-subtle">
+          Sem análises ainda — submeta resoluções em Java para ver a distribuição.
+        </span>
+      ) : (
+        <>
+          <div className="flex flex-col gap-2.5">
+            {itens.map((i) => {
+              const cor = complexityHexByOrdinal(i.ordem)
+              return (
+                <div key={i.rotulo} className="flex items-center gap-2.5">
+                  <span
+                    className="w-14 shrink-0 text-right font-mono text-[11.5px] font-semibold"
+                    style={{ color: cor }}
+                  >
+                    {prettyBigO(i.rotulo)}
+                  </span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${(i.total / max) * 100}%`, minWidth: 6, background: cor }}
+                    />
+                  </div>
+                  <span className="w-4 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-subtle">
+                    {i.total}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex items-center gap-2 border-t border-border-subtle pt-3">
+            <foot.Icon size={15} style={{ color: foot.color }} />
+            <span className="text-[12px] text-muted">{foot.texto}</span>
+          </div>
+        </>
+      )}
+    </Card>
   )
 }
 
 export function DashboardPage() {
   const { user } = useAuth()
-  const desafiosQuery = useMeusDesafios(0)
-  const snippetsQuery = useMeusSnippets(0)
+  const resumoQuery = useResumoDashboard()
+
+  const captionDesafios = (r: ResumoDashboardDTO) =>
+    `${plural(r.desafiosPublicos, 'público', 'públicos')} · ${plural(
+      r.totalDesafios - r.desafiosPublicos,
+      'privado',
+      'privados',
+    )}`
+  const captionResolucoes = (r: ResumoDashboardDTO) =>
+    `${plural(r.resolucoesAnalisadas, 'analisada', 'analisadas')} · ${
+      r.totalResolucoes - r.resolucoesAnalisadas
+    } calculando`
+  const captionSnippets = (r: ResumoDashboardDTO) =>
+    `em ${plural(r.totalCategorias, 'categoria', 'categorias')}`
 
   return (
     <PageContainer>
@@ -121,93 +494,45 @@ export function DashboardPage() {
         }
       />
 
-      {/* Cards de resumo — apenas totais que a API realmente expõe. */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <CountCard
+      {/* Totais (agregados reais do backend). */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatCard
           icon={Target}
           label="Desafios"
-          sub="registrados no seu portfólio"
-          query={desafiosQuery}
+          query={resumoQuery}
+          select={(r) => r.totalDesafios}
+          caption={captionDesafios}
         />
-        <CountCard
+        <StatCard
+          icon={Code2}
+          label="Resoluções"
+          query={resumoQuery}
+          select={(r) => r.totalResolucoes}
+          caption={captionResolucoes}
+        />
+        <StatCard
           icon={Braces}
           label="Snippets"
-          sub="trechos reutilizáveis"
-          query={snippetsQuery}
+          query={resumoQuery}
+          select={(r) => r.totalSnippets}
+          caption={captionSnippets}
         />
-        {/* Sem endpoint de agregados de análise: card remete às métricas por resolução. */}
-        <Card className="flex flex-col gap-2.5 p-[18px]">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-muted">Análises</span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-brand/10">
-              <Gauge size={17} className="text-brand-strong" />
-            </div>
-          </div>
-          <span className="text-[15px] font-semibold leading-tight text-heading">Por resolução</span>
-          <span className="text-[12px] leading-relaxed text-subtle">
-            Complexidade (Big O, ciclomática, espaço) e Índice de Autonomia IA em cada resolução
-            analisada.
-          </span>
-        </Card>
       </div>
 
-      {/* Painel design-forward: dashboards agregados chegam com o endpoint de analytics. */}
-      <Card className="flex flex-col gap-4 p-5 md:flex-row md:items-start md:gap-5">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand/[.13]">
-          <Gauge size={22} className="text-brand-strong" />
+      {/* Evolução (variável central da pesquisa) + resumo de autonomia/complexidade. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.62fr_1fr]">
+        <EvolucaoCard query={resumoQuery} />
+        <div className="flex flex-col gap-4">
+          <AutonomiaCard query={resumoQuery} />
+          <ComplexidadeTipicaCard query={resumoQuery} />
         </div>
-        <div className="flex flex-1 flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-[15px] font-semibold text-heading">Painéis de evolução a caminho</h3>
-            <p className="max-w-2xl text-[13px] leading-relaxed text-muted">
-              As análises por resolução já são calculadas hoje. Os painéis agregados — autonomia
-              média × complexidade típica, evolução ao longo dos meses e distribuição de complexidade
-              — chegam junto com o endpoint de analytics.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <FutureChip icon={LineChart} label="Autonomia × complexidade" />
-            <FutureChip icon={TrendingUp} label="Evolução no tempo" />
-            <FutureChip icon={BarChart3} label="Distribuição de complexidade" />
-          </div>
-        </div>
-      </Card>
+      </div>
 
-      {/* Desafios recentes */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[15px] font-semibold text-heading">Desafios recentes</h3>
-          <Link
-            to="/app/desafios"
-            className="text-[13px] font-medium text-brand-strong hover:underline"
-          >
-            Ver todos
-          </Link>
-        </div>
-        <QueryBoundary query={desafiosQuery}>
-          {(pagina) =>
-            pagina.itens.length === 0 ? (
-              <EmptyState
-                icon={Target}
-                title="Comece registrando seu primeiro desafio"
-                description="Cadastre um exercício de Online Judge e submeta suas resoluções para acompanhar suas métricas de aprendizado."
-                action={
-                  <Link to="/app/desafios" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
-                    <Plus size={15} />
-                    Novo desafio
-                  </Link>
-                }
-              />
-            ) : (
-              <Card className="flex flex-col divide-y divide-border-subtle overflow-hidden p-0">
-                {pagina.itens.slice(0, 5).map((desafio) => (
-                  <RecentRow key={desafio.id} desafio={desafio} />
-                ))}
-              </Card>
-            )
-          }
-        </QueryBoundary>
-      </section>
+      {/* Atividade recente (resoluções) + distribuição de complexidade. */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.62fr_1fr]">
+        <AtividadeRecenteCard query={resumoQuery} />
+        <DistribuicaoCard query={resumoQuery} />
+      </div>
     </PageContainer>
   )
 }

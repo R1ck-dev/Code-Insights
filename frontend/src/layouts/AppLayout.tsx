@@ -109,7 +109,10 @@ function UserMenu() {
   const navigate = useNavigate()
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex h-[38px] cursor-pointer items-center gap-2 rounded-[9px] pl-1.5 pr-2 outline-none hover:bg-surface-2">
+      <DropdownMenuTrigger
+        aria-label="Menu do usuário"
+        className="flex h-[38px] cursor-pointer items-center gap-2 rounded-[9px] pl-1.5 pr-2 outline-none hover:bg-surface-2"
+      >
         <Avatar name={user?.username} size={28} />
         <span className="hidden text-[13.5px] font-semibold text-fg sm:block">{user?.username}</span>
         <ChevronDown size={15} className="text-subtle" />

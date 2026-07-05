@@ -15,5 +15,10 @@ public interface DesafioRepository {
 
     Pagina<Desafio> listarPublicosPorAutor(UUID autorId, int pagina, int tamanho);
 
+    long contarPorAutor(UUID autorId);
+
+    /** Quantos desafios do autor sao publicos. */
+    long contarPublicosPorAutor(UUID autorId);
+
     void remover(UUID id);
 }

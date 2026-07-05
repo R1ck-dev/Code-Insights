@@ -88,7 +88,7 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-[25px] font-bold tracking-tight text-heading">{desafio.titulo}</h2>
+            <h1 className="text-[25px] font-bold tracking-tight text-heading">{desafio.titulo}</h1>
             <VisibilityBadge visibilidade={desafio.visibilidade} />
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -270,6 +270,9 @@ function ResolucaoLinha({ resolucao }: { resolucao: ResolucaoResumoDTO }) {
       </span>
       <AutonomyMeter value={resolucao.indiceAutonomiaIA} size="sm" className="shrink-0" />
       <AnalysisStatus analisada={resolucao.analisada} className="shrink-0" />
+      <span className="hidden shrink-0 sm:inline-flex">
+        <VisibilityBadge visibilidade={resolucao.visibilidade} />
+      </span>
       <span className="w-[66px] shrink-0 text-right font-mono text-[11.5px] text-subtle">
         {formatDate(resolucao.submetidaEm)}
       </span>

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 import com.projeto.codeinsights.domain.knowledge.model.Snippet;
 import com.projeto.codeinsights.domain.knowledge.port.SnippetRepository;
 import com.projeto.codeinsights.domain.shared.Pagina;
@@ -42,6 +43,26 @@ public class SnippetRepositoryAdapter implements SnippetRepository {
         Page<SnippetJpaEntity> page = springDataSnippetRepository.findByAutorId(autorId, pageRequest);
         List<Snippet> itens = page.getContent().stream().map(snippetMapper::toDomain).toList();
         return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
+    }
+
+    @Override
+    public Pagina<Snippet> listarPorAutorECategoria(UUID autorId, CategoriaConceito categoria,
+            int pagina, int tamanho) {
+        PageRequest pageRequest = PageRequest.of(pagina, tamanho);
+        Page<SnippetJpaEntity> page = springDataSnippetRepository
+                .findByAutorIdAndCategoria(autorId, categoria, pageRequest);
+        List<Snippet> itens = page.getContent().stream().map(snippetMapper::toDomain).toList();
+        return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
+    }
+
+    @Override
+    public long contarPorAutor(UUID autorId) {
+        return springDataSnippetRepository.countByAutorId(autorId);
+    }
+
+    @Override
+    public long contarCategoriasPorAutor(UUID autorId) {
+        return springDataSnippetRepository.contarCategoriasPorAutor(autorId);
     }
 
     @Override

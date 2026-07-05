@@ -86,6 +86,7 @@ export interface ResolucaoResumoDTO {
   autorId: string
   linguagem: LinguagemProgramacao
   indiceAutonomiaIA: number
+  visibilidade: Visibilidade
   analisada: boolean
   submetidaEm: string
 }
@@ -110,6 +111,50 @@ export interface ResultadoMetricaDTO {
   rotulo: string
   detalhe: string | null
   analisadoEm: string
+}
+
+// ---- Knowledge: Dashboard (agregados) ----
+export interface DistribuicaoItemDTO {
+  rotulo: string
+  /** ordinal da classe de complexidade (0 = O(1) … 7 = O(n!)). */
+  ordem: number
+  total: number
+}
+
+export interface EvolucaoMensalDTO {
+  ano: number
+  mes: number
+  mediaAutonomia: number | null
+  totalResolucoes: number
+  /** média da ordem de Big O (tempo) das resoluções do mês; null se nenhuma analisada. */
+  mediaComplexidade: number | null
+}
+
+export interface AtividadeRecenteDTO {
+  resolucaoId: string
+  desafioId: string
+  desafioTitulo: string
+  linguagem: LinguagemProgramacao
+  indiceAutonomiaIA: number
+  analisada: boolean
+  /** rótulo/ordinal de Big O (tempo); null se não analisada ou sem métrica de tempo. */
+  complexidadeRotulo: string | null
+  complexidadeOrdem: number | null
+  submetidaEm: string
+}
+
+export interface ResumoDashboardDTO {
+  totalDesafios: number
+  desafiosPublicos: number
+  totalResolucoes: number
+  resolucoesAnalisadas: number
+  totalSnippets: number
+  totalCategorias: number
+  mediaAutonomia: number | null
+  distribuicaoBigO: DistribuicaoItemDTO[]
+  distribuicaoEspaco: DistribuicaoItemDTO[]
+  evolucao: EvolucaoMensalDTO[]
+  atividadeRecente: AtividadeRecenteDTO[]
 }
 
 // ---- Knowledge: Snippets ----

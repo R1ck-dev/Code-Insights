@@ -42,7 +42,9 @@ import type { CategoriaConceito, SnippetDTO } from '@/types/api'
 export function SnippetsPage() {
   const [pagina, setPagina] = useState(0)
   const [cat, setCat] = useState<CategoriaConceito | 'TODAS'>('TODAS')
-  const query = useMeusSnippets(pagina)
+  // Filtro por categoria server-side: o backend recebe `categoria` e a paginação
+  // reflete a categoria selecionada (sem "sumir" com itens de outras páginas).
+  const query = useMeusSnippets(pagina, cat === 'TODAS' ? null : cat)
 
   const criar = useCriarSnippet()
   const remover = useRemoverSnippet()
@@ -61,8 +63,6 @@ export function SnippetsPage() {
   const [detalhe, setDetalhe] = useState<SnippetDTO | null>(null)
   const [removendo, setRemovendo] = useState<SnippetDTO | null>(null)
 
-  // O filtro por categoria é client-side (a API não expõe filtro — lacuna #5), então
-  // opera só sobre a página carregada. Ao trocar de categoria, volta para a página 0.
   function selecionarCategoria(c: CategoriaConceito | 'TODAS') {
     setCat(c)
     setPagina(0)
@@ -146,72 +146,64 @@ export function SnippetsPage() {
       />
 
       <QueryBoundary query={query}>
-        {(dados) =>
-          dados.itens.length === 0 ? (
-            <EmptyState
-              icon={Braces}
-              title="Nenhum snippet ainda"
-              description="Guarde trechos de código reutilizáveis, categorizados por conceito, para consultar depois."
-              action={botaoNovo}
-            />
-          ) : (
-            (() => {
-              const itens =
-                cat === 'TODAS'
-                  ? dados.itens
-                  : dados.itens.filter((s) => s.categoria === cat)
+        {(dados) => {
+          // Sem nenhum snippet e sem filtro ativo: estado de onboarding (esconde os chips).
+          if (dados.itens.length === 0 && cat === 'TODAS') {
+            return (
+              <EmptyState
+                icon={Braces}
+                title="Nenhum snippet ainda"
+                description="Guarde trechos de código reutilizáveis, categorizados por conceito, para consultar depois."
+                action={botaoNovo}
+              />
+            )
+          }
 
-              return (
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-wrap gap-2">
+          return (
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap gap-2">
+                <CategoriaChip ativa={cat === 'TODAS'} onClick={() => selecionarCategoria('TODAS')}>
+                  Todas
+                </CategoriaChip>
+                {CATEGORIAS.map((c) => {
+                  const Icone = c.icon
+                  return (
                     <CategoriaChip
-                      ativa={cat === 'TODAS'}
-                      onClick={() => selecionarCategoria('TODAS')}
+                      key={c.value}
+                      ativa={cat === c.value}
+                      onClick={() => selecionarCategoria(c.value)}
                     >
-                      Todas
+                      <Icone size={13} />
+                      {c.label}
                     </CategoriaChip>
-                    {CATEGORIAS.map((c) => {
-                      const Icone = c.icon
-                      return (
-                        <CategoriaChip
-                          key={c.value}
-                          ativa={cat === c.value}
-                          onClick={() => selecionarCategoria(c.value)}
-                        >
-                          <Icone size={13} />
-                          {c.label}
-                        </CategoriaChip>
-                      )
-                    })}
-                  </div>
+                  )
+                })}
+              </div>
 
-                  {itens.length === 0 ? (
-                    <EmptyState
-                      icon={SearchX}
-                      title="Nenhum snippet nesta categoria"
-                      description="Você ainda não tem trechos da categoria selecionada."
+              {dados.itens.length === 0 ? (
+                <EmptyState
+                  icon={SearchX}
+                  title="Nenhum snippet nesta categoria"
+                  description="Você ainda não tem trechos da categoria selecionada."
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {dados.itens.map((snippet) => (
+                    <SnippetCard
+                      key={snippet.id}
+                      snippet={snippet}
+                      onOpen={() => setDetalhe(snippet)}
                     />
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {itens.map((snippet) => (
-                        <SnippetCard
-                          key={snippet.id}
-                          snippet={snippet}
-                          onOpen={() => setDetalhe(snippet)}
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Paginação só faz sentido sem filtro client-side ativo. */}
-                  {cat === 'TODAS' && (
-                    <Pagination page={pagina} totalPages={dados.totalPaginas} onChange={setPagina} />
-                  )}
+                  ))}
                 </div>
-              )
-            })()
+              )}
+
+              {dados.totalPaginas > 1 && (
+                <Pagination page={pagina} totalPages={dados.totalPaginas} onChange={setPagina} />
+              )}
+            </div>
           )
-        }
+        }}
       </QueryBoundary>
 
       {/* Diálogo criar / editar */}
@@ -292,16 +284,18 @@ export function SnippetsPage() {
 
       {/* Diálogo de detalhe */}
       <Dialog open={!!detalhe} onOpenChange={(aberto) => !aberto && setDetalhe(null)}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           {detalhe && (
             <div className="flex flex-col gap-4 p-5">
               <div className="flex items-start justify-between gap-3 pr-6">
                 <div className="flex min-w-0 flex-col gap-2">
                   <CategoriaTag categoria={detalhe.categoria} />
-                  {detalhe.descricao && (
-                    <span className="text-[15px] font-semibold leading-snug text-heading">
+                  {detalhe.descricao ? (
+                    <DialogTitle className="text-[15px] font-semibold leading-snug text-heading">
                       {detalhe.descricao}
-                    </span>
+                    </DialogTitle>
+                  ) : (
+                    <DialogTitle className="sr-only">Detalhe do snippet</DialogTitle>
                   )}
                 </div>
                 <div className="flex shrink-0 gap-2">
@@ -373,7 +367,8 @@ function SnippetCard({
       }}
       className="flex cursor-pointer flex-col gap-2.5 p-3 transition-colors hover:border-border-strong hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
     >
-      <CodeBlock code={snippet.codigo} lang="java" lines={false} maxHeight={128} />
+      {/* Preview sem botão "Copiar" para não aninhar interativo dentro do card clicável. */}
+      <CodeBlock code={snippet.codigo} lang="java" lines={false} maxHeight={128} showCopy={false} />
       <div className="flex items-center gap-2 px-0.5">
         <CategoriaTag categoria={snippet.categoria} />
         {snippet.descricao && (

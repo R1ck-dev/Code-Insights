@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { Dialog, DialogContent } from './dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './dialog'
 import { Button, type ButtonVariant } from './button'
 import { cn } from '@/lib/utils'
 
@@ -44,8 +44,10 @@ export function ConfirmDialog({
             <Icon size={22} className={destructive ? 'text-danger' : 'text-brand-strong'} />
           </div>
           <div className="flex flex-col gap-1.5">
-            <h3 className="text-[18px] font-bold text-heading">{title}</h3>
-            <p className="text-[13.5px] leading-relaxed text-muted">{description}</p>
+            <DialogTitle className="text-[18px] font-bold text-heading">{title}</DialogTitle>
+            <DialogDescription className="text-[13.5px] leading-relaxed text-muted">
+              {description}
+            </DialogDescription>
           </div>
           <div className="mt-1 flex justify-end gap-2.5">
             <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>

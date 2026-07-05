@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Braces, Cpu, ExternalLink, Gauge, Target, type LucideIcon } from 'lucide-react'
+import { ArrowRight, Braces, Cpu, Gauge, Target, type LucideIcon } from 'lucide-react'
 import { buttonClasses } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CodeBlock } from '@/components/CodeBlock'
@@ -96,8 +96,7 @@ export function LandingPage() {
                 <ArrowRight size={17} />
               </Link>
               <Link to="/entrar" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
-                Ver um portfólio
-                <ExternalLink size={16} />
+                Já tenho conta
               </Link>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-4 font-mono text-[12px] text-subtle">
@@ -189,7 +188,6 @@ export function LandingPage() {
             Projeto de Iniciação Científica — pesquisa sobre autonomia e amadurecimento algorítmico.
           </span>
           <nav className="flex gap-5 text-[12.5px] text-muted">
-            <span className="text-subtle">Sobre</span>
             <Link to="/entrar" className="transition-colors hover:text-fg">
               Entrar
             </Link>

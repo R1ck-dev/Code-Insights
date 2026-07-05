@@ -1,16 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { snippetsApi } from './api'
-import type { AtualizarSnippetRequest, CriarSnippetRequest } from '@/types/api'
+import type { AtualizarSnippetRequest, CategoriaConceito, CriarSnippetRequest } from '@/types/api'
 
 export const snippetsKeys = {
   all: ['snippets'] as const,
-  meus: (pagina: number, tamanho: number) => ['snippets', 'meus', pagina, tamanho] as const,
+  meus: (pagina: number, tamanho: number, categoria: CategoriaConceito | null) =>
+    ['snippets', 'meus', pagina, tamanho, categoria] as const,
 }
 
-export function useMeusSnippets(pagina: number, tamanho = 12) {
+export function useMeusSnippets(
+  pagina: number,
+  categoria: CategoriaConceito | null = null,
+  tamanho = 12,
+) {
   return useQuery({
-    queryKey: snippetsKeys.meus(pagina, tamanho),
-    queryFn: () => snippetsApi.listarMeus(pagina, tamanho),
+    queryKey: snippetsKeys.meus(pagina, tamanho, categoria),
+    queryFn: () => snippetsApi.listarMeus(pagina, tamanho, categoria),
+    placeholderData: keepPreviousData,
   })
 }
 

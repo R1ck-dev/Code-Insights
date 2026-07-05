@@ -16,4 +16,8 @@ public interface SpringDataDesafioRepository extends JpaRepository<DesafioJpaEnt
     Page<DesafioJpaEntity> findByAutorId(UUID autorId, Pageable pageable);
 
     Page<DesafioJpaEntity> findByAutorIdAndVisibilidade(UUID autorId, Visibilidade visibilidade, Pageable pageable);
+
+    long countByAutorId(UUID autorId);
+
+    long countByAutorIdAndVisibilidade(UUID autorId, Visibilidade visibilidade);
 }
