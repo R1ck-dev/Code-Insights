@@ -1,6 +1,5 @@
 import { api } from '@/lib/api'
 import type {
-  AtualizarResolucaoRequest,
   Pagina,
   ResolucaoDetalheDTO,
   ResolucaoResumoDTO,
@@ -22,9 +21,6 @@ export const resolucoesApi = {
 
   buscarDetalhe: (id: string) =>
     api.get<ResolucaoDetalheDTO>(`/api/resolucoes/${id}`).then((r) => r.data),
-
-  atualizar: (id: string, body: AtualizarResolucaoRequest) =>
-    api.patch<void>(`/api/resolucoes/${id}`, body).then((r) => r.data),
 
   alterarVisibilidade: (id: string, publico: boolean) =>
     api.patch<void>(`/api/resolucoes/${id}/visibilidade`, { publico }).then((r) => r.data),

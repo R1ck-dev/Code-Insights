@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, Globe, Info, Pencil, Sparkles, Trash2 } from 'lucide-react'
+import { AlertTriangle, Globe, Info, Plus, Sparkles, Trash2 } from 'lucide-react'
 import {
   useAlterarVisibilidadeResolucao,
-  useAtualizarResolucao,
   useRemoverResolucao,
   useResolucaoDetalhe,
 } from '@/features/resolucoes/hooks'
@@ -17,44 +16,19 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
-import { FormField } from '@/components/ui/form-field'
-import {
-  Dialog,
-  DialogBody,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { toast } from '@/components/ui/toaster'
 import { CodeBlock } from '@/components/CodeBlock'
-import { CodeEditor } from '@/components/CodeEditor'
 import { MetricCard } from '@/components/MetricCard'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
 import { AnalysisStatus, LanguageBadge, VisibilityBadge } from '@/components/domain/badges'
 import {
   complexityHexByOrdinal,
   LINGUAGEM_META,
-  LINGUAGENS,
   prettyBigO,
   TIPO_METRICA_META,
 } from '@/domain/enums'
-import type {
-  LinguagemProgramacao,
-  ResolucaoDetalheDTO,
-  ResultadoMetricaDTO,
-  TipoMetrica,
-} from '@/types/api'
+import type { ResolucaoDetalheDTO, ResultadoMetricaDTO, TipoMetrica } from '@/types/api'
 import { formatDateTime } from '@/lib/utils'
 import { apiErrorMessage } from '@/lib/api'
 
@@ -91,32 +65,11 @@ export function ResolucaoDetalhePage() {
     if (analisada) void metricasQuery.refetch()
   }, [analisada, metricasQuery.refetch])
 
-  const atualizar = useAtualizarResolucao(resolucaoId ?? '')
   const remover = useRemoverResolucao()
   const alterarVisibilidade = useAlterarVisibilidadeResolucao(resolucaoId ?? '')
 
-  // Diálogo de edição de código (pré-preenchido ao abrir).
-  const [editOpen, setEditOpen] = useState(false)
-  const [editCodigo, setEditCodigo] = useState('')
-  const [editLinguagem, setEditLinguagem] = useState<LinguagemProgramacao>('JAVA')
   const [removerOpen, setRemoverOpen] = useState(false)
   const [visibilidadeOpen, setVisibilidadeOpen] = useState(false)
-
-  function abrirEdicao(r: ResolucaoDetalheDTO) {
-    setEditCodigo(r.codigoFonte)
-    setEditLinguagem(r.linguagem)
-    setEditOpen(true)
-  }
-
-  async function salvarEdicao() {
-    try {
-      await atualizar.mutateAsync({ codigoFonte: editCodigo, linguagem: editLinguagem })
-      toast.success('Código atualizado. Recalculando as métricas…')
-      setEditOpen(false)
-    } catch (e) {
-      toast.error(apiErrorMessage(e))
-    }
-  }
 
   async function confirmarRemocao(r: ResolucaoDetalheDTO) {
     try {
@@ -178,9 +131,13 @@ export function ResolucaoDetalhePage() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => abrirEdicao(resolucao)}>
-                    <Pencil size={15} />
-                    Editar código
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/app/desafios/${resolucao.desafioId}/submeter`)}
+                  >
+                    <Plus size={15} />
+                    Nova resolução
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => setRemoverOpen(true)}>
                     <Trash2 size={15} />
@@ -235,6 +192,7 @@ export function ResolucaoDetalhePage() {
                           return (
                             <MetricCard
                               key={tipo}
+                              tipo={tipo}
                               nome={meta.nome}
                               sub={meta.sub}
                               rotulo={prettyBigO(m.rotulo)}
@@ -316,76 +274,24 @@ export function ResolucaoDetalhePage() {
                     </p>
                   </Card>
 
-                  <div className="flex gap-2.5 rounded-xl border border-warning/25 bg-warning/[.06] p-3.5">
-                    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warning" />
+                  <div className="flex gap-2.5 rounded-xl border border-border bg-surface p-3.5">
+                    <Sparkles size={15} className="mt-0.5 shrink-0 text-brand-strong" />
                     <span className="text-[11.5px] leading-relaxed text-muted">
-                      Editar o código dispara nova análise e recalcula todas as métricas.
+                      Melhorou a solução? Envie uma{' '}
+                      <button
+                        type="button"
+                        className="font-semibold text-brand-strong underline-offset-2 hover:underline"
+                        onClick={() =>
+                          navigate(`/app/desafios/${resolucao.desafioId}/submeter`)
+                        }
+                      >
+                        nova resolução
+                      </button>{' '}
+                      — cada envio vira um ponto na sua evolução, sem apagar esta.
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Diálogo: editar código */}
-              <Dialog open={editOpen} onOpenChange={setEditOpen}>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <div className="flex flex-col gap-1">
-                      <DialogTitle>Editar código</DialogTitle>
-                      <DialogDescription>
-                        Editar recalcula as métricas desta resolução.
-                      </DialogDescription>
-                    </div>
-                  </DialogHeader>
-                  <DialogBody>
-                    <FormField label="Linguagem" htmlFor="edit-linguagem">
-                      <Select
-                        value={editLinguagem}
-                        onValueChange={(v) => setEditLinguagem(v as LinguagemProgramacao)}
-                      >
-                        <SelectTrigger id="edit-linguagem" className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LINGUAGENS.map((l) => (
-                            <SelectItem key={l.value} value={l.value}>
-                              {l.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormField>
-
-                    <FormField label="Código-fonte">
-                      <CodeEditor
-                        value={editCodigo}
-                        onChange={setEditCodigo}
-                        label="Solution"
-                        minHeight={280}
-                      />
-                    </FormField>
-
-                    <div className="flex gap-2.5 rounded-[10px] border border-warning/25 bg-warning/[.06] p-3">
-                      <AlertTriangle size={15} className="mt-0.5 shrink-0 text-warning" />
-                      <span className="text-[12px] leading-relaxed text-muted">
-                        Editar recalcula as métricas: a resolução volta para "calculando" e o motor
-                        reanalisa o código.
-                      </span>
-                    </div>
-                  </DialogBody>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="secondary">Cancelar</Button>
-                    </DialogClose>
-                    <Button
-                      onClick={salvarEdicao}
-                      loading={atualizar.isPending}
-                      disabled={!editCodigo.trim()}
-                    >
-                      Salvar e reanalisar
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
 
               {/* Diálogo: alterar visibilidade */}
               <ConfirmDialog

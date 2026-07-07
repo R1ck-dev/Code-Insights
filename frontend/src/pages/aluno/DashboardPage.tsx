@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { buttonClasses } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
+import { InfoButton } from '@/components/ui/info-button'
 import { AnalysisStatus, ComplexityBadge, LanguageBadge } from '@/components/domain/badges'
 import { useAuth } from '@/auth/useAuth'
 import { useEvolucao, useResumoDashboard } from '@/features/metricas/hooks'
@@ -59,6 +60,77 @@ function medianaComplexidade(itens: DistribuicaoItemDTO[]): { rotulo: string; or
 
 function plural(n: number, singular: string, pluralForma: string): string {
   return `${n} ${n === 1 ? singular : pluralForma}`
+}
+
+/**
+ * Textos dos "?" do dashboard. O de complexidade/evolução explica de propósito
+ * que o card (mediana geral) e a linha do gráfico (média por período) são
+ * estatísticas diferentes — por isso podem mostrar classes Big O diferentes.
+ */
+const DASH_INFO = {
+  evolucao: {
+    titulo: 'Como ler a evolução',
+    subtitulo: 'Duas séries ao longo do tempo (mês/semana/dia)',
+    secoes: [
+      {
+        rotulo: 'Linha cheia — Autonomia',
+        texto:
+          'A média do seu Índice de Autonomia IA (1 a 5) das resoluções enviadas em cada período. Subir significa que você declarou ter feito com mais autonomia.',
+      },
+      {
+        rotulo: 'Linha tracejada — Complexidade',
+        texto:
+          'A complexidade de tempo (Big O) típica das resoluções de cada período, como uma média aproximada. Serve para ler a tendência: cair costuma indicar soluções mais eficientes com o tempo.',
+      },
+      {
+        rotulo: 'Difere do card ao lado',
+        texto:
+          'Aqui o valor é por período e aproximado; o card "Complexidade típica" usa a mediana de todo o seu histórico. Por serem estatísticas diferentes, podem mostrar classes diferentes — use o gráfico para a tendência e o card para o valor típico geral.',
+      },
+    ],
+  },
+  complexidade: {
+    titulo: 'Complexidade típica',
+    subtitulo: 'Mediana do seu histórico analisado',
+    secoes: [
+      {
+        rotulo: 'O que é',
+        texto:
+          'A classe Big O de tempo que fica no meio de todas as suas resoluções já analisadas (mediana). Por ser a mediana, é sempre uma classe real que você de fato escreveu.',
+      },
+      {
+        rotulo: 'Por que a mediana',
+        texto:
+          'A mediana é robusta a extremos: uma ou outra solução muito custosa (ex.: O(n²)) não distorce o valor típico, ao contrário de uma média.',
+      },
+      {
+        rotulo: 'Difere do gráfico',
+        texto:
+          'Pode diferir da linha de complexidade do gráfico de Evolução, que é uma média por período (aproximada). Não é erro: são recortes e estatísticas diferentes.',
+      },
+    ],
+  },
+  autonomia: {
+    titulo: 'Autonomia IA média',
+    subtitulo: 'Índice autodeclarado de 1 a 5',
+    secoes: [
+      {
+        rotulo: 'O que é',
+        texto:
+          'A média do Índice de Autonomia IA que você informa ao enviar cada resolução: 1 = fiz com bastante apoio de IA; 5 = fiz de forma autônoma.',
+      },
+      {
+        rotulo: 'Como ler',
+        texto:
+          'Quanto maior a média, mais autônomo você declarou ter sido no conjunto das suas soluções. O medidor mostra essa média nos 5 segmentos.',
+      },
+      {
+        rotulo: 'Tendência',
+        texto:
+          'A legenda "em alta/queda/estável" compara a autonomia das primeiras e das últimas resoluções — um sinal do seu amadurecimento ao longo do tempo.',
+      },
+    ],
+  },
 }
 
 // ---- cards ----
@@ -113,7 +185,15 @@ function AutonomiaCard({ query }: { query: ResumoQuery }) {
   }
   return (
     <Card className="flex flex-col gap-3 p-[18px]">
-      <span className="text-[13px] font-semibold text-muted">Autonomia IA média</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-semibold text-muted">Autonomia IA média</span>
+        <InfoButton
+          titulo={DASH_INFO.autonomia.titulo}
+          subtitulo={DASH_INFO.autonomia.subtitulo}
+          secoes={DASH_INFO.autonomia.secoes}
+          ariaLabel="O que é a Autonomia IA média?"
+        />
+      </div>
       {query.isPending ? (
         <Skeleton className="h-[30px] w-24" />
       ) : query.isError ? (
@@ -141,7 +221,15 @@ function ComplexidadeTipicaCard({ query }: { query: ResumoQuery }) {
   const mediana = query.data ? medianaComplexidade(query.data.distribuicaoBigO) : null
   return (
     <Card className="flex flex-1 flex-col justify-center gap-2 p-[18px]">
-      <span className="text-[13px] font-semibold text-muted">Complexidade típica</span>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-semibold text-muted">Complexidade típica</span>
+        <InfoButton
+          titulo={DASH_INFO.complexidade.titulo}
+          subtitulo={DASH_INFO.complexidade.subtitulo}
+          secoes={DASH_INFO.complexidade.secoes}
+          ariaLabel="O que é a Complexidade típica?"
+        />
+      </div>
       {query.isPending ? (
         <Skeleton className="h-[28px] w-28" />
       ) : query.isError ? (
@@ -362,7 +450,15 @@ function EvolucaoCard() {
     <Card className="flex flex-col gap-4 p-[18px]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[14px] font-bold text-heading">Evolução</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[14px] font-bold text-heading">Evolução</span>
+            <InfoButton
+              titulo={DASH_INFO.evolucao.titulo}
+              subtitulo={DASH_INFO.evolucao.subtitulo}
+              secoes={DASH_INFO.evolucao.secoes}
+              ariaLabel="Como ler o gráfico de evolução?"
+            />
+          </div>
           <span className="text-[12px] text-subtle">
             Autonomia IA × complexidade típica por {escala}
           </span>

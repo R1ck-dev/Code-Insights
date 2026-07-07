@@ -1,5 +1,8 @@
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/utils'
+import { InfoButton } from '@/components/ui/info-button'
+import { METRICA_EXPLICACAO } from '@/domain/metricas-explicacao'
+import type { TipoMetrica } from '@/types/api'
 
 interface MetricCardProps {
   nome: string
@@ -10,6 +13,8 @@ interface MetricCardProps {
   valueColor?: string
   detalhe?: string | null
   analisadoEm?: string | null
+  /** Quando presente, mostra um "?" que abre a explicação do conceito. */
+  tipo?: TipoMetrica
   className?: string
 }
 
@@ -22,9 +27,11 @@ export function MetricCard({
   valueColor,
   detalhe,
   analisadoEm,
+  tipo,
   className,
 }: MetricCardProps) {
   const exata = natureza === 'exata'
+  const explicacao = tipo ? METRICA_EXPLICACAO[tipo] : null
   return (
     <div
       className={cn(
@@ -34,7 +41,18 @@ export function MetricCard({
     >
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[12.5px] font-semibold text-muted">{nome}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-[12.5px] font-semibold text-muted">{nome}</span>
+            {explicacao && (
+              <InfoButton
+                titulo={explicacao.titulo}
+                subtitulo={explicacao.subtitulo}
+                secoes={explicacao.secoes}
+                ariaLabel={`O que é ${nome}?`}
+                size={13}
+              />
+            )}
+          </div>
           {sub && <span className="font-mono text-[10.5px] tracking-wide text-subtle">{sub}</span>}
         </div>
         <span

@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.projeto.codeinsights.application.knowledge.dto.AlterarVisibilidadeResolucaoInput;
-import com.projeto.codeinsights.application.knowledge.dto.AtualizarResolucaoInput;
 import com.projeto.codeinsights.application.knowledge.dto.ResolucaoDetalheDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResolucaoResumoDTO;
 import com.projeto.codeinsights.application.knowledge.dto.SubmeterResolucaoInput;
 import com.projeto.codeinsights.application.knowledge.usecase.AlterarVisibilidadeResolucaoUseCase;
-import com.projeto.codeinsights.application.knowledge.usecase.AtualizarResolucaoUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.BuscarResolucaoDetalheUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.ListarResolucoesDoDesafioUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.RemoverResolucaoUseCase;
@@ -27,7 +25,6 @@ import com.projeto.codeinsights.application.knowledge.usecase.SubmeterResolucaoU
 import com.projeto.codeinsights.domain.shared.Pagina;
 import com.projeto.codeinsights.infrastructure.config.security.CurrentUserId;
 import com.projeto.codeinsights.infrastructure.web.knowledge.dto.AlterarVisibilidadeResolucaoRequest;
-import com.projeto.codeinsights.infrastructure.web.knowledge.dto.AtualizarResolucaoRequest;
 import com.projeto.codeinsights.infrastructure.web.knowledge.dto.SubmeterResolucaoRequest;
 
 import jakarta.validation.Valid;
@@ -40,7 +37,6 @@ public class ResolucaoController {
     private final SubmeterResolucaoUseCase submeterResolucaoUseCase;
     private final ListarResolucoesDoDesafioUseCase listarResolucoesDoDesafioUseCase;
     private final BuscarResolucaoDetalheUseCase buscarResolucaoDetalheUseCase;
-    private final AtualizarResolucaoUseCase atualizarResolucaoUseCase;
     private final AlterarVisibilidadeResolucaoUseCase alterarVisibilidadeResolucaoUseCase;
     private final RemoverResolucaoUseCase removerResolucaoUseCase;
 
@@ -74,19 +70,6 @@ public class ResolucaoController {
             @PathVariable UUID resolucaoId,
             @CurrentUserId UUID usuarioId) {
         return ResponseEntity.ok(buscarResolucaoDetalheUseCase.execute(resolucaoId, usuarioId));
-    }
-
-    @PatchMapping("/api/resolucoes/{resolucaoId}")
-    public ResponseEntity<Void> atualizar(
-            @PathVariable UUID resolucaoId,
-            @CurrentUserId UUID usuarioId,
-            @RequestBody @Valid AtualizarResolucaoRequest request) {
-        atualizarResolucaoUseCase.execute(new AtualizarResolucaoInput(
-                resolucaoId,
-                usuarioId,
-                request.codigoFonte(),
-                request.linguagem()));
-        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/api/resolucoes/{resolucaoId}/visibilidade")

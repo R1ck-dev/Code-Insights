@@ -1,12 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { resolucoesApi } from './api'
 import { desafiosKeys } from '@/features/desafios/hooks'
-import { metricasKeys } from '@/features/metricas/hooks'
-import type {
-  AtualizarResolucaoRequest,
-  ResolucaoDetalheDTO,
-  SubmeterResolucaoRequest,
-} from '@/types/api'
+import type { ResolucaoDetalheDTO, SubmeterResolucaoRequest } from '@/types/api'
 
 export const resolucoesKeys = {
   all: ['resolucoes'] as const,
@@ -45,17 +40,6 @@ export function useSubmeterResolucao(desafioId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: resolucoesKeys.all })
       void qc.invalidateQueries({ queryKey: desafiosKeys.detalhe(desafioId) })
-    },
-  })
-}
-
-export function useAtualizarResolucao(id: string) {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: AtualizarResolucaoRequest) => resolucoesApi.atualizar(id, body),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: resolucoesKeys.detalhe(id) })
-      void qc.invalidateQueries({ queryKey: metricasKeys.daResolucao(id) })
     },
   })
 }

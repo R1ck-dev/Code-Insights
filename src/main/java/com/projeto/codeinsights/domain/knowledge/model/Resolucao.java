@@ -76,16 +76,6 @@ public class Resolucao {
         this.submetidaEm = submetidaEm;
     }
 
-    public void atualizarCodigo(String codigoFonte, LinguagemProgramacao linguagem) {
-        validarCodigoFonte(codigoFonte);
-        if (linguagem == null) {
-            throw new NegocioException("A linguagem da resolucao e obrigatoria.");
-        }
-        this.codigoFonte = codigoFonte;
-        this.linguagem = linguagem;
-        this.analisada = false;
-    }
-
     public void registrarAutonomia(int valor) {
         validarAutonomia(valor);
         this.indiceAutonomiaIA = valor;

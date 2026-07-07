@@ -154,6 +154,7 @@ export function ResolucaoPublicaPage() {
                   return (
                     <MetricCard
                       key={tipo}
+                      tipo={tipo}
                       nome={meta.nome}
                       sub={meta.sub}
                       rotulo={prettyBigO(m.rotulo)}
