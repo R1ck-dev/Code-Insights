@@ -25,8 +25,10 @@ import com.projeto.codeinsights.application.identity.usecase.AtivarContaUseCase;
 import com.projeto.codeinsights.application.identity.usecase.AtualizarMeuPerfilUseCase;
 import com.projeto.codeinsights.application.identity.usecase.BuscarMeuPerfilUseCase;
 import com.projeto.codeinsights.application.identity.usecase.BuscarUsuarioPublicoUseCase;
+import com.projeto.codeinsights.application.identity.usecase.ListarUsuariosPublicosUseCase;
 import com.projeto.codeinsights.application.identity.usecase.ReenviarAtivacaoUseCase;
 import com.projeto.codeinsights.application.identity.usecase.RegistrarUsuarioUseCase;
+import com.projeto.codeinsights.domain.shared.Pagina;
 import com.projeto.codeinsights.infrastructure.config.security.CurrentUserId;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.AlterarVisibilidadePerfilRequest;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.AtualizarMeuPerfilRequest;
@@ -48,6 +50,7 @@ public class UsuarioController {
     private final AtualizarMeuPerfilUseCase atualizarMeuPerfilUseCase;
     private final AlterarVisibilidadePerfilUseCase alterarVisibilidadePerfilUseCase;
     private final BuscarUsuarioPublicoUseCase buscarUsuarioPublicoUseCase;
+    private final ListarUsuariosPublicosUseCase listarUsuariosPublicosUseCase;
 
     @PostMapping
     public ResponseEntity<Void> registrar(@RequestBody @Valid RegistrarUsuarioRequest request) {
@@ -92,6 +95,16 @@ public class UsuarioController {
         alterarVisibilidadePerfilUseCase.execute(
                 new AlterarVisibilidadePerfilInput(usuarioId, request.publico()));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/publicos")
+    public ResponseEntity<Pagina<UsuarioPublicoDTO>> listarPublicos(
+            @CurrentUserId UUID usuarioId,
+            @RequestParam(required = false) String filtro,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "12") int tamanho) {
+        return ResponseEntity.ok(
+                listarUsuariosPublicosUseCase.execute(usuarioId, filtro, pagina, tamanho));
     }
 
     @GetMapping("/{usuarioId}")

@@ -19,6 +19,7 @@ import { ResolucaoPublicaPage } from '@/pages/visitante/ResolucaoPublicaPage'
 
 // Aluno
 import { DashboardPage } from '@/pages/aluno/DashboardPage'
+import { ExplorarPage } from '@/pages/aluno/ExplorarPage'
 import { DesafiosPage } from '@/pages/aluno/DesafiosPage'
 import { DesafioDetalhePage } from '@/pages/aluno/DesafioDetalhePage'
 import { SubmeterResolucaoPage } from '@/pages/aluno/SubmeterResolucaoPage'
@@ -54,6 +55,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="explorar" element={<ExplorarPage />} />
           <Route path="desafios" element={<DesafiosPage />} />
           <Route path="desafios/:desafioId" element={<DesafioDetalhePage />} />
           <Route path="desafios/:desafioId/submeter" element={<SubmeterResolucaoPage />} />

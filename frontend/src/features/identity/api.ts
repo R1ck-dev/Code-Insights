@@ -4,6 +4,7 @@ import type {
   AtualizarMeuPerfilRequest,
   LoginRequest,
   MeuPerfilDTO,
+  Pagina,
   RegistrarUsuarioRequest,
   TokenResponse,
   UsuarioPublicoDTO,
@@ -40,4 +41,11 @@ export const identityApi = {
 
   buscarUsuarioPublico: (usuarioId: string) =>
     api.get<UsuarioPublicoDTO>(`/api/usuarios/${usuarioId}`).then((r) => r.data),
+
+  listarPublicos: (filtro: string, pagina: number, tamanho: number) =>
+    api
+      .get<Pagina<UsuarioPublicoDTO>>('/api/usuarios/publicos', {
+        params: { filtro: filtro || undefined, pagina, tamanho },
+      })
+      .then((r) => r.data),
 }

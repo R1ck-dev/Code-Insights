@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { identityApi } from './api'
 import type {
   AtualizarMeuPerfilRequest,
@@ -7,6 +7,8 @@ import type {
 
 export const identityKeys = {
   usuarioPublico: (id: string) => ['usuario-publico', id] as const,
+  usuariosPublicos: (filtro: string, pagina: number, tamanho: number) =>
+    ['usuarios-publicos', filtro, pagina, tamanho] as const,
   ativacao: (token: string) => ['ativacao', token] as const,
 }
 
@@ -15,6 +17,14 @@ export function useUsuarioPublico(id: string | undefined) {
     queryKey: identityKeys.usuarioPublico(id ?? ''),
     queryFn: () => identityApi.buscarUsuarioPublico(id!),
     enabled: !!id,
+  })
+}
+
+export function useUsuariosPublicos(filtro: string, pagina: number, tamanho = 12) {
+  return useQuery({
+    queryKey: identityKeys.usuariosPublicos(filtro, pagina, tamanho),
+    queryFn: () => identityApi.listarPublicos(filtro, pagina, tamanho),
+    placeholderData: keepPreviousData,
   })
 }
 

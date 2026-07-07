@@ -1,4 +1,4 @@
-import { Braces, ChevronDown, LayoutDashboard, LogOut, Menu, Target, User } from 'lucide-react'
+import { Braces, ChevronDown, Compass, LayoutDashboard, LogOut, Menu, Target, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/app/desafios', label: 'Desafios', icon: Target },
   { to: '/app/snippets', label: 'Snippets', icon: Braces },
+  { to: '/app/explorar', label: 'Explorar', icon: Compass },
   { to: '/app/perfil', label: 'Perfil', icon: User },
 ]
 
