@@ -19,6 +19,8 @@ public interface SpringDataSnippetRepository extends JpaRepository<SnippetJpaEnt
 
     Page<SnippetJpaEntity> findByAutorIdAndCategoria(UUID autorId, CategoriaConceito categoria, Pageable pageable);
 
+    Page<SnippetJpaEntity> findByAutorIdAndDesafioId(UUID autorId, UUID desafioId, Pageable pageable);
+
     long countByAutorId(UUID autorId);
 
     @Query("select count(distinct s.categoria) from SnippetJpaEntity s where s.autor.id = :autorId")

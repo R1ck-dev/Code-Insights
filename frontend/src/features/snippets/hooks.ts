@@ -6,6 +6,7 @@ export const snippetsKeys = {
   all: ['snippets'] as const,
   meus: (pagina: number, tamanho: number, categoria: CategoriaConceito | null) =>
     ['snippets', 'meus', pagina, tamanho, categoria] as const,
+  doDesafio: (desafioId: string) => ['snippets', 'desafio', desafioId] as const,
 }
 
 export function useMeusSnippets(
@@ -17,6 +18,14 @@ export function useMeusSnippets(
     queryKey: snippetsKeys.meus(pagina, tamanho, categoria),
     queryFn: () => snippetsApi.listarMeus(pagina, tamanho, categoria),
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useSnippetsDoDesafio(desafioId: string | undefined, tamanho = 50) {
+  return useQuery({
+    queryKey: snippetsKeys.doDesafio(desafioId ?? ''),
+    queryFn: () => snippetsApi.listarDoDesafio(desafioId!, 0, tamanho),
+    enabled: !!desafioId,
   })
 }
 

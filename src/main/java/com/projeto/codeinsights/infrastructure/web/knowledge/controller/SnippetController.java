@@ -47,6 +47,7 @@ public class SnippetController {
             @RequestBody @Valid CriarSnippetRequest request) {
         CriarSnippetInput input = new CriarSnippetInput(
                 autorId,
+                request.desafioId(),
                 request.codigo(),
                 request.descricao(),
                 request.categoria());
@@ -56,10 +57,12 @@ public class SnippetController {
 
     @GetMapping
     public ResponseEntity<Pagina<SnippetDTO>> listarMeus(@CurrentUserId UUID autorId,
+            @RequestParam(required = false) UUID desafioId,
             @RequestParam(required = false) CategoriaConceito categoria,
             @RequestParam(defaultValue = "0") int pagina,
             @RequestParam(defaultValue = "10") int tamanho) {
-        return ResponseEntity.ok(listarMeusSnippetsUseCase.execute(autorId, categoria, pagina, tamanho));
+        return ResponseEntity.ok(
+                listarMeusSnippetsUseCase.execute(autorId, desafioId, categoria, pagina, tamanho));
     }
 
     @GetMapping("/{snippetId}")

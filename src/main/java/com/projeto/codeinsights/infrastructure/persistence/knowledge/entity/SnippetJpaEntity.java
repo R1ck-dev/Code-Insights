@@ -31,6 +31,11 @@ public class SnippetJpaEntity {
     @JoinColumn(name = "autor_id", nullable = false)
     private UsuarioJpaEntity autor;
 
+    // Vinculo opcional ao desafio de origem do trecho (nullable).
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "desafio_id")
+    private DesafioJpaEntity desafio;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String codigo;
 

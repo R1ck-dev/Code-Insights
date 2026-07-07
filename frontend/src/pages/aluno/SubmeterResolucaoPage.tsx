@@ -5,6 +5,7 @@ import { PageContainer } from '@/components/page/PageContainer'
 import { Breadcrumb } from '@/components/page/Breadcrumb'
 import { QueryBoundary } from '@/components/page/states'
 import { CodeEditor } from '@/components/CodeEditor'
+import { SnippetsDoDesafioSection } from '@/components/snippets/SnippetsDoDesafioSection'
 import { LanguageDot } from '@/components/domain/badges'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/input'
@@ -192,6 +193,9 @@ export function SubmeterResolucaoPage() {
                 </div>
               </div>
             </div>
+
+            {/* Snippets deste desafio: o aluno pode guardar trechos já vinculados. */}
+            <SnippetsDoDesafioSection desafioId={desafio.id} />
           </>
         )}
       </QueryBoundary>

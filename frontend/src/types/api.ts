@@ -165,6 +165,7 @@ export interface ResumoDashboardDTO {
 export interface SnippetDTO {
   id: string
   autorId: string
+  desafioId: string | null
   codigo: string
   descricao: string | null
   categoria: CategoriaConceito
@@ -212,15 +213,11 @@ export interface SubmeterResolucaoRequest {
   descricaoApoioIA?: string | null
 }
 
-export interface AtualizarResolucaoRequest {
-  codigoFonte?: string
-  linguagem?: LinguagemProgramacao
-}
-
 export interface CriarSnippetRequest {
   codigo: string
   descricao?: string | null
   categoria: CategoriaConceito
+  desafioId?: string | null
 }
 
 export interface AtualizarSnippetRequest {

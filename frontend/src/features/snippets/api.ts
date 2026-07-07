@@ -15,6 +15,13 @@ export const snippetsApi = {
       })
       .then((r) => r.data),
 
+  listarDoDesafio: (desafioId: string, pagina: number, tamanho: number) =>
+    api
+      .get<Pagina<SnippetDTO>>('/api/snippets', {
+        params: { desafioId, pagina, tamanho },
+      })
+      .then((r) => r.data),
+
   buscarDetalhe: (id: string) => api.get<SnippetDTO>(`/api/snippets/${id}`).then((r) => r.data),
 
   criar: (body: CriarSnippetRequest) =>

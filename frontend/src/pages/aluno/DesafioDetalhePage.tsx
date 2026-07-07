@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { toast } from '@/components/ui/toaster'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
+import { SnippetsDoDesafioSection } from '@/components/snippets/SnippetsDoDesafioSection'
 import { AnalysisStatus, LanguageBadge, VisibilityBadge } from '@/components/domain/badges'
 import { LINGUAGEM_META } from '@/domain/enums'
 import { apiErrorMessage } from '@/lib/api'
@@ -171,6 +172,9 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
 
         <ListaResolucoes desafioId={id} />
       </section>
+
+      {/* Snippets vinculados a este desafio */}
+      <SnippetsDoDesafioSection desafioId={id} />
 
       {/* Diálogos */}
       {editarAberto && (

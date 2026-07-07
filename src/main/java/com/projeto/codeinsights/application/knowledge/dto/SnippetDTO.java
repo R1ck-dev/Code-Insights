@@ -8,6 +8,7 @@ import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 public record SnippetDTO(
         UUID id,
         UUID autorId,
+        UUID desafioId,
         String codigo,
         String descricao,
         CategoriaConceito categoria,

@@ -30,6 +30,7 @@ public class BuscarSnippetDetalheUseCase {
         return new SnippetDTO(
                 snippet.getId(),
                 snippet.getAutorId(),
+                snippet.getDesafioId(),
                 snippet.getCodigo(),
                 snippet.getDescricao(),
                 snippet.getCategoria(),

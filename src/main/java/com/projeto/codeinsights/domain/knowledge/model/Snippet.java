@@ -10,18 +10,24 @@ import com.projeto.codeinsights.domain.shared.exception.NegocioException;
  * Snippet: trecho de codigo reutilizavel e categorizado, parte da biblioteca
  * pessoal de conhecimento do usuario. Referencia o autor por id e classifica o
  * conceito via enum {@code CategoriaConceito}.
+ * <p>
+ * Opcionalmente vincula-se a um {@code Desafio} (por id), quando o trecho nasceu
+ * a partir daquele problema. O vinculo e opcional: {@code desafioId} pode ser
+ * null, e o snippet continua valendo como item global da biblioteca.
  */
 public class Snippet {
 
     private UUID id;
     private UUID autorId;
+    private UUID desafioId;
     private String codigo;
     private String descricao;
     private CategoriaConceito categoria;
     private OffsetDateTime criadoEm;
 
     /** Construtor de criacao. */
-    public Snippet(UUID id, UUID autorId, String codigo, String descricao, CategoriaConceito categoria) {
+    public Snippet(UUID id, UUID autorId, UUID desafioId, String codigo, String descricao,
+            CategoriaConceito categoria) {
         if (autorId == null) {
             throw new NegocioException("O autor do snippet e obrigatorio.");
         }
@@ -30,6 +36,7 @@ public class Snippet {
 
         this.id = (id != null) ? id : UUID.randomUUID();
         this.autorId = autorId;
+        this.desafioId = desafioId;
         this.codigo = codigo;
         this.descricao = descricao;
         this.categoria = categoria;
@@ -37,10 +44,11 @@ public class Snippet {
     }
 
     /** Construtor de reconstituicao. */
-    public Snippet(UUID id, UUID autorId, String codigo, String descricao, CategoriaConceito categoria,
-            OffsetDateTime criadoEm) {
+    public Snippet(UUID id, UUID autorId, UUID desafioId, String codigo, String descricao,
+            CategoriaConceito categoria, OffsetDateTime criadoEm) {
         this.id = id;
         this.autorId = autorId;
+        this.desafioId = desafioId;
         this.codigo = codigo;
         this.descricao = descricao;
         this.categoria = categoria;
@@ -80,6 +88,10 @@ public class Snippet {
 
     public UUID getAutorId() {
         return autorId;
+    }
+
+    public UUID getDesafioId() {
+        return desafioId;
     }
 
     public String getCodigo() {

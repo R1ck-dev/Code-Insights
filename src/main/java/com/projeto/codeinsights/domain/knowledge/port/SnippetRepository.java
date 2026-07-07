@@ -16,6 +16,8 @@ public interface SnippetRepository {
 
     Pagina<Snippet> listarPorAutorECategoria(UUID autorId, CategoriaConceito categoria, int pagina, int tamanho);
 
+    Pagina<Snippet> listarPorAutorEDesafio(UUID autorId, UUID desafioId, int pagina, int tamanho);
+
     long contarPorAutor(UUID autorId);
 
     /** Quantas categorias de conceito distintas o autor usa nos seus snippets. */

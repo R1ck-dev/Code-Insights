@@ -6,6 +6,7 @@ import com.projeto.codeinsights.domain.knowledge.enums.CategoriaConceito;
 
 public record CriarSnippetInput(
         UUID autorId,
+        UUID desafioId,
         String codigo,
         String descricao,
         CategoriaConceito categoria) {

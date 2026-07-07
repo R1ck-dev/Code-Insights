@@ -56,6 +56,15 @@ public class SnippetRepositoryAdapter implements SnippetRepository {
     }
 
     @Override
+    public Pagina<Snippet> listarPorAutorEDesafio(UUID autorId, UUID desafioId, int pagina, int tamanho) {
+        PageRequest pageRequest = PageRequest.of(pagina, tamanho);
+        Page<SnippetJpaEntity> page = springDataSnippetRepository
+                .findByAutorIdAndDesafioId(autorId, desafioId, pageRequest);
+        List<Snippet> itens = page.getContent().stream().map(snippetMapper::toDomain).toList();
+        return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
+    }
+
+    @Override
     public long contarPorAutor(UUID autorId) {
         return springDataSnippetRepository.countByAutorId(autorId);
     }
