@@ -72,16 +72,14 @@ export function DefinirNovaSenhaPage() {
           <label htmlFor="confirma" className="text-[12.5px] font-semibold text-label">
             Confirmar senha
           </label>
-          <div className="relative flex items-center">
-            <PasswordInput
-              id="confirma"
-              autoComplete="new-password"
-              value={confirma}
-              onChange={(e) => setConfirma(e.target.value)}
-              className={match ? 'border-success pr-10' : undefined}
-              required
-            />
-          </div>
+          <PasswordInput
+            id="confirma"
+            autoComplete="new-password"
+            value={confirma}
+            onChange={(e) => setConfirma(e.target.value)}
+            className={match ? 'border-success' : undefined}
+            required
+          />
           {match && (
             <span className="flex items-center gap-1.5 text-[11.5px] text-success">
               <Check size={13} /> As senhas coincidem.

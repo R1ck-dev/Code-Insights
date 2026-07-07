@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { buttonClasses } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useAtivarConta } from '@/features/identity/hooks'
+import { emitirContaAtivada } from '@/lib/activationSignal'
 
 export function ContaAtivadaPage() {
   const [params] = useSearchParams()
@@ -11,6 +13,11 @@ export function ContaAtivadaPage() {
   const { isPending, isSuccess } = useAtivarConta(token)
 
   const loading = !!token && isPending
+
+  // Avisa a aba de /verifique-email (mesma origem) que a conta foi ativada.
+  useEffect(() => {
+    if (isSuccess) emitirContaAtivada()
+  }, [isSuccess])
 
   return (
     <AuthLayout>
