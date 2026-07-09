@@ -107,11 +107,19 @@ export interface ResolucaoDetalheDTO {
 }
 
 // ---- Knowledge: Métricas ----
+/**
+ * Confiança do motor no valor que ele mesmo calculou. ALTA = nenhuma suposição;
+ * MEDIA = ao menos um default conservador ("assumi que este laço roda n vezes");
+ * BAIXA = não foi possível classificar (rótulo "?").
+ */
+export type NivelConfianca = 'ALTA' | 'MEDIA' | 'BAIXA'
+
 export interface ResultadoMetricaDTO {
   tipo: TipoMetrica
   valor: number
   rotulo: string
   detalhe: string | null
+  confianca: NivelConfianca
   analisadoEm: string
 }
 

@@ -44,6 +44,7 @@ public class ListarMetricasDaResolucaoUseCase {
                         resultado.getValor(),
                         resultado.getRotulo(),
                         resultado.getDetalhe(),
+                        resultado.getConfianca(),
                         resultado.getAnalisadoEm()))
                 .toList();
     }

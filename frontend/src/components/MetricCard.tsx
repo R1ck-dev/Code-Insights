@@ -1,8 +1,9 @@
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/utils'
+import { ConfidenceBadge } from '@/components/domain/badges'
 import { InfoButton } from '@/components/ui/info-button'
 import { METRICA_EXPLICACAO } from '@/domain/metricas-explicacao'
-import type { TipoMetrica } from '@/types/api'
+import type { NivelConfianca, TipoMetrica } from '@/types/api'
 
 interface MetricCardProps {
   nome: string
@@ -12,6 +13,8 @@ interface MetricCardProps {
   /** cor do valor (hex da escala p/ estimadas; default heading). */
   valueColor?: string
   detalhe?: string | null
+  /** Só faz sentido em métricas estimadas: as exatas são sempre ALTA. */
+  confianca?: NivelConfianca
   analisadoEm?: string | null
   /** Quando presente, mostra um "?" que abre a explicação do conceito. */
   tipo?: TipoMetrica
@@ -26,6 +29,7 @@ export function MetricCard({
   natureza,
   valueColor,
   detalhe,
+  confianca,
   analisadoEm,
   tipo,
   className,
@@ -55,16 +59,19 @@ export function MetricCard({
           </div>
           {sub && <span className="font-mono text-[10.5px] tracking-wide text-subtle">{sub}</span>}
         </div>
-        <span
-          className={cn(
-            'shrink-0 rounded-full px-2 py-[3px] font-mono text-[10.5px] font-semibold uppercase tracking-wider ring-1 ring-inset',
-            exata
-              ? 'text-success bg-success/10 ring-success/30'
-              : 'text-warning bg-warning/[.12] ring-warning/30',
-          )}
-        >
-          {natureza}
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span
+            className={cn(
+              'shrink-0 rounded-full px-2 py-[3px] font-mono text-[10.5px] font-semibold uppercase tracking-wider ring-1 ring-inset',
+              exata
+                ? 'text-success bg-success/10 ring-success/30'
+                : 'text-warning bg-warning/[.12] ring-warning/30',
+            )}
+          >
+            {natureza}
+          </span>
+          {!exata && confianca && <ConfidenceBadge confianca={confianca} />}
+        </div>
       </div>
       <div
         className="font-mono text-[34px] font-semibold leading-none tabular-nums"

@@ -161,6 +161,7 @@ export function ResolucaoPublicaPage() {
                       natureza={meta.natureza}
                       valueColor={valueColor}
                       detalhe={m.detalhe}
+                      confianca={m.confianca}
                     />
                   )
                 })}

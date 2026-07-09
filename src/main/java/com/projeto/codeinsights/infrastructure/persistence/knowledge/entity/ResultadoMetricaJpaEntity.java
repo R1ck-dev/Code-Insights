@@ -3,6 +3,7 @@ package com.projeto.codeinsights.infrastructure.persistence.knowledge.entity;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 
 import jakarta.persistence.Column;
@@ -42,6 +43,10 @@ public class ResultadoMetricaJpaEntity {
 
     @Column(columnDefinition = "TEXT")
     private String detalhe;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private NivelConfianca confianca;
 
     @Column(name = "analisado_em", nullable = false, updatable = false)
     private OffsetDateTime analisadoEm;

@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
@@ -53,7 +54,8 @@ class AnalisarResolucaoUseCaseTest {
         Resolucao resolucao = resolucaoNaoAnalisada(id);
         when(resolucaoRepository.buscarPorId(id)).thenReturn(Optional.of(resolucao));
         when(analisadorMetricas.analisar(resolucao)).thenReturn(List.of(
-                new ResultadoMetrica(null, id, TipoMetrica.COMPLEXIDADE_CICLOMATICA, 1, "1", null)));
+                new ResultadoMetrica(null, id, TipoMetrica.COMPLEXIDADE_CICLOMATICA, 1, "1", null,
+                        NivelConfianca.ALTA)));
 
         useCase.execute(id);
 

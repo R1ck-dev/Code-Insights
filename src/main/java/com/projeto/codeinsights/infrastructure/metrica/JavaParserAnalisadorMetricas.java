@@ -54,7 +54,7 @@ public class JavaParserAnalisadorMetricas implements AnalisadorMetricas {
                 .map(analisador -> {
                     MetricaCalculada calculada = analisador.analisar(unidade.get());
                     return new ResultadoMetrica(null, resolucao.getId(), analisador.tipo(),
-                            calculada.valor(), calculada.rotulo(), calculada.detalhe());
+                            calculada.valor(), calculada.rotulo(), calculada.detalhe(), calculada.confianca());
                 })
                 .toList();
     }

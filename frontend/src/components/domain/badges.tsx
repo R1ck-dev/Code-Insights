@@ -9,7 +9,7 @@ import {
   STATUS_CONTA_META,
   VISIBILIDADE_META,
 } from '@/domain/enums'
-import type { LinguagemProgramacao, StatusConta, Visibilidade } from '@/types/api'
+import type { LinguagemProgramacao, NivelConfianca, StatusConta, Visibilidade } from '@/types/api'
 import { cn } from '@/lib/utils'
 
 export function LanguageDot({ linguagem, size = 7 }: { linguagem: LinguagemProgramacao; size?: number }) {
@@ -67,6 +67,34 @@ export function ComplexityBadge({
       }}
     >
       {prettyBigO(rotulo)}
+    </span>
+  )
+}
+
+const CONFIANCA_META: Record<NivelConfianca, { label: string; classe: string }> = {
+  ALTA: { label: 'confiança alta', classe: 'text-success bg-success/10 ring-success/30' },
+  MEDIA: { label: 'confiança média', classe: 'text-warning bg-warning/[.12] ring-warning/30' },
+  BAIXA: { label: 'confiança baixa', classe: 'text-danger bg-danger/[.12] ring-danger/30' },
+}
+
+/** Pílula que expõe o quanto o motor precisou supor para chegar a um valor estimado. */
+export function ConfidenceBadge({
+  confianca,
+  className,
+}: {
+  confianca: NivelConfianca
+  className?: string
+}) {
+  const meta = CONFIANCA_META[confianca]
+  return (
+    <span
+      className={cn(
+        'shrink-0 rounded-full px-2 py-[3px] font-mono text-[10.5px] font-semibold tracking-wider ring-1 ring-inset',
+        meta.classe,
+        className,
+      )}
+    >
+      {meta.label}
     </span>
   )
 }

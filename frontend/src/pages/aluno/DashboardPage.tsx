@@ -44,11 +44,17 @@ function tendencia(valores: (number | null)[]): Tendencia {
   return 'estavel'
 }
 
-/** Mediana ponderada da complexidade a partir da distribuição (por ordinal). */
+/**
+ * Mediana ponderada da complexidade a partir da distribuição (por ordinal).
+ * Resoluções não classificadas (ordem -1, rótulo "?") ficam de fora: "não sei" não é uma
+ * complexidade menor que O(1), e incluí-las puxaria a mediana para baixo. Elas seguem
+ * visíveis nas barras de distribuição, onde a contagem é informativa.
+ */
 function medianaComplexidade(itens: DistribuicaoItemDTO[]): { rotulo: string; ordem: number } | null {
-  const total = itens.reduce((s, i) => s + i.total, 0)
+  const classificados = itens.filter((i) => i.ordem >= 0)
+  const total = classificados.reduce((s, i) => s + i.total, 0)
   if (total === 0) return null
-  const ordenados = [...itens].sort((a, b) => a.ordem - b.ordem)
+  const ordenados = [...classificados].sort((a, b) => a.ordem - b.ordem)
   const alvo = Math.ceil(total / 2)
   let acc = 0
   for (const i of ordenados) {

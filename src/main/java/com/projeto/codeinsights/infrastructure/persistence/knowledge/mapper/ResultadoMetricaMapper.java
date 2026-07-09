@@ -23,6 +23,7 @@ public class ResultadoMetricaMapper {
         entity.setValor(domain.getValor());
         entity.setRotulo(domain.getRotulo());
         entity.setDetalhe(domain.getDetalhe());
+        entity.setConfianca(domain.getConfianca());
         entity.setAnalisadoEm(domain.getAnalisadoEm());
         return entity;
     }
@@ -35,6 +36,7 @@ public class ResultadoMetricaMapper {
                 entity.getValor(),
                 entity.getRotulo(),
                 entity.getDetalhe(),
+                entity.getConfianca(),
                 entity.getAnalisadoEm());
     }
 }
