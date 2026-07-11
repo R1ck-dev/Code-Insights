@@ -21,22 +21,29 @@ import {
 import { CodeEditor } from '@/components/CodeEditor'
 import { toast } from '@/components/ui/toaster'
 import { CATEGORIAS } from '@/domain/enums'
+import { useMeusDesafios } from '@/features/desafios/hooks'
 import { useCriarSnippet } from '@/features/snippets/hooks'
 import { apiErrorMessage } from '@/lib/api'
 import type { CategoriaConceito } from '@/types/api'
 
+/** Valor sentinela do item "Nenhum" — o Radix Select não aceita `value=""`. */
+const SEM_DESAFIO = '__nenhum__'
+
 interface SnippetFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** Quando informado, o snippet criado é vinculado a este desafio. */
+  /**
+   * Vínculo FIXO: quando informado, o snippet nasce ligado a este desafio e o
+   * campo "Desafio" não aparece (o contexto já decidiu). Sem ele, o diálogo
+   * oferece o Select opcional de desafios (00-INDICE §6-A, Lacuna 6).
+   */
   desafioId?: string
   onCreated?: () => void
 }
 
 /**
- * Diálogo reutilizável de criação de snippet. Aceita um `desafioId` opcional para
- * vincular o trecho a um desafio (usado na submissão de resolução e no detalhe do
- * desafio). A tela de Snippets mantém seu próprio formulário (criar + editar).
+ * Diálogo de criação de snippet (04 §7.4). Chassi de formulário: cabeçalho com
+ * ícone `braces`, corpo rolável e rodapé com as ações.
  */
 export function SnippetFormDialog({
   open,
@@ -45,10 +52,17 @@ export function SnippetFormDialog({
   onCreated,
 }: SnippetFormDialogProps) {
   const criar = useCriarSnippet()
+  const vinculoFixo = !!desafioId
+
   const [codigo, setCodigo] = useState('')
   const [descricao, setDescricao] = useState('')
   const [categoria, setCategoria] = useState<CategoriaConceito | ''>('')
+  const [desafioSelecionado, setDesafioSelecionado] = useState(SEM_DESAFIO)
   const [tocado, setTocado] = useState(false)
+
+  // Só busca a lista quando o campo existe (sem vínculo fixo) e o diálogo está aberto.
+  const desafios = useMeusDesafios(0, 100)
+  const opcoesDesafio = vinculoFixo ? [] : (desafios.data?.itens ?? [])
 
   // Reseta o formulário sempre que o diálogo abre.
   useEffect(() => {
@@ -56,6 +70,7 @@ export function SnippetFormDialog({
       setCodigo('')
       setDescricao('')
       setCategoria('')
+      setDesafioSelecionado(SEM_DESAFIO)
       setTocado(false)
     }
   }, [open])
@@ -68,12 +83,16 @@ export function SnippetFormDialog({
     setTocado(true)
     const codigoLimpo = codigo.trim()
     if (!codigoLimpo || !categoria) return
+
+    const vinculo =
+      desafioId ?? (desafioSelecionado === SEM_DESAFIO ? null : desafioSelecionado)
+
     try {
       await criar.mutateAsync({
         codigo: codigoLimpo,
         descricao: descricao.trim() || null,
         categoria,
-        desafioId: desafioId ?? null,
+        desafioId: vinculo,
       })
       toast.success('Snippet criado.')
       onOpenChange(false)
@@ -85,11 +104,10 @@ export function SnippetFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent showClose={false}>
-        <form onSubmit={handleSalvar}>
-          <DialogHeader>
+      <DialogContent width={560}>
+        <form onSubmit={handleSalvar} className="flex min-h-0 flex-col">
+          <DialogHeader icon={Braces}>
             <DialogTitle>Novo snippet</DialogTitle>
-            <Braces size={18} className="text-subtle" />
           </DialogHeader>
 
           <DialogBody>
@@ -104,19 +122,19 @@ export function SnippetFormDialog({
                 value={codigo}
                 onChange={setCodigo}
                 label="snippet.java"
+                lang="java"
                 minHeight={160}
                 placeholder="Cole aqui o trecho de código…"
               />
             </FormField>
 
-            <FormField label="Descrição" htmlFor="snippet-form-descricao">
-              <Input
-                id="snippet-form-descricao"
-                value={descricao}
-                onChange={(e) => setDescricao(e.target.value)}
-                placeholder="Ex.: MDC pelo algoritmo de Euclides"
-              />
-            </FormField>
+            <Input
+              label="Descrição"
+              id="snippet-form-descricao"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Ex.: MDC pelo algoritmo de Euclides"
+            />
 
             <FormField
               label="Categoria"
@@ -127,32 +145,47 @@ export function SnippetFormDialog({
                 value={categoria || undefined}
                 onValueChange={(v) => setCategoria(v as CategoriaConceito)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger variant="campo" valid={!!categoria}>
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIAS.map((c) => {
-                    const Icone = c.icon
-                    return (
-                      <SelectItem key={c.value} value={c.value}>
-                        <span className="inline-flex items-center gap-2">
-                          <Icone size={14} className="text-brand-strong" />
-                          {c.label}
-                        </span>
-                      </SelectItem>
-                    )
-                  })}
+                  {CATEGORIAS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormField>
+
+            {!vinculoFixo && (
+              <FormField
+                label="Desafio"
+                hint="Opcional — vincule o trecho ao problema em que ele nasceu."
+              >
+                <Select value={desafioSelecionado} onValueChange={setDesafioSelecionado}>
+                  <SelectTrigger variant="campo">
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SEM_DESAFIO}>Nenhum</SelectItem>
+                    {opcoesDesafio.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.titulo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            )}
           </DialogBody>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" loading={criar.isPending}>
-              Salvar
+              Salvar snippet
             </Button>
           </DialogFooter>
         </form>

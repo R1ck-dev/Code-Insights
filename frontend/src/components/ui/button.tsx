@@ -1,69 +1,159 @@
 import { forwardRef } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Spinner } from './spinner'
 
 export type ButtonVariant =
   | 'primary'
   | 'secondary'
   | 'ghost'
   | 'destructive'
-  | 'destructiveSolid'
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon'
+  | 'destructive-solid'
+export type ButtonSize = 'sm' | 'md' | 'lg'
+/** Mono na área autenticada · Space Grotesk nas telas de acesso/landing. */
+export type ButtonFont = 'mono' | 'sans'
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded-[10px] font-semibold whitespace-nowrap transition-colors cursor-pointer disabled:pointer-events-none disabled:opacity-55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60'
+  'ci-foco-botao inline-flex cursor-pointer items-center justify-center gap-2 rounded-ci border ' +
+  'whitespace-nowrap select-none transition-[background-color,border-color,color,filter] duration-100 ' +
+  'disabled:cursor-not-allowed disabled:opacity-55'
 
-const variants: Record<ButtonVariant, string> = {
-  primary:
-    'bg-brand text-white shadow-[0_6px_16px_-6px_rgba(110,95,246,.7)] hover:bg-brand-hover active:bg-brand-pressed',
-  secondary:
-    'border border-border-strong bg-transparent text-fg hover:bg-surface-2',
-  ghost: 'bg-transparent text-muted hover:text-fg hover:bg-surface-2',
+const variantes: Record<ButtonVariant, string> = {
+  primary: 'border-transparent bg-ink text-ink-on hover:bg-body',
+  secondary: 'border-line-strong bg-transparent text-ink hover:bg-elevated',
+  ghost: 'border-transparent bg-transparent text-mid hover:bg-elevated hover:text-ink',
   destructive:
-    'border border-danger/35 bg-danger/[.08] text-danger hover:bg-danger/[.14]',
-  destructiveSolid: 'bg-danger text-white hover:brightness-110',
+    'border-erro-line bg-erro-bg text-erro-texto hover:bg-[rgba(var(--erro-rgb),0.14)]',
+  // Rótulo osso fixo: `ink` inverteria no claro e ficaria ilegível sobre o vermelho.
+  'destructive-solid':
+    'border-transparent bg-erro-estrutura text-[#FBFCFE] dark:text-[#EDF0FA] hover:brightness-110',
 }
 
-const sizes: Record<ButtonSize, string> = {
-  sm: 'h-9 px-3 text-[13px]',
-  md: 'h-10 px-4 text-sm',
-  lg: 'h-[46px] px-5 text-[15px]',
-  icon: 'h-[38px] w-[38px] p-0',
+const alturas: Record<ButtonSize, string> = {
+  sm: 'h-[36px]',
+  md: 'h-[40px]',
+  lg: 'h-[44px]',
 }
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+const paddings: Record<ButtonSize, string> = {
+  sm: 'px-[13px]',
+  md: 'px-[15px]',
+  lg: 'px-[18px]',
+}
+
+const quadrados: Record<ButtonSize, string> = {
+  sm: 'w-[36px] px-0',
+  md: 'w-[40px] px-0',
+  lg: 'w-[44px] px-0',
+}
+
+const fontes: Record<ButtonFont, Record<ButtonSize, string>> = {
+  mono: {
+    sm: 'font-mono text-[12.5px]',
+    md: 'font-mono text-[12.5px]',
+    lg: 'font-mono text-[13px]',
+  },
+  sans: {
+    sm: 'font-sans text-[14px]',
+    md: 'font-sans text-[14px]',
+    lg: 'font-sans text-[13.5px]',
+  },
+}
+
+const TAMANHO_ICONE: Record<ButtonSize, number> = { sm: 14, md: 15, lg: 16 }
+
+export interface ButtonOptions {
   variant?: ButtonVariant
   size?: ButtonSize
-  loading?: boolean
-}
-
-/** Classes de botão reutilizáveis (para aplicar em <Link> etc.). */
-export function buttonClasses(opts?: {
-  variant?: ButtonVariant
-  size?: ButtonSize
+  font?: ButtonFont
+  fullWidth?: boolean
+  /** Botão quadrado (só ícone): 36/40/44 px. */
+  iconOnly?: boolean
   className?: string
-}): string {
+}
+
+/**
+ * Classes de botão reutilizáveis — usadas por dezenas de `<Link>` que precisam
+ * parecer botão. Mantenha este export.
+ */
+export function buttonClasses({
+  variant = 'primary',
+  size = 'md',
+  font = 'mono',
+  fullWidth,
+  iconOnly,
+  className,
+}: ButtonOptions = {}): string {
+  const forte = variant === 'primary' || variant === 'destructive-solid'
   return cn(
     base,
-    variants[opts?.variant ?? 'primary'],
-    sizes[opts?.size ?? 'md'],
-    opts?.className,
+    variantes[variant],
+    alturas[size],
+    iconOnly ? quadrados[size] : paddings[size],
+    fontes[font][size],
+    forte ? 'font-semibold' : 'font-medium',
+    fullWidth && 'w-full',
+    className,
   )
 }
 
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    ButtonOptions {
+  icon?: LucideIcon
+  /** Spinner `ciSpin` + `cursor:progress` + `disabled`. */
+  loading?: boolean
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = 'primary', size = 'md', loading, disabled, children, className, ...props },
+  {
+    variant = 'primary',
+    size = 'md',
+    font = 'mono',
+    fullWidth,
+    iconOnly,
+    icon: Icon,
+    loading,
+    disabled,
+    className,
+    children,
+    ...props
+  },
   ref,
 ) {
   return (
     <button
       ref={ref}
-      className={buttonClasses({ variant, size, className })}
+      type={props.type ?? 'button'}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      className={cn(
+        buttonClasses({ variant, size, font, fullWidth, iconOnly, className }),
+        loading && 'cursor-progress',
+      )}
       {...props}
     >
-      {loading && <Spinner size={16} color="currentColor" />}
+      {loading ? (
+        <Spinner />
+      ) : (
+        Icon && <Icon size={TAMANHO_ICONE[size]} strokeWidth={2} aria-hidden />
+      )}
       {children}
     </button>
   )
 })
+
+/** Anel `currentColor` a 28% com o topo cheio (§01 §7.1). */
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      className="ci-spin shrink-0 rounded-full"
+      style={{
+        width: 13,
+        height: 13,
+        border: '2px solid color-mix(in srgb, currentColor 28%, transparent)',
+        borderTopColor: 'currentColor',
+      }}
+    />
+  )
+}

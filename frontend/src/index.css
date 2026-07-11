@@ -1,125 +1,392 @@
 @import 'tailwindcss';
 
-/* Modo escuro é o padrão (o <html> nasce com class="dark"); alternar remove/adiciona .dark. */
+/*
+ * ============================================================================
+ *  CodeInsights · Sistema de Design "ÓRBITA"
+ *  Carta celeste: céu (fundo), osso/tinta (texto) e UMA única cor — o colormap
+ *  de complexidade (verde #4FB477 → vermelho #B23A5E).
+ *
+ *  NÃO EXISTE COR DE MARCA. Sem índigo, sem roxo, sem glow, sem sombra colorida.
+ *  Raio 3px em tudo. Mono (IBM Plex Mono) MEDE, Space Grotesk LÊ.
+ *
+ *  Fonte da verdade: docs/design/specs/00-INDICE.md (§2 tabela canônica).
+ * ============================================================================
+ */
+
+/* O modo escuro é o padrão: o <html> nasce com class="dark". */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/*
- * Tokens de design do CodeInsights — estética dev-tool, marca índigo.
- * Neutros trocam entre claro/escuro; marca, semânticos, complexidade e
- * linguagens são fixos nos dois modos. Extraídos das referências do Claude Design.
- */
+/* ============================================================================
+ * 1. TOKENS
+ *    :root  = modo CLARO   ·   .dark = modo ESCURO (padrão do produto)
+ * ========================================================================== */
 @layer base {
   :root {
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    color-scheme: light;
 
-    /* Marca — índigo/violeta */
-    --brand: #6e5ff6;
-    --brand-hover: #5b4fd8;
-    --brand-pressed: #4a3fb5;
-    --brand-deep: #2a2472;
-    --brand-strong: #8b85ff; /* realce/links no escuro */
-    --brand-on: #c7c3ff; /* texto sobre superfícies de marca (avatar) */
+    /* ---- 1.1 Tipografia ------------------------------------------------ */
+    --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-    /* Semânticos (fixos nos dois modos) */
-    --success: #2fb863;
-    --danger: #f0563f;
-    --warning: #e0a21e;
-    --info: #4c9aff;
-    --neutral: #8a94a6;
+    /* ---- 1.2 Neutros · CLARO (§2.1) ------------------------------------ */
+    --bg: #f2f4f8; /* fundo de tela */
+    --panel: #fbfcfe; /* cartões, painéis, modal */
+    --elevated: #ffffff; /* avatar, tile de ícone, nav ativo, callout */
+    --recess: #eaeff6; /* sidebar, inputs, tiles de métrica */
+    --line: #d3dae6; /* borda padrão (hairline 1px) */
+    --line-soft: #e4e9f1; /* divisórias internas */
+    --line-strong: #c3cad8; /* borda de input / botão secundário / hover */
+    --grid: #cdd5e4; /* elipse do logo, gutter, eixos */
+    --grid-soft: #aeb8cc; /* elipse do logo claro, gutter claro */
+    --ink: #1a2436; /* texto primário · fundo do botão primário · MEDIDO */
+    --ink-on: #fbfcfe; /* texto SOBRE ink */
+    --body: #3a4658; /* corpo de leitura 14–15px */
+    --mid: #55617a; /* texto secundário, rótulos mono, ícones */
+    --soft: #8a94a8; /* terciário, placeholder, hints */
+    --steel: #55617a; /* links / linhas de constelação (derivado, §6 Lacuna 5) */
+    --steel-hover: #1a2436; /* hover de link (derivado) */
+    --badge: #1a2436; /* satélite do logo, estrelas */
+    --code-ink: #1f2a3d; /* código / identificadores (só-do-claro) */
+    --panel-chart: #f5f7fb; /* painel do gráfico e CodeBlock claro */
+    --selection: rgba(143, 166, 201, 0.26);
 
-    /* Escala de complexidade — verde (simples) → vermelho (custoso) */
-    --cx-0: #2fb863; /* O(1) */
-    --cx-1: #59c36a; /* O(log n) */
-    --cx-2: #9cc15a; /* O(n) */
-    --cx-3: #e0a21e; /* O(n log n) */
-    --cx-4: #ec8a3c; /* O(n^2) */
-    --cx-5: #f0563f; /* O(n^3) */
-    --cx-6: #e23d5a; /* O(2^n) */
-    --cx-7: #c2304e; /* O(n!) */
-    --cx-unknown: #666b7a;
+    /* ---- 1.3 Gráficos (spec 02 §0.2) ----------------------------------- */
+    --graf-grade: #e4e9f1; /* grade interna */
+    --graf-eixo: #cdd5e4; /* eixo / linha de base / anéis */
+    --graf-vazio: #b6becd; /* "·" da matriz */
+    /* Núcleo da estrela selecionada: no CLARO é a COR DA CLASSE. Use
+       `color: var(--cx-N)` no <g>/<circle> para que currentColor resolva. */
+    --estrela-nucleo: currentColor;
 
-    /* Linguagens */
+    /* ---- 1.4 Atmosfera · canais (§6 da spec 01) ------------------------ */
+    /* Tripletes em vírgula → usar sempre `rgba(var(--x-rgb), .09)`. */
+    --estrela-rgb: 26, 36, 54; /* no claro as estrelas viram pontos de tinta */
+    --estrela-azul-rgb: 26, 36, 54;
+    --estrela-stop: 62%;
+    --nebula-indigo-rgb: 26, 36, 54;
+    --nebula-violeta-rgb: 26, 36, 54;
+    --nebula-aco-rgb: 26, 36, 54;
+    --nebula-forca: 0.6; /* nebulosa de tinta é mais discreta que a de céu */
+
+    /* ---- 1.5 Colormap de complexidade · CLARO (§2.2) -------------------
+       Preenchimento = --cx-N · Texto = --cx-N-ink · Tonal = --cx-N-tint/-edge.
+       No ESCURO um hex só serve para os dois (--cx-N === --cx-N-ink).        */
+    --cx-0: #3e9e63;
+    --cx-0-ink: #2f7d4f;
+    --cx-0-rgb: 62, 158, 99;
+    --cx-1: #6fa83f;
+    --cx-1-ink: #587f2f;
+    --cx-1-rgb: 111, 168, 63;
+    --cx-2: #9ca82f;
+    --cx-2-ink: #767f23;
+    --cx-2-rgb: 156, 168, 47;
+    --cx-3: #ce9a24;
+    --cx-3-ink: #a6791c;
+    --cx-3-rgb: 206, 154, 36;
+    --cx-4: #d67a24;
+    --cx-4-ink: #c05b2e;
+    --cx-4-rgb: 214, 122, 36;
+    --cx-5: #c85631;
+    --cx-5-ink: #a24427;
+    --cx-5-rgb: 200, 86, 49;
+    --cx-6: #bc3540;
+    --cx-6-ink: #992a33;
+    --cx-6-rgb: 188, 53, 64;
+    --cx-7: #9e2b45;
+    --cx-7-ink: #7f2237;
+    --cx-7-rgb: 158, 43, 69;
+
+    /* ---- 1.6 Semânticos · CLARO (§2.3) --------------------------------- */
+    --sucesso: #3e9e63;
+    --sucesso-ink: #2f7d4f;
+    --sucesso-rgb: 62, 158, 99;
+    --sucesso-bg: rgba(62, 158, 99, 0.08);
+    --sucesso-line: #a9cbb2;
+
+    --atencao: #ce9a24;
+    --atencao-ink: #a6791c;
+    --atencao-rgb: 206, 154, 36;
+    --atencao-bg: rgba(206, 154, 36, 0.08);
+    --atencao-line: rgba(206, 154, 36, 0.35);
+
+    --erro-texto: #c4444f; /* texto e ícone de erro */
+    --erro-estrutura: #c4444f; /* borda de input, botão sólido */
+    --erro-rgb: 196, 68, 79;
+    --erro-bg: rgba(196, 68, 79, 0.07); /* botão destrutivo (outline) */
+    --erro-line: rgba(196, 68, 79, 0.4);
+    --erro-card-bg: rgba(196, 68, 79, 0.05); /* cartão de erro */
+    --erro-card-line: rgba(196, 68, 79, 0.3);
+    --erro-tile-bg: rgba(196, 68, 79, 0.1); /* tile de ícone do modal destrutivo */
+    --erro-tile-line: rgba(196, 68, 79, 0.34);
+
+    /* ---- 1.7 AutonomyMeter · CLARO (quase-tokens do markup, §5 div. 4) --
+       Autonomia é NEUTRA — nunca colormap.                                  */
+    --autonomia-on: #1a2436;
+    --autonomia-off: #e1e6f0;
+    --autonomia-off-line: #cdd5e4;
+
+    /* ---- 1.8 Anéis de foco · CLARO (§2.6 — 4 alphas distintos) --------- */
+    --anel-botao: 0 0 0 2px rgba(26, 36, 54, 0.35);
+    --anel-input: 0 0 0 2px rgba(26, 36, 54, 0.14);
+
+    /* ---- 1.9 Sombras (só neutras/pretas — nunca coloridas, nunca glow) - */
+    --sombra-modal: 0 30px 70px -24px rgba(0, 0, 0, 1);
+    --sombra-modal-funda: 0 30px 70px -34px rgba(0, 0, 0, 1);
+    --sombra-flutuante: 0 24px 60px -34px rgba(0, 0, 0, 1);
+    --sombra-callout: 0 10px 24px -12px rgba(26, 36, 54, 0.28);
+
+    /* ---- 1.10 Linguagens (idênticas nos dois modos, §2.4) --------------- */
     --lang-java: #e76f00;
     --lang-python: #4b8bbe;
     --lang-cpp: #4c93d6;
-    --lang-javascript: #e9c500;
+    --lang-javascript: #e9c500; /* NUNCA #D3AE3F — esse é o O(n log n) */
     --lang-c: #659ad2;
-
-    /* Neutros — CLARO (padrão do :root; sobrescrito por .dark) */
-    --bg: #f7f8fa;
-    --bg-deep: #ffffff;
-    --surface: #ffffff;
-    --surface-2: #f3f4f7;
-    --input: #fbfbfd;
-    --border: #e7e8ec;
-    --border-subtle: #edeef2;
-    --border-strong: #dee0e6;
-    --heading: #14151a;
-    --fg: #1f2430;
-    --label: #3a3f4c;
-    --muted: #565b69;
-    --subtle: #868c99;
-    --accent: #5b4fd8; /* links/ativos no claro (índigo mais escuro p/ contraste) */
-    --ring: #6e5ff6;
-    --brand-tint: rgba(110, 95, 246, 0.1);
+    --lang-fallback: #8fa6c9;
   }
 
   .dark {
-    --bg: #0c0d11;
-    --bg-deep: #0a0b0e;
-    --surface: #15161c;
-    --surface-2: #1b1d25;
-    --input: #0e0f14;
-    --border: #24262f;
-    --border-subtle: #1b1d25;
-    --border-strong: #31343f;
-    --heading: #f2f3f7;
-    --fg: #e7e8ee;
-    --label: #c9ccd6;
-    --muted: #9b9fad;
-    --subtle: #666b7a;
-    --accent: #8b85ff;
-    --ring: #6e5ff6;
-    --brand-tint: rgba(110, 95, 246, 0.13);
+    color-scheme: dark;
+
+    /* ---- Neutros · ESCURO (§2.1) --------------------------------------- */
+    --bg: #06070d; /* céu */
+    --panel: #0b0f1a;
+    --elevated: #141c2e;
+    --recess: #05060b;
+    --line: #1e2740;
+    --line-soft: #141c2e; /* = elevated (reuso deliberado) */
+    --line-strong: #2a3658;
+    --grid: #33415a;
+    --grid-soft: #33415a; /* no escuro colapsa em grid */
+    --ink: #edf0fa; /* osso */
+    --ink-on: #0a0d14;
+    --body: #c6cee0;
+    --mid: #a6afc9;
+    --soft: #6b738f;
+    --steel: #8fa6c9;
+    --steel-hover: #c7d2e6;
+    --badge: #d6deff;
+    --code-ink: #d4dbec;
+    --panel-chart: #05060b; /* cartão do gráfico no escuro = recuo */
+    --selection: rgba(143, 166, 201, 0.26);
+
+    /* ---- Gráficos ------------------------------------------------------ */
+    --graf-grade: #111827;
+    --graf-eixo: #18223a;
+    --graf-vazio: #3a4358;
+    --estrela-nucleo: #fff3e6;
+
+    /* ---- Atmosfera · canais -------------------------------------------- */
+    --estrela-rgb: 255, 255, 255;
+    --estrela-azul-rgb: 214, 224, 255;
+    --estrela-stop: 60%;
+    --nebula-indigo-rgb: 120, 140, 228;
+    --nebula-violeta-rgb: 150, 112, 205;
+    --nebula-aco-rgb: 88, 150, 205;
+    --nebula-forca: 1;
+
+    /* ---- Colormap · ESCURO (fill === ink) ------------------------------ */
+    --cx-0: #4fb477;
+    --cx-0-ink: #4fb477;
+    --cx-0-rgb: 79, 180, 119;
+    --cx-1: #7fbd5c;
+    --cx-1-ink: #7fbd5c;
+    --cx-1-rgb: 127, 189, 92;
+    --cx-2: #a9be49;
+    --cx-2-ink: #a9be49;
+    --cx-2-rgb: 169, 190, 73;
+    --cx-3: #d3ae3f;
+    --cx-3-ink: #d3ae3f;
+    --cx-3-rgb: 211, 174, 63;
+    --cx-4: #e08a3c;
+    --cx-4-ink: #e08a3c;
+    --cx-4-rgb: 224, 138, 60;
+    --cx-5: #dc6a3f;
+    --cx-5-ink: #dc6a3f;
+    --cx-5-rgb: 220, 106, 63;
+    --cx-6: #ce4c55;
+    --cx-6-ink: #ce4c55;
+    --cx-6-rgb: 206, 76, 85;
+    --cx-7: #b23a5e;
+    --cx-7-ink: #b23a5e;
+    --cx-7-rgb: 178, 58, 94;
+
+    /* ---- Semânticos · ESCURO ------------------------------------------- */
+    --sucesso: #4fb477;
+    --sucesso-ink: #4fb477;
+    --sucesso-rgb: 79, 180, 119;
+    --sucesso-bg: rgba(79, 180, 119, 0.09);
+    --sucesso-line: rgba(79, 180, 119, 0.32);
+
+    --atencao: #d3ae3f;
+    --atencao-ink: #d3ae3f;
+    --atencao-rgb: 211, 174, 63;
+    --atencao-bg: rgba(211, 174, 63, 0.09);
+    --atencao-line: rgba(211, 174, 63, 0.32);
+
+    --erro-texto: #e07a82;
+    --erro-estrutura: #ce4c55; /* = classe O(2ⁿ) do colormap — reuso deliberado */
+    --erro-rgb: 206, 76, 85;
+    --erro-bg: rgba(206, 76, 85, 0.08);
+    --erro-line: rgba(206, 76, 85, 0.4);
+    --erro-card-bg: rgba(206, 76, 85, 0.05);
+    --erro-card-line: rgba(206, 76, 85, 0.3);
+    --erro-tile-bg: rgba(206, 76, 85, 0.1);
+    --erro-tile-line: rgba(206, 76, 85, 0.34);
+
+    /* ---- AutonomyMeter · ESCURO ---------------------------------------- */
+    --autonomia-on: #eaeef6;
+    --autonomia-off: #1b2433;
+    --autonomia-off-line: #2a3547;
+
+    /* ---- Anéis de foco · ESCURO (botão .5 · input .3) ------------------ */
+    --anel-botao: 0 0 0 2px rgba(237, 240, 250, 0.5);
+    --anel-input: 0 0 0 2px rgba(237, 240, 250, 0.3);
+
+    /* ---- Sombras ------------------------------------------------------- */
+    --sombra-callout: 0 10px 24px -12px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Superfícies tonalizadas do colormap (§2.2): fundo .09 · borda .30.
+     Derivadas dos tripletes acima, valem nos dois modos.                    */
+  :root,
+  .dark {
+    --cx-0-tint: rgba(var(--cx-0-rgb), 0.09);
+    --cx-0-edge: rgba(var(--cx-0-rgb), 0.3);
+    --cx-1-tint: rgba(var(--cx-1-rgb), 0.09);
+    --cx-1-edge: rgba(var(--cx-1-rgb), 0.3);
+    --cx-2-tint: rgba(var(--cx-2-rgb), 0.09);
+    --cx-2-edge: rgba(var(--cx-2-rgb), 0.3);
+    --cx-3-tint: rgba(var(--cx-3-rgb), 0.09);
+    --cx-3-edge: rgba(var(--cx-3-rgb), 0.3);
+    --cx-4-tint: rgba(var(--cx-4-rgb), 0.09);
+    --cx-4-edge: rgba(var(--cx-4-rgb), 0.3);
+    --cx-5-tint: rgba(var(--cx-5-rgb), 0.09);
+    --cx-5-edge: rgba(var(--cx-5-rgb), 0.3);
+    --cx-6-tint: rgba(var(--cx-6-rgb), 0.09);
+    --cx-6-edge: rgba(var(--cx-6-rgb), 0.3);
+    --cx-7-tint: rgba(var(--cx-7-rgb), 0.09);
+    --cx-7-edge: rgba(var(--cx-7-rgb), 0.3);
   }
 }
 
-/* Expõe os tokens como utilitários Tailwind (bg-surface, text-muted, border-strong…). */
+/* ============================================================================
+ * 2. EXPOSIÇÃO COMO UTILITÁRIOS TAILWIND
+ *    bg-panel · text-ink · border-line · text-mid · bg-recess · text-cx-4 …
+ * ========================================================================== */
 @theme inline {
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
 
+  /* Raio — 3px em tudo. 2px = skeleton/trilho/código inline. 999px = só o
+     toggle de visibilidade do perfil. */
+  --radius-ci: 3px;
+  --radius-ci-sm: 2px;
+  --radius-ci-pill: 999px;
+
+  /* Neutros */
   --color-bg: var(--bg);
-  --color-bg-deep: var(--bg-deep);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-border-subtle: var(--border-subtle);
-  --color-border-strong: var(--border-strong);
-  --color-heading: var(--heading);
-  --color-fg: var(--fg);
-  --color-label: var(--label);
-  --color-muted: var(--muted);
-  --color-subtle: var(--subtle);
-  --color-accent: var(--accent);
-  --color-ring: var(--ring);
+  --color-panel: var(--panel);
+  --color-elevated: var(--elevated);
+  --color-recess: var(--recess);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-line-strong: var(--line-strong);
+  --color-grid: var(--grid);
+  --color-grid-soft: var(--grid-soft);
+  --color-ink: var(--ink);
+  --color-ink-on: var(--ink-on);
+  --color-body: var(--body);
+  --color-mid: var(--mid);
+  --color-soft: var(--soft);
+  --color-steel: var(--steel);
+  --color-steel-hover: var(--steel-hover);
+  --color-badge: var(--badge);
+  --color-code-ink: var(--code-ink);
+  --color-panel-chart: var(--panel-chart);
 
-  --color-brand: var(--brand);
-  --color-brand-hover: var(--brand-hover);
-  --color-brand-pressed: var(--brand-pressed);
-  --color-brand-deep: var(--brand-deep);
-  --color-brand-strong: var(--brand-strong);
-  --color-brand-on: var(--brand-on);
+  /* Gráficos */
+  --color-graf-grade: var(--graf-grade);
+  --color-graf-eixo: var(--graf-eixo);
+  --color-graf-vazio: var(--graf-vazio);
+  --color-estrela-nucleo: var(--estrela-nucleo);
 
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
-  --color-neutral: var(--neutral);
+  /* Colormap — a única cor do sistema */
+  --color-cx-0: var(--cx-0);
+  --color-cx-0-ink: var(--cx-0-ink);
+  --color-cx-0-tint: var(--cx-0-tint);
+  --color-cx-0-edge: var(--cx-0-edge);
+  --color-cx-1: var(--cx-1);
+  --color-cx-1-ink: var(--cx-1-ink);
+  --color-cx-1-tint: var(--cx-1-tint);
+  --color-cx-1-edge: var(--cx-1-edge);
+  --color-cx-2: var(--cx-2);
+  --color-cx-2-ink: var(--cx-2-ink);
+  --color-cx-2-tint: var(--cx-2-tint);
+  --color-cx-2-edge: var(--cx-2-edge);
+  --color-cx-3: var(--cx-3);
+  --color-cx-3-ink: var(--cx-3-ink);
+  --color-cx-3-tint: var(--cx-3-tint);
+  --color-cx-3-edge: var(--cx-3-edge);
+  --color-cx-4: var(--cx-4);
+  --color-cx-4-ink: var(--cx-4-ink);
+  --color-cx-4-tint: var(--cx-4-tint);
+  --color-cx-4-edge: var(--cx-4-edge);
+  --color-cx-5: var(--cx-5);
+  --color-cx-5-ink: var(--cx-5-ink);
+  --color-cx-5-tint: var(--cx-5-tint);
+  --color-cx-5-edge: var(--cx-5-edge);
+  --color-cx-6: var(--cx-6);
+  --color-cx-6-ink: var(--cx-6-ink);
+  --color-cx-6-tint: var(--cx-6-tint);
+  --color-cx-6-edge: var(--cx-6-edge);
+  --color-cx-7: var(--cx-7);
+  --color-cx-7-ink: var(--cx-7-ink);
+  --color-cx-7-tint: var(--cx-7-tint);
+  --color-cx-7-edge: var(--cx-7-edge);
+
+  /* Semânticos */
+  --color-sucesso: var(--sucesso);
+  --color-sucesso-ink: var(--sucesso-ink);
+  --color-sucesso-bg: var(--sucesso-bg);
+  --color-sucesso-line: var(--sucesso-line);
+  --color-atencao: var(--atencao);
+  --color-atencao-ink: var(--atencao-ink);
+  --color-atencao-bg: var(--atencao-bg);
+  --color-atencao-line: var(--atencao-line);
+  --color-erro-texto: var(--erro-texto);
+  --color-erro-estrutura: var(--erro-estrutura);
+  --color-erro-bg: var(--erro-bg);
+  --color-erro-line: var(--erro-line);
+  --color-erro-card-bg: var(--erro-card-bg);
+  --color-erro-card-line: var(--erro-card-line);
+  --color-erro-tile-bg: var(--erro-tile-bg);
+  --color-erro-tile-line: var(--erro-tile-line);
+
+  /* Autonomia (neutra — nunca colormap) */
+  --color-autonomia-on: var(--autonomia-on);
+  --color-autonomia-off: var(--autonomia-off);
+  --color-autonomia-off-line: var(--autonomia-off-line);
+
+  /* Linguagens */
+  --color-lang-java: var(--lang-java);
+  --color-lang-python: var(--lang-python);
+  --color-lang-cpp: var(--lang-cpp);
+  --color-lang-javascript: var(--lang-javascript);
+  --color-lang-c: var(--lang-c);
+  --color-lang-fallback: var(--lang-fallback);
+
+  /* Sombras e anéis de foco */
+  --shadow-modal: var(--sombra-modal);
+  --shadow-modal-deep: var(--sombra-modal-funda);
+  --shadow-float: var(--sombra-flutuante);
+  --shadow-callout: var(--sombra-callout);
+  --shadow-anel-botao: var(--anel-botao);
+  --shadow-anel-input: var(--anel-input);
 }
 
+/* ============================================================================
+ * 3. RESET / BASE
+ * ========================================================================== */
 @layer base {
   html,
   body,
@@ -130,61 +397,319 @@
   body {
     margin: 0;
     background: var(--bg);
-    color: var(--fg);
+    color: var(--ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
   ::selection {
-    background: rgba(110, 95, 246, 0.32);
+    background: var(--selection);
   }
 
-  /* Foco visível consistente (acessibilidade AA). */
+  a {
+    color: var(--steel);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--steel-hover);
+  }
+
+  /* Foco visível — fallback global (AA nos dois modos). Botões e inputs usam
+     os anéis dedicados abaixo (.ci-foco-botao / .ci-foco-input). */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: 2px solid var(--ink);
     outline-offset: 2px;
   }
 
-  /* Scrollbar discreta, estilo IDE. */
+  /* Todo número que varia mede em mono tabular. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Scrollbar discreta, estilo instrumento. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
+    scrollbar-color: var(--line-strong) transparent;
   }
   *::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
   *::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
-    border-radius: 8px;
+    background: var(--line-strong);
+    border-radius: 3px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: var(--subtle);
+    background: var(--soft);
     background-clip: content-box;
   }
 }
 
-@keyframes ci-spin {
+/* ============================================================================
+ * 4. ANÉIS DE FOCO DEDICADOS (§2.6 — quatro alphas distintos)
+ *    escuro: botão .5 · input .3   |   claro: botão .35 · input .14
+ * ========================================================================== */
+.ci-foco-botao:focus-visible {
+  outline: none;
+  box-shadow: var(--anel-botao);
+}
+
+.ci-foco-input:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: var(--anel-input);
+}
+
+/* ============================================================================
+ * 5. KEYFRAMES E MOVIMENTO
+ * ========================================================================== */
+@keyframes ciSpin {
   to {
     transform: rotate(360deg);
   }
 }
-@keyframes ci-pulse {
+
+@keyframes ciPulse {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 0.4;
   }
   50% {
     opacity: 0.85;
   }
 }
 
-.ci-spin {
-  animation: ci-spin 0.8s linear infinite;
+@keyframes ciTwinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
+@keyframes ciBlink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Spinner de botão (.7s) e spinner do chip CALCULANDO (.8s). */
+.ci-spin {
+  animation: ciSpin 0.7s linear infinite;
+}
+.ci-spin-chip {
+  animation: ciSpin 0.8s linear infinite;
+}
+
+/* Skeleton. */
 .ci-pulse {
-  animation: ci-pulse 1.4s ease-in-out infinite;
+  animation: ciPulse 1.4s ease-in-out infinite;
+}
+
+/* LED / indicador vivo. */
+.ci-blink {
+  animation: ciBlink 2s ease-in-out infinite;
+}
+
+/* Estrela cintilante de cenário. Duração/atraso por instância:
+   style={{ '--twinkle-dur': '4.1s', '--twinkle-delay': '.6s' }}   (3.2s–4.8s / 0–1.4s) */
+.ci-estrela {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  background: rgb(var(--estrela-rgb));
+  animation: ciTwinkle var(--twinkle-dur, 3.6s) ease-in-out infinite
+    var(--twinkle-delay, 0s);
+}
+
+/* Única exceção de "glow" no sistema: estrela de cenário destacada. */
+.ci-estrela-glow {
+  box-shadow: 0 0 6px 1px rgba(var(--estrela-azul-rgb), 0.6);
+}
+
+/* No modo CLARO as estrelas viram pontos de tinta estáticos (sem cintilação). */
+html:not(.dark) .ci-estrela {
+  animation: none;
+  opacity: 0.75;
+}
+
+/* ============================================================================
+ * 6. ATMOSFERA — NEBULOSA E STARFIELD (spec 01 §6)
+ *
+ *    Empilhamento: nebulosa (background do container) → starfield (camada
+ *    absoluta) → estrelas cintilantes (.ci-estrela) → conteúdo.
+ *
+ *    Toda camada é `aria-hidden` + `pointer-events:none`. No modo claro os
+ *    canais viram tinta automaticamente (§1.4), sem CSS duplicado.
+ * ========================================================================== */
+
+/* ---- 6.1 Starfield (camadas absolutas) ---------------------------------- */
+
+.ci-starfield,
+.ci-starfield-auth,
+.ci-starfield-esparso {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Denso — 28 estrelas. Plate/hero grande, cartão da carta celeste. */
+.ci-starfield {
+  opacity: 0.96;
+  background-image:
+    radial-gradient(1.3px 1.3px at 8% 12%, rgba(var(--estrela-rgb), 0.85), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 22% 40%, rgba(var(--estrela-rgb), 0.55), transparent var(--estrela-stop)),
+    radial-gradient(1.5px 1.5px at 35% 8%, rgba(var(--estrela-azul-rgb), 0.9), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 48% 55%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 62% 20%, rgba(var(--estrela-rgb), 0.7), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 74% 68%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.6px 1.6px at 88% 30%, rgba(var(--estrela-azul-rgb), 0.9), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 15% 78%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 55% 90%, rgba(var(--estrela-rgb), 0.65), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 92% 84%, rgba(var(--estrela-rgb), 0.45), transparent var(--estrela-stop)),
+    radial-gradient(1.3px 1.3px at 40% 30%, rgba(var(--estrela-rgb), 0.55), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 68% 46%, rgba(var(--estrela-rgb), 0.4), transparent var(--estrela-stop)),
+    radial-gradient(1.4px 1.4px at 30% 68%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 82% 58%, rgba(var(--estrela-rgb), 0.4), transparent var(--estrela-stop)),
+    radial-gradient(1.1px 1.1px at 5% 34%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1.4px 1.4px at 18% 58%, rgba(var(--estrela-azul-rgb), 0.75), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 33% 78%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 44% 16%, rgba(var(--estrela-rgb), 0.65), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 58% 62%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.5px 1.5px at 66% 10%, rgba(var(--estrela-azul-rgb), 0.85), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 79% 42%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 86% 72%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 96% 24%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.3px 1.3px at 11% 90%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 50% 40%, rgba(var(--estrela-rgb), 0.45), transparent var(--estrela-stop)),
+    radial-gradient(1.1px 1.1px at 72% 88%, rgba(var(--estrela-rgb), 0.55), transparent var(--estrela-stop)),
+    radial-gradient(1.4px 1.4px at 25% 6%, rgba(var(--estrela-azul-rgb), 0.7), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 60% 30%, rgba(var(--estrela-rgb), 0.4), transparent var(--estrela-stop));
+}
+
+/* Médio — 10 estrelas. Cartão de auth grande (A · Login). */
+.ci-starfield-auth {
+  opacity: 0.9;
+  background-image:
+    radial-gradient(1.3px 1.3px at 12% 18%, rgba(var(--estrela-rgb), 0.8), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 30% 62%, rgba(var(--estrela-rgb), 0.55), transparent var(--estrela-stop)),
+    radial-gradient(1.5px 1.5px at 44% 12%, rgba(var(--estrela-azul-rgb), 0.85), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 62% 74%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 78% 26%, rgba(var(--estrela-rgb), 0.7), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 88% 60%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.4px 1.4px at 20% 84%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 68% 42%, rgba(var(--estrela-rgb), 0.45), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 54% 90%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 94% 84%, rgba(var(--estrela-rgb), 0.45), transparent var(--estrela-stop));
+}
+
+/* Esparso — 5 estrelas. Telas de auth pequenas (E · F · G · H · I) e hero da landing. */
+.ci-starfield-esparso {
+  opacity: 0.85;
+  background-image:
+    radial-gradient(1.3px 1.3px at 20% 18%, rgba(var(--estrela-rgb), 0.7), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 62% 28%, rgba(var(--estrela-rgb), 0.5), transparent var(--estrela-stop)),
+    radial-gradient(1.4px 1.4px at 83% 64%, rgba(var(--estrela-azul-rgb), 0.8), transparent var(--estrela-stop)),
+    radial-gradient(1px 1px at 34% 74%, rgba(var(--estrela-rgb), 0.45), transparent var(--estrela-stop)),
+    radial-gradient(1.2px 1.2px at 88% 28%, rgba(var(--estrela-rgb), 0.6), transparent var(--estrela-stop));
+}
+
+/* ---- 6.2 Nebulosa ------------------------------------------------------- */
+/* As três primeiras pintam o próprio container (já trazem o fundo).
+   As duas com sufixo -camada são camadas absolutas sobre um fundo existente. */
+
+/* Plate/hero grande — 3 nebulosas (índigo NE · violeta SO · aço no centro). */
+.ci-nebula-plate {
+  background:
+    radial-gradient(85% 65% at 84% -14%, rgba(var(--nebula-indigo-rgb), calc(0.22 * var(--nebula-forca))), transparent 55%),
+    radial-gradient(80% 78% at 6% 110%, rgba(var(--nebula-violeta-rgb), calc(0.16 * var(--nebula-forca))), transparent 55%),
+    radial-gradient(70% 55% at 40% 42%, rgba(var(--nebula-aco-rgb), calc(0.08 * var(--nebula-forca))), transparent 60%),
+    var(--bg);
+}
+
+/* A · Login — nebulosa dupla (índigo no topo, violeta na base-esquerda). */
+.ci-nebula-login {
+  background:
+    radial-gradient(80% 60% at 50% 6%, rgba(var(--nebula-indigo-rgb), calc(0.2 * var(--nebula-forca))), transparent 55%),
+    radial-gradient(70% 60% at 12% 108%, rgba(var(--nebula-violeta-rgb), calc(0.14 * var(--nebula-forca))), transparent 55%),
+    var(--bg);
+}
+
+/* E · Registro · F · Verifique · H · Esqueci · I · Nova senha. */
+.ci-nebula-auth {
+  background:
+    radial-gradient(70% 55% at 50% -6%, rgba(var(--nebula-indigo-rgb), calc(0.16 * var(--nebula-forca))), transparent 58%),
+    var(--bg);
+}
+
+/* G · Conta ativada — a mesma, mais discreta. */
+.ci-nebula-auth-suave {
+  background:
+    radial-gradient(60% 55% at 50% -6%, rgba(var(--nebula-indigo-rgb), calc(0.14 * var(--nebula-forca))), transparent 58%),
+    var(--bg);
+}
+
+/* B · Landing (hero) — camada absoluta, canto superior direito. */
+.ci-nebula-hero-camada {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 90% at 88% 0%, rgba(var(--nebula-indigo-rgb), calc(0.16 * var(--nebula-forca))), transparent 58%);
+}
+
+/* J · Portfólio público (header do autor) — camada absoluta, canto sup. esquerdo. */
+.ci-nebula-portfolio-camada {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 130% at 8% -30%, rgba(var(--nebula-indigo-rgb), calc(0.14 * var(--nebula-forca))), transparent 60%);
+}
+
+/* Painel do dashboard sobre `panel` — nebulosa muito leve. */
+.ci-nebula-painel {
+  background:
+    radial-gradient(120% 90% at 88% -10%, rgba(var(--nebula-indigo-rgb), calc(0.1 * var(--nebula-forca))), transparent 55%),
+    var(--panel);
+}
+
+/* Cartão da CARTA CELESTE (e demais gráficos) — fundo panel-chart + nebulosa.
+   Aqui a força é 1 nos dois modos: no claro o markup usa alpha .16 cheio. */
+.ci-nebula-carta {
+  --nebula-forca: 1;
+  background:
+    radial-gradient(95% 75% at 84% -12%, rgba(var(--nebula-indigo-rgb), 0.16), transparent 55%),
+    var(--panel-chart);
+}
+
+/* ============================================================================
+ * 7. MOVIMENTO REDUZIDO — obrigatório (todas as animações desligadas)
+ * ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .ci-spin,
+  .ci-spin-chip,
+  .ci-pulse,
+  .ci-blink,
+  .ci-estrela {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

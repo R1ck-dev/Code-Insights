@@ -5,6 +5,7 @@ import { metricasApi } from './api'
 export const metricasKeys = {
   daResolucao: (resolucaoId: string) => ['metricas', resolucaoId] as const,
   resumo: ['metricas', 'resumo'] as const,
+  carta: ['metricas', 'carta'] as const,
   evolucao: (granularidade: GranularidadeTempo) => ['metricas', 'evolucao', granularidade] as const,
 }
 
@@ -25,6 +26,18 @@ export function useResumoDashboard() {
   return useQuery({
     queryKey: metricasKeys.resumo,
     queryFn: () => metricasApi.resumoDashboard(),
+  })
+}
+
+/**
+ * Carta celeste do aluno logado: uma estrela por resolução (autonomia × Big O de tempo).
+ * Dataset das 5 visualizações do dashboard. Só plotam os pontos com `tempoOrdem >= 0`;
+ * `null` (sem métrica) e `-1` (motor não classificou) contam no rodapé "sem métrica".
+ */
+export function useCartaCeleste() {
+  return useQuery({
+    queryKey: metricasKeys.carta,
+    queryFn: () => metricasApi.carta(),
   })
 }
 

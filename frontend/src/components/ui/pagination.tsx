@@ -11,25 +11,28 @@ interface PaginationProps {
 
 export function Pagination({ page, totalPages, onChange, className }: PaginationProps) {
   if (totalPages <= 1) return null
-  const prevDisabled = page <= 0
-  const nextDisabled = page >= totalPages - 1
 
   return (
-    <div className={cn('flex items-center justify-center gap-2.5', className)}>
-      <PageButton
-        disabled={prevDisabled}
-        onClick={() => onChange(page - 1)}
-        label="Página anterior"
-      >
-        <ArrowLeft size={16} />
+    <nav
+      aria-label="Paginação"
+      className={cn('mt-1.5 flex items-center justify-center gap-2.5', className)}
+    >
+      <PageButton disabled={page <= 0} onClick={() => onChange(page - 1)} label="Página anterior">
+        <ArrowLeft size={16} strokeWidth={2} />
       </PageButton>
-      <span className="font-mono text-[12.5px] text-muted">
-        Página <span className="font-semibold text-fg">{page + 1}</span> de {totalPages}
+
+      <span className="tabular font-mono text-[12.5px] text-mid">
+        Página <span className="font-semibold text-ink">{page + 1}</span> de {totalPages}
       </span>
-      <PageButton disabled={nextDisabled} onClick={() => onChange(page + 1)} label="Próxima página">
-        <ArrowRight size={16} />
+
+      <PageButton
+        disabled={page >= totalPages - 1}
+        onClick={() => onChange(page + 1)}
+        label="Próxima página"
+      >
+        <ArrowRight size={16} strokeWidth={2} />
       </PageButton>
-    </div>
+    </nav>
   )
 }
 
@@ -39,7 +42,7 @@ function PageButton({
   label,
   children,
 }: {
-  disabled?: boolean
+  disabled: boolean
   onClick: () => void
   label: string
   children: React.ReactNode
@@ -51,10 +54,10 @@ function PageButton({
       disabled={disabled}
       aria-label={label}
       className={cn(
-        'flex h-9 w-9 items-center justify-center rounded-lg border text-fg transition-colors',
+        'ci-foco-botao flex h-9 w-9 items-center justify-center rounded-ci border transition-colors',
         disabled
-          ? 'cursor-not-allowed border-border opacity-40'
-          : 'cursor-pointer border-border-strong hover:bg-surface-2',
+          ? 'cursor-not-allowed border-line text-mid opacity-40'
+          : 'cursor-pointer border-line-strong text-ink hover:bg-elevated',
       )}
     >
       {children}

@@ -1,27 +1,38 @@
+import { Fragment } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Fragment } from 'react'
+import { cn } from '@/lib/utils'
 
-interface Crumb {
+export interface Crumb {
   label: string
   to?: string
 }
 
-export function Breadcrumb({ items }: { items: Crumb[] }) {
+/** Trilha da topbar variante (c) (04 §1.2): mono 12px, elo corrente em `ink`. */
+export function Breadcrumb({ items, className }: { items: Crumb[]; className?: string }) {
   return (
-    <nav className="flex items-center gap-2 font-mono text-[12.5px] text-subtle" aria-label="Trilha">
+    <nav
+      aria-label="Trilha"
+      className={cn('flex min-w-0 items-center gap-2 font-mono text-[12px] text-soft', className)}
+    >
       {items.map((item, i) => {
         const last = i === items.length - 1
+
         return (
           <Fragment key={i}>
             {item.to && !last ? (
-              <Link to={item.to} className="text-muted hover:text-fg">
+              <Link to={item.to} className="truncate text-mid transition-colors hover:text-ink">
                 {item.label}
               </Link>
             ) : (
-              <span className={last ? 'text-label' : 'text-muted'}>{item.label}</span>
+              <span
+                aria-current={last ? 'page' : undefined}
+                className={cn('truncate', last ? 'text-ink' : 'text-mid')}
+              >
+                {item.label}
+              </span>
             )}
-            {!last && <ChevronRight size={13} className="text-border-strong" />}
+            {!last && <ChevronRight size={13} strokeWidth={2} className="shrink-0 text-soft/70" />}
           </Fragment>
         )
       })}
