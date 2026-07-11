@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
 import com.projeto.codeinsights.domain.knowledge.model.AtividadeRecente;
+import com.projeto.codeinsights.domain.knowledge.model.PontoCarta;
 import com.projeto.codeinsights.domain.knowledge.model.PontoEvolucaoMensal;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.shared.Pagina;
@@ -35,6 +36,9 @@ public interface ResolucaoRepository {
 
     /** As {@code limite} resolucoes mais recentes do autor, com titulo do desafio e Big O de tempo. */
     List<AtividadeRecente> listarAtividadeRecentePorAutor(UUID autorId, int limite);
+
+    /** Todas as resolucoes do autor como pontos da carta celeste, com as tres metricas (nulas se nao analisada). */
+    List<PontoCarta> listarPontosCartaPorAutor(UUID autorId);
 
     void remover(UUID id);
 }

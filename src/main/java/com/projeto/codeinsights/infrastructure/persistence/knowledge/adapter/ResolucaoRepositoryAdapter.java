@@ -11,8 +11,10 @@ import org.springframework.stereotype.Component;
 
 import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.AtividadeRecente;
+import com.projeto.codeinsights.domain.knowledge.model.PontoCarta;
 import com.projeto.codeinsights.domain.knowledge.model.PontoEvolucaoMensal;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.knowledge.port.ResolucaoRepository;
@@ -112,6 +114,29 @@ public class ResolucaoRepositoryAdapter implements ResolucaoRepository {
                         (String) r[6],
                         r[7] == null ? null : ((Number) r[7]).intValue(),
                         (OffsetDateTime) r[8]))
+                .toList();
+    }
+
+    @Override
+    public List<PontoCarta> listarPontosCartaPorAutor(UUID autorId) {
+        return springDataResolucaoRepository.pontosCartaPorAutor(autorId,
+                TipoMetrica.BIG_O_TEMPO, TipoMetrica.COMPLEXIDADE_ESPACO,
+                TipoMetrica.COMPLEXIDADE_CICLOMATICA).stream()
+                .map(r -> new PontoCarta(
+                        (UUID) r[0],
+                        (UUID) r[1],
+                        (String) r[2],
+                        (LinguagemProgramacao) r[3],
+                        ((Number) r[4]).intValue(),
+                        (Boolean) r[5],
+                        (String) r[8],
+                        r[9] == null ? null : ((Number) r[9]).intValue(),
+                        (NivelConfianca) r[10],
+                        (String) r[11],
+                        r[12] == null ? null : ((Number) r[12]).intValue(),
+                        r[13] == null ? null : ((Number) r[13]).intValue(),
+                        (Visibilidade) r[6],
+                        (OffsetDateTime) r[7]))
                 .toList();
     }
 
