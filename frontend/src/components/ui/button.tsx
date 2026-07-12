@@ -23,9 +23,11 @@ const variantes: Record<ButtonVariant, string> = {
   ghost: 'border-transparent bg-transparent text-mid hover:bg-elevated hover:text-ink',
   destructive:
     'border-erro-line bg-erro-bg text-erro-texto hover:bg-[rgba(var(--erro-rgb),0.14)]',
-  // Rótulo osso fixo: `ink` inverteria no claro e ficaria ilegível sobre o vermelho.
+  // Rótulo osso fixo: `ink` inverteria no claro e ficaria ilegível sobre o vermelho. Os dois
+  // tons SÃO tokens (`ink-on` no claro = #FBFCFE · `ink` no escuro = #EDF0FA): mesmo resultado,
+  // zero hex. O escape `dark:` continua sendo necessário — é ele que trava a inversão.
   'destructive-solid':
-    'border-transparent bg-erro-estrutura text-[#FBFCFE] dark:text-[#EDF0FA] hover:brightness-110',
+    'border-transparent bg-erro-estrutura text-ink-on dark:text-ink hover:brightness-110',
 }
 
 const alturas: Record<ButtonSize, string> = {

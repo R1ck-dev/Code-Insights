@@ -22,7 +22,7 @@ export function Avatar({ name, size = 34, className }: AvatarProps) {
   return (
     <span
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-[3px] border border-line-strong bg-elevated font-mono font-semibold text-ink',
+        'flex shrink-0 items-center justify-center rounded-ci border border-line-strong bg-elevated font-mono font-semibold text-ink',
         className,
       )}
       style={{ width: size, height: size, fontSize }}

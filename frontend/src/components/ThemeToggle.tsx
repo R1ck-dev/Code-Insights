@@ -24,7 +24,7 @@ export function ThemeToggle({ size = 36, className }: ThemeToggleProps) {
       aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
       title={isDark ? 'Modo claro' : 'Modo escuro'}
       className={cn(
-        'ci-foco-botao flex shrink-0 cursor-pointer items-center justify-center rounded-[3px] border border-line bg-transparent text-mid transition-colors hover:border-line-strong hover:text-ink',
+        'ci-foco-botao flex shrink-0 cursor-pointer items-center justify-center rounded-ci border border-line bg-transparent text-mid transition-colors hover:border-line-strong hover:text-ink',
         className,
       )}
       style={{ width: size, height: size }}

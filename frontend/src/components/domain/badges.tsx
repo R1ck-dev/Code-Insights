@@ -76,11 +76,13 @@ export interface BigOChipProps {
   confianca: Confianca
   /** Fundo `rgba(cor,.09)` + borda `rgba(cor,.30)` no lugar do chip neutro. */
   tonal?: boolean
+  /** Texto do `title` (ex.: "confiança do motor: alta" — o eixo SECUNDÁRIO). */
+  title?: string
   className?: string
 }
 
 /** Classe de complexidade: quadrado 7×7 na cor da classe + rótulo na tinta da classe. */
-export function BigOChip({ k, confianca, tonal, className }: BigOChipProps) {
+export function BigOChip({ k, confianca, tonal, title, className }: BigOChipProps) {
   const { theme } = useTheme()
   const temClasse = ehPlotavel(k)
   const rotulo = temClasse ? rotuloCanonico(k) : ROTULO_DESCONHECIDO
@@ -88,6 +90,7 @@ export function BigOChip({ k, confianca, tonal, className }: BigOChipProps) {
 
   return (
     <span
+      title={title}
       className={cn(CHIP, 'gap-1.5 px-[9px] py-1 text-[12px] font-semibold', className)}
       style={{
         color: tintaDaClasse(k, theme),
@@ -188,7 +191,7 @@ export function StatusChip({ status, compact, className }: StatusChipProps) {
           className,
         )}
       >
-        <Check size={12} strokeWidth={2} />
+        <Check size={12} strokeWidth={2} aria-hidden />
         analisada
       </span>
     )
@@ -236,7 +239,7 @@ export function StatusChip({ status, compact, className }: StatusChipProps) {
         className,
       )}
     >
-      <Lock size={11} strokeWidth={2} />
+      <Lock size={11} strokeWidth={2} aria-hidden />
       Privado
     </span>
   )

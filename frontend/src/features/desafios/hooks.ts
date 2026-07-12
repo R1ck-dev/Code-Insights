@@ -10,10 +10,16 @@ export const desafiosKeys = {
   detalhe: (id: string) => ['desafios', 'detalhe', id] as const,
 }
 
-export function useMeusDesafios(pagina: number, tamanho = 12) {
+/**
+ * `enabled` existe para quem monta a lista antes de precisar dela (ex.: o Select de desafios
+ * do diálogo de snippet, que fica montado e fechado em toda tela de desafio): sem ele, cada
+ * visita disparava um `GET /api/desafios?tamanho=100` que ninguém ia ler.
+ */
+export function useMeusDesafios(pagina: number, tamanho = 12, opts?: { enabled?: boolean }) {
   return useQuery({
     queryKey: desafiosKeys.meus(pagina, tamanho),
     queryFn: () => desafiosApi.listarMeus(pagina, tamanho),
+    enabled: opts?.enabled ?? true,
     placeholderData: keepPreviousData,
   })
 }

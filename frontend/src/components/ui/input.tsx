@@ -230,17 +230,22 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
               )}
               {...props}
             />
+            {/*
+             * SEM `tabIndex={-1}`: com ele, quem não usa mouse não conseguia revelar a senha
+             * em NENHUMA das 4 telas de senha — e não havia mecanismo alternativo (WCAG 2.1.1).
+             * Alvo de 24×24 (WCAG 2.5.8) com o ícone em 16px.
+             */}
             <button
               type="button"
-              tabIndex={-1}
               onClick={() => setVisivel((v) => !v)}
+              aria-pressed={visivel}
               aria-label={visivel ? 'Ocultar senha' : 'Mostrar senha'}
-              className="absolute right-3 cursor-pointer text-soft transition-colors hover:text-mid"
+              className="ci-foco-botao absolute right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-ci text-soft transition-colors hover:text-mid"
             >
               {visivel ? (
-                <EyeOff size={16} strokeWidth={2} />
+                <EyeOff size={16} strokeWidth={2} aria-hidden />
               ) : (
-                <Eye size={16} strokeWidth={2} />
+                <Eye size={16} strokeWidth={2} aria-hidden />
               )}
             </button>
           </div>

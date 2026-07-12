@@ -59,14 +59,15 @@ export {
   TOTAL_AUTONOMIA,
   type Constelacao,
   type DatasetCarta,
+  type DescartesDataset,
   type NivelAutonomia,
+  type PontoBase,
   type PontoPlotavel,
   type PropsGrafico,
 } from './tipos'
 export {
   DATASET_VAZIO,
   MIN_PONTOS_CONSTELACAO,
-  confiancaDeNivel,
   constelacaoDoPonto,
   ehPontoPlotavel,
   montarConstelacoes,
@@ -74,3 +75,6 @@ export {
   pontoPorId,
   rotuloRodape,
 } from './dataset'
+// ⚠ NÃO existe (nem volte a criar) um `confiancaDeNivel(NivelConfianca) → MEDIDO/ESTIMADO`:
+// são dois eixos diferentes. A natureza da métrica vem de `TIPO_METRICA_META` (@/domain/enums).
+export { linhasEspectro } from './escalas'

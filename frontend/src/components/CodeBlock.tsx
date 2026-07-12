@@ -174,11 +174,23 @@ const COLORS = {
   } as Record<string, string>,
 }
 
-/** Cromo do card: fundo, cabeçalho, hairline, rótulo, botão em repouso e gutter (cor `grid`). */
+/*
+ * Cromo do card (fundo, cabeçalho, hairline, rótulos, gutter) = TOKENS DO SISTEMA.
+ *
+ * ⚠ A exceção de hex do CodeBlock é a PALETA DE SINTAXE (`COLORS`, acima) — e só ela. Antes,
+ * este objeto trazia 6 hex por tema; no claro os 6 batiam com os tokens, mas no escuro 5 dos 6
+ * eram "quase" — neutros que não existem em lugar nenhum da tabela §2. Resultado: hairline e
+ * painel do CodeBlock não alinhavam com nenhum outro cartão da tela, justamente no modo padrão
+ * do produto. O cromo agora vem de `var(--…)`, e muda junto com o resto do sistema.
+ */
 const PANEL = {
-  dark: { bg: '#0B0F17', header: '#121826', border: '#24303F', hd: '#9AA7BD', hdSoft: '#5F6C82', gutter: '#33415A' },
-  light: { bg: '#F5F7FB', header: '#EAEFF6', border: '#D3DAE6', hd: '#55617A', hdSoft: '#8A94A8', gutter: '#AEB8CC' },
-}
+  bg: 'var(--panel-chart)',
+  header: 'var(--elevated)',
+  border: 'var(--line)',
+  hd: 'var(--mid)',
+  hdSoft: 'var(--soft)',
+  gutter: 'var(--grid)',
+} as const
 
 /** Verde de sucesso do sistema — nunca #2FB863 (verde fora do colormap). */
 const COPIADO = { dark: '#4FB477', light: '#3E9E63' }
@@ -219,7 +231,7 @@ export function CodeBlock({
   const { theme } = useTheme()
   const [copied, setCopied] = useState(false)
   const COL = COLORS[theme]
-  const P = PANEL[theme]
+  const P = PANEL // cromo por token: não depende do tema em JS (o CSS resolve)
   const [langName, langColor] = LANG_LABEL[lang] ?? LANG_FALLBACK
 
   const toks = tokenize(code, lang)
@@ -244,7 +256,7 @@ export function CodeBlock({
 
   return (
     <div
-      className={cn('overflow-hidden rounded-[3px] border', className)}
+      className={cn('overflow-hidden rounded-ci border', className)}
       style={{ background: P.bg, borderColor: P.border }}
     >
       <div
@@ -252,7 +264,11 @@ export function CodeBlock({
         style={{ background: P.header, borderColor: P.border }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: langColor }} />
+          <span
+            aria-hidden
+            className="h-[9px] w-[9px] shrink-0 rounded-full"
+            style={{ background: langColor }}
+          />
           <span className="truncate font-mono text-[12px] font-medium" style={{ color: P.hd }}>
             {label ?? langName}
           </span>
@@ -261,7 +277,7 @@ export function CodeBlock({
           <button
             type="button"
             onClick={copy}
-            className="cursor-pointer rounded-[3px] px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-[rgba(127,127,127,0.16)]"
+            className="ci-foco-botao cursor-pointer rounded-ci px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-[rgba(127,127,127,0.16)]"
             style={{ color: copied ? COPIADO[theme] : P.hdSoft }}
           >
             {copied ? 'Copiado' : 'Copiar'}

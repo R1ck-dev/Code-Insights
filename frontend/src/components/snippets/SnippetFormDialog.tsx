@@ -60,8 +60,10 @@ export function SnippetFormDialog({
   const [desafioSelecionado, setDesafioSelecionado] = useState(SEM_DESAFIO)
   const [tocado, setTocado] = useState(false)
 
-  // Só busca a lista quando o campo existe (sem vínculo fixo) e o diálogo está aberto.
-  const desafios = useMeusDesafios(0, 100)
+  // Só busca a lista quando o campo existe (sem vínculo fixo) E o diálogo está aberto. Este
+  // diálogo fica MONTADO (fechado) em toda tela de desafio: sem o `enabled`, cada visita
+  // disparava um GET de 100 desafios que nunca seria exibido.
+  const desafios = useMeusDesafios(0, 100, { enabled: open && !vinculoFixo })
   const opcoesDesafio = vinculoFixo ? [] : (desafios.data?.itens ?? [])
 
   // Reseta o formulário sempre que o diálogo abre.

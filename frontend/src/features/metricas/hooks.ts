@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
-import type { GranularidadeTempo } from '@/types/api'
 import { metricasApi } from './api'
 
 export const metricasKeys = {
   daResolucao: (resolucaoId: string) => ['metricas', resolucaoId] as const,
   resumo: ['metricas', 'resumo'] as const,
   carta: ['metricas', 'carta'] as const,
-  evolucao: (granularidade: GranularidadeTempo) => ['metricas', 'evolucao', granularidade] as const,
 }
 
 export function useMetricasDaResolucao(
@@ -41,11 +39,10 @@ export function useCartaCeleste() {
   })
 }
 
-/** Série de evolução (autonomia + complexidade típica) na granularidade escolhida (dia/semana/mês). */
-export function useEvolucao(granularidade: GranularidadeTempo) {
-  return useQuery({
-    queryKey: metricasKeys.evolucao(granularidade),
-    queryFn: () => metricasApi.evolucao(granularidade),
-    placeholderData: (prev) => prev,
-  })
-}
+/*
+ * ⚠ NÃO existe `useEvolucao`. O endpoint `/api/metricas/evolucao` continua no `metricasApi`,
+ * mas nenhuma tela o consome: a Linha temporal deriva os buckets mensais da CARTA, no cliente
+ * (`bucketsMensais(dataset.todas)`), porque precisa das resoluções SEM métrica para a série de
+ * autonomia — coisa que o agregado do backend não devolve. Um hook sem consumidor só serve
+ * para driftar; se um dia a Linha passar a ler o endpoint, o hook volta junto.
+ */

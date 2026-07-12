@@ -68,6 +68,15 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-bg">
+      {/* Pular para o conteúdo (WCAG 2.4.1): a sidebar + topbar se repetem em TODAS as telas;
+          sem isto, quem navega por teclado tabula a nav inteira em cada página. */}
+      <a
+        href="#conteudo"
+        className="ci-foco-botao sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-ci focus:border focus:border-line-strong focus:bg-panel focus:px-3 focus:py-2 focus:font-mono focus:text-[12.5px] focus:text-ink"
+      >
+        Pular para o conteúdo
+      </a>
+
       {/* Sidebar (≥ md) */}
       <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-line-soft bg-recess px-3 py-[18px] md:flex">
         <Link to="/app" aria-label="Início" className="ci-foco-botao rounded-ci px-1.5 pb-5">
@@ -95,6 +104,7 @@ export function AppLayout() {
                 <Icon
                   size={17}
                   strokeWidth={2}
+                  aria-hidden
                   className={cn('shrink-0', ativo ? 'text-ink' : 'text-soft')}
                 />
                 {label}
@@ -146,7 +156,7 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="min-w-0 flex-1">
+        <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 outline-none">
           <Outlet />
         </main>
       </div>
@@ -169,21 +179,21 @@ function UserMenu() {
         <span className="hidden font-mono text-[12.5px] font-medium text-ink sm:block">
           {user?.username}
         </span>
-        <ChevronDown size={14} strokeWidth={2} className="text-soft" />
+        <ChevronDown size={14} strokeWidth={2} aria-hidden className="text-soft" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent>
         <DropdownMenuLabel>@{user?.username}</DropdownMenuLabel>
         <DropdownMenuItem asChild>
           <Link to="/app/perfil">
-            <User size={15} strokeWidth={2} className="text-soft" />
+            <User size={15} strokeWidth={2} aria-hidden className="text-soft" />
             Meu perfil
           </Link>
         </DropdownMenuItem>
         {user && (
           <DropdownMenuItem asChild>
             <Link to={`/u/${user.id}`}>
-              <Compass size={15} strokeWidth={2} className="text-soft" />
+              <Compass size={15} strokeWidth={2} aria-hidden className="text-soft" />
               Ver portfólio público
             </Link>
           </DropdownMenuItem>
@@ -196,7 +206,7 @@ function UserMenu() {
             navigate('/')
           }}
         >
-          <LogOut size={15} strokeWidth={2} />
+          <LogOut size={15} strokeWidth={2} aria-hidden />
           Sair
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -212,7 +222,7 @@ function MobileNav({ pathname }: { pathname: string }) {
         aria-label="Abrir menu"
         className="ci-foco-botao flex h-9 w-9 cursor-pointer items-center justify-center rounded-ci border border-line text-mid outline-none transition-colors hover:border-line-strong hover:text-ink"
       >
-        <Menu size={18} strokeWidth={2} />
+        <Menu size={18} strokeWidth={2} aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {NAV.map((item) => {
@@ -229,6 +239,7 @@ function MobileNav({ pathname }: { pathname: string }) {
                 <Icon
                   size={16}
                   strokeWidth={2}
+                  aria-hidden
                   className={ativo ? 'text-ink' : 'text-soft'}
                 />
                 {label}

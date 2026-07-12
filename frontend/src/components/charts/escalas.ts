@@ -17,6 +17,7 @@ import {
   AUTONOMIA_MAX,
   AUTONOMIA_MIN,
   type NivelAutonomia,
+  type PontoBase,
   type PontoPlotavel,
   TOTAL_AUTONOMIA,
 } from './tipos'
@@ -433,11 +434,18 @@ export interface BucketMes {
   /** 'jan', 'fev'… — rótulo do eixo X. */
   rotulo: string
   inicio: Date
-  pontos: PontoPlotavel[]
+  /** TODAS as resoluções do mês — inclusive as sem métrica (autonomia independe da linguagem). */
+  resolucoes: PontoBase[]
+  /** Só as com classe de tempo: a série de COMPLEXIDADE sai daqui. */
+  comMetrica: PontoBase[]
+  /** = `resolucoes.length`. Zero = mês SEM RESOLUÇÃO (o aluno não enviou nada). */
   total: number
-  /** média de autonomia do mês; `null` no mês SEM resolução (não gera ponto). */
+  /** Quantas do mês não têm classe de complexidade. `total > 0 && semMetrica === total` é
+   *  um mês de trabalho SEM métrica — jamais um mês "vazio". */
+  semMetrica: number
+  /** média de autonomia do mês sobre TODAS as resoluções; `null` só no mês sem resolução. */
   mediaAutonomia: number | null
-  /** média de `k` (classe de tempo) do mês; `null` no mês sem resolução. */
+  /** média de `k` (classe de tempo) sobre as COM métrica; `null` quando nenhuma tem classe. */
   mediaClasse: number | null
 }
 
@@ -449,28 +457,34 @@ function media(valores: number[]): number | null {
 /**
  * Buckets MENSAIS (spec 02 §5 + Lacuna M).
  *
+ * ⚠ Recebe `PontoBase[]` = `dataset.todas`, NÃO `dataset.pontos`. Um mês em que o aluno
+ * submeteu 3 resoluções em Python tem 3 resoluções — ele não é um mês "sem resolução".
+ * A autonomia é autodeclarada e independe da linguagem (§4.4): a série neutra atravessa
+ * o mês; a série de complexidade é que se interrompe.
+ *
  * DECISÃO (minha, combinando as propostas da spec):
  *   1. O intervalo é CONTÍNUO do 1º ao último mês com atividade — meses vazios NÃO somem,
  *      ocupam seu `x` (o tempo não anda mais devagar porque o aluno parou de enviar).
  *   2. Se o intervalo passar de `LINHA_MAX_BUCKETS` (8), fica com os 8 meses MAIS RECENTES.
- *   3. Mês vazio → `mediaAutonomia`/`mediaClasse` = `null` → não vira ponto; a série QUEBRA
- *      ali (use `segmentosDaSerie`, não uma polyline única).
+ *   3. Mês sem resolução → `mediaAutonomia` = `null` → não vira ponto; a série QUEBRA ali
+ *      (use `segmentosDaSerie`, não uma polyline única). Mês com resolução mas sem métrica →
+ *      só `mediaClasse` é `null`: a linha de complexidade quebra, a de autonomia não.
  *
- * Recebe os pontos já em ordem cronológica ascendente (garantia de `montarDataset`).
+ * Recebe as resoluções já em ordem cronológica ascendente (garantia de `montarDataset`).
  */
 export function bucketsMensais(
-  pontos: PontoPlotavel[],
+  resolucoes: PontoBase[],
   maxBuckets = LINHA_MAX_BUCKETS,
 ): BucketMes[] {
-  if (pontos.length === 0) return []
+  if (resolucoes.length === 0) return []
 
   // índice absoluto de mês: ano*12 + (mês-1) — aritmética de calendário sem fuso.
   const indiceDe = (d: Date) => d.getFullYear() * 12 + d.getMonth()
-  const porMes = new Map<number, PontoPlotavel[]>()
+  const porMes = new Map<number, PontoBase[]>()
   let min = Number.POSITIVE_INFINITY
   let max = Number.NEGATIVE_INFINITY
 
-  for (const p of pontos) {
+  for (const p of resolucoes) {
     const idx = indiceDe(p.submetidaEm)
     min = Math.min(min, idx)
     max = Math.max(max, idx)
@@ -485,16 +499,19 @@ export function bucketsMensais(
     const ano = Math.floor(idx / 12)
     const mes0 = idx % 12
     const doMes = porMes.get(idx) ?? []
+    const comMetrica = doMes.filter((p) => p.k != null)
     buckets.push({
       ano,
       mes: mes0 + 1,
       chave: `${ano}-${doisDigitos(mes0 + 1)}`,
       rotulo: MESES_CURTOS[mes0],
       inicio: new Date(ano, mes0, 1),
-      pontos: doMes,
+      resolucoes: doMes,
+      comMetrica,
       total: doMes.length,
+      semMetrica: doMes.length - comMetrica.length,
       mediaAutonomia: media(doMes.map((p) => p.autonomia)),
-      mediaClasse: media(doMes.map((p) => p.k)),
+      mediaClasse: media(comMetrica.map((p) => p.k as number)),
     })
   }
   return buckets
@@ -564,7 +581,7 @@ export interface Tendencia {
   ultimo: BucketMes | null
   /** último − primeiro (positivo = autonomia subiu). `null` se não dá para comparar. */
   deltaAutonomia: number | null
-  /** último − primeiro (positivo = complexidade SUBIU = ficou mais custosa). */
+  /** último − primeiro (positivo = complexidade SUBIU = ficou mais custosa). `null` = sem base. */
   deltaClasse: number | null
   /** Texto do rodapé, DERIVADO DOS DADOS (nunca fixo — spec 02, Lacuna L). */
   texto: string
@@ -577,13 +594,18 @@ const LIMIAR_TENDENCIA = 0.2
  * Lacuna L (resolvida na spec): o rodapé do protótipo afirmava "autonomia sobe enquanto a
  * complexidade típica cai" — mas a linha tracejada dele SUBIA. A legenda NÃO PODE ser fixa:
  * é gerada comparando o primeiro e o último bucket com dado.
+ *
+ * ⚠ As duas séries têm bases DIFERENTES: autonomia existe em todo mês com resolução;
+ * complexidade só nos meses com ao menos uma resolução classificada. Nada de `?? 0` — um
+ * mês sem classe NÃO vale O(1); sem base, a tendência de complexidade simplesmente não é
+ * afirmada.
  */
 export function tendenciaDaLinha(buckets: BucketMes[]): Tendencia {
-  const comDado = buckets.filter((b) => b.total > 0)
-  const primeiro = comDado[0] ?? null
-  const ultimo = comDado[comDado.length - 1] ?? null
+  const comResolucao = buckets.filter((b) => b.total > 0)
+  const primeiro = comResolucao[0] ?? null
+  const ultimo = comResolucao[comResolucao.length - 1] ?? null
 
-  if (!primeiro || !ultimo || comDado.length < LINHA_MIN_PONTOS) {
+  if (!primeiro || !ultimo || comResolucao.length < LINHA_MIN_PONTOS) {
     return {
       primeiro,
       ultimo,
@@ -593,18 +615,25 @@ export function tendenciaDaLinha(buckets: BucketMes[]): Tendencia {
     }
   }
 
-  const deltaAutonomia = (ultimo.mediaAutonomia ?? 0) - (primeiro.mediaAutonomia ?? 0)
-  const deltaClasse = (ultimo.mediaClasse ?? 0) - (primeiro.mediaClasse ?? 0)
   const verbo = (delta: number) =>
     Math.abs(delta) < LIMIAR_TENDENCIA ? 'estável' : delta > 0 ? 'sobe' : 'cai'
 
-  return {
-    primeiro,
-    ultimo,
-    deltaAutonomia,
-    deltaClasse,
-    texto: `autonomia ${verbo(deltaAutonomia)} · complexidade típica ${verbo(deltaClasse)}`,
-  }
+  // `mediaAutonomia` nunca é null num bucket com `total > 0`.
+  const deltaAutonomia = (ultimo.mediaAutonomia as number) - (primeiro.mediaAutonomia as number)
+
+  const comClasse = buckets.filter((b) => b.mediaClasse != null)
+  const deltaClasse =
+    comClasse.length >= LINHA_MIN_PONTOS
+      ? (comClasse[comClasse.length - 1].mediaClasse as number) -
+        (comClasse[0].mediaClasse as number)
+      : null
+
+  const texto =
+    deltaClasse == null
+      ? `autonomia ${verbo(deltaAutonomia)} · complexidade típica sem base para tendência`
+      : `autonomia ${verbo(deltaAutonomia)} · complexidade típica ${verbo(deltaClasse)}`
+
+  return { primeiro, ultimo, deltaAutonomia, deltaClasse, texto }
 }
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -18,8 +18,8 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { cn, pluralPt } from '@/lib/utils'
 import {
   type ClasseK,
-  type Confianca,
   COMPLEXIDADE_ORDEM_MAX,
+  CONFIANCA_BIG_O,
   comPrefixoEstimado,
   corDaClasse,
   ordemArredondada,
@@ -126,13 +126,12 @@ interface DadosBucket {
   bucket: BucketMes
   i: number
   x: number
-  /** `null` no mês sem resolução. */
+  /** `null` só no mês SEM RESOLUÇÃO (autonomia independe da linguagem — §4.4). */
   yAut: number | null
+  /** `null` quando nenhuma resolução do mês tem classe de complexidade. */
   yCls: number | null
-  /** classe média ARREDONDADA — a cor do ponto e do rótulo. `null` no mês vazio. */
+  /** classe média ARREDONDADA — a cor do ponto e do rótulo. `null` sem classe no mês. */
   k: ClasseK | null
-  /** MEDIDO só quando TODAS as resoluções do mês são MEDIDO (regra 3: na dúvida, ESTIMADO). */
-  confianca: Confianca
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -150,9 +149,14 @@ export function Linha({
 }: PropsLinha) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
+  /*
+   * ⚠ `dataset.todas`, NÃO `dataset.pontos`. A série de AUTONOMIA é autodeclarada e INDEPENDE
+   * da linguagem (§4.4): um mês com 3 resoluções em Python é um mês com 3 resoluções — não um
+   * mês "sem resolução". Só a série de COMPLEXIDADE se interrompe ali.
+   */
   const buckets = useMemo(
-    () => bucketsMensais(dataset.pontos, janelaMeses),
-    [dataset.pontos, janelaMeses],
+    () => bucketsMensais(dataset.todas, janelaMeses),
+    [dataset.todas, janelaMeses],
   )
 
   const dados = useMemo<DadosBucket[]>(
@@ -164,7 +168,6 @@ export function Linha({
         yAut: bucket.mediaAutonomia == null ? null : yAutonomiaLinha(bucket.mediaAutonomia),
         yCls: bucket.mediaClasse == null ? null : yClasseLinha(bucket.mediaClasse),
         k: ordemArredondada(bucket.mediaClasse),
-        confianca: confiancaDoBucket(bucket),
       })),
     [buckets],
   )
@@ -175,11 +178,12 @@ export function Linha({
 
   /** ≥ 2 meses COM dado. Abaixo disso não se desenha linha — só os pontos (pedido do produto). */
   const temSerie = temSerieTemporal(buckets)
-  const vazio = !carregando && dataset.pontos.length === 0
+  /** Vazio = nenhuma RESOLUÇÃO (não "nenhuma plotável"): a autonomia existe sem métrica. */
+  const vazio = !carregando && dataset.todas.length === 0
 
   const idxSelecionado = useMemo(() => {
     if (!selecionadoId) return -1
-    return buckets.findIndex((b) => b.pontos.some((p) => p.resolucaoId === selecionadoId))
+    return buckets.findIndex((b) => b.resolucoes.some((p) => p.resolucaoId === selecionadoId))
   }, [buckets, selecionadoId])
 
   /** O bucket "ativo" — o hover manda; sem hover, o mês da resolução selecionada. */
@@ -190,12 +194,14 @@ export function Linha({
   const passo = buckets.length > 1 ? LINHA_LARGURA / (buckets.length - 1) : LINHA_LARGURA
 
   function selecionar(b: BucketMes) {
-    if (!onSelecionar || b.total === 0) return
-    // `dataset.pontos` (e portanto `bucket.pontos`) está em ordem cronológica ASCENDENTE.
+    // Só as COM métrica viram estrela nos outros gráficos — selecionar uma resolução que não
+    // existe na Carta deixaria a seleção pendurada. Mês sem nenhuma plotável não é clicável.
+    if (!onSelecionar || b.comMetrica.length === 0) return
+    // `bucket.comMetrica` está em ordem cronológica ASCENDENTE.
     // DECISÃO: o mês é um AGREGADO — não dá para "selecionar um mês". Clicar seleciona a
     // resolução MAIS RECENTE do mês, e o tooltip diz isso em voz alta quando há mais de uma.
     // Nunca escolher em silêncio: o clique é explicado antes de acontecer.
-    onSelecionar(b.pontos[b.pontos.length - 1].resolucaoId)
+    onSelecionar(b.comMetrica[b.comMetrica.length - 1].resolucaoId)
   }
 
   return (
@@ -203,11 +209,16 @@ export function Linha({
       <Legenda tema={tema} />
 
       <div className="relative" onMouseLeave={() => setHoverIdx(null)}>
+        {/*
+         * `role="group"`, não `role="img"`: por ARIA, os descendentes de um `img` são
+         * PRESENTATIONAL — os 12 alvos de mês (`role="button"` + `<title>`) simplesmente
+         * não existiriam para o leitor de tela. Um gráfico interativo é um grupo.
+         */}
         <svg
           viewBox={`0 0 ${VB.largura} ${VB.altura}`}
           width="100%"
           className="block"
-          role="img"
+          role="group"
           aria-label={rotuloAcessivel(buckets, tendencia.texto, carregando)}
         >
           {/* ── grade: regrada nos INTEIROS de autonomia (DECISÃO — Lacuna K) ────────── */}
@@ -359,9 +370,10 @@ export function Linha({
                 if (d.yCls == null || d.k == null) return null
                 const cor = corDaClasse(d.k, tema)
                 const r = idxAtivo === d.i ? R_CLS_ATIVO : R_CLS
-                // MEDIDO = disco CHEIO · ≈ ESTIMADO = anel VAZADO (regra 3). Anel em vez de
-                // disco com fill do fundo: assim a marca não depende da cor do cartão atrás.
-                return d.confianca === 'MEDIDO' ? (
+                // MEDIDO = disco CHEIO · ≈ ESTIMADO = anel VAZADO (regra 3). A classe de tempo
+                // é inferência estática → sempre ESTIMADA → sempre anel. Anel em vez de disco
+                // com fill do fundo: assim a marca não depende da cor do cartão atrás.
+                return CONFIANCA_BIG_O === 'MEDIDO' ? (
                   <circle key={`mc-${d.bucket.chave}`} cx={d.x} cy={d.yCls} r={r} fill={cor} />
                 ) : (
                   <circle
@@ -395,7 +407,10 @@ export function Linha({
               {dados.map((d) => {
                 const x0 = Math.max(GRADE_X0, d.x - passo / 2)
                 const x1 = Math.min(GRADE_X1, d.x + passo / 2)
-                const clicavel = !!onSelecionar && d.bucket.total > 0
+                const clicavel = !!onSelecionar && d.bucket.comMetrica.length > 0
+                // Mês sem resolução não vira parada de tabulação muda: ou é botão de verdade,
+                // ou é um `img` com rótulo (o leitor ainda ouve "mar 2026: sem resolução").
+                const temDado = d.bucket.total > 0
                 return (
                   <rect
                     key={`hit-${d.bucket.chave}`}
@@ -405,8 +420,9 @@ export function Linha({
                     height={LINHA_Y_BASE - LINHA_Y_TOPO + 20}
                     fill="transparent"
                     style={{ cursor: clicavel ? 'pointer' : 'default' }}
-                    tabIndex={0}
-                    role={clicavel ? 'button' : undefined}
+                    tabIndex={clicavel || temDado ? 0 : -1}
+                    role={clicavel ? 'button' : 'img'}
+                    aria-label={resumoDoBucket(d)}
                     onMouseEnter={() => setHoverIdx(d.i)}
                     onFocus={() => setHoverIdx(d.i)}
                     onBlur={() => setHoverIdx(null)}
@@ -447,8 +463,8 @@ export function Linha({
             <EmptyState
               size="sm"
               icon={Folder}
-              title="Nenhuma resolução analisada ainda."
-              description="Submeta uma resolução em Java para ver sua evolução mês a mês."
+              title="Nenhuma resolução ainda."
+              description="Submeta sua primeira resolução: a autonomia entra na linha desde já; a complexidade, quando o código for Java."
               className="max-w-[300px] bg-recess/90"
             />
           </div>
@@ -498,12 +514,13 @@ function Legenda({ tema }: { tema: Tema }) {
         </svg>
         complexidade típica
       </span>
+      {/* Só o marcador VAZADO aparece nesta série: a classe de tempo é sempre ≈ estimada
+          (o disco cheio é reservado a métrica MEDIDA — regra 3). */}
       <span className="flex items-center gap-1.5 text-soft">
-        <svg width={20} height={8} aria-hidden="true">
-          <circle cx={4} cy={4} r={3} fill={corExemplo} />
-          <circle cx={15} cy={4} r={3.2} fill="none" stroke={corExemplo} strokeWidth={1.6} />
+        <svg width={10} height={8} aria-hidden="true">
+          <circle cx={5} cy={4} r={3.2} fill="none" stroke={corExemplo} strokeWidth={1.6} />
         </svg>
-        medido / ≈ estimado
+        ≈ estimado (análise estática)
       </span>
     </div>
   )
@@ -561,10 +578,11 @@ function Tooltip({
   tema: Tema
   clicavel: boolean
 }) {
-  const { bucket, x, k, confianca } = dados
+  const { bucket, x, k } = dados
   const yAncora = Math.min(dados.yAut ?? LINHA_Y_BASE, dados.yCls ?? LINHA_Y_BASE)
   const pos = posicaoTooltip(x, yAncora)
-  const vazio = bucket.total === 0
+  /** SEM RESOLUÇÃO ≠ sem métrica. O mês só é vazio quando o aluno não enviou nada. */
+  const semResolucao = bucket.total === 0
 
   return (
     <div
@@ -580,36 +598,46 @@ function Tooltip({
           {bucket.rotulo} {bucket.ano}
         </span>
         <span className="font-mono text-[10px] text-soft tabular">
-          {vazio ? 'sem resolução' : `${bucket.total} ${pluralPt(bucket.total, 'resolução', 'resoluções')}`}
+          {semResolucao
+            ? 'sem resolução'
+            : pluralPt(bucket.total, 'resolução', 'resoluções')}
+          {bucket.semMetrica > 0 && ` · ${bucket.semMetrica} sem métrica`}
         </span>
       </div>
 
-      {!vazio && (
-        <>
-          <span className="flex items-center gap-1.5 font-mono text-[10px] text-mid tabular">
-            <span className="h-[2px] w-2.5 rounded-ci-sm bg-ink" aria-hidden="true" />
-            aut. média {numeroPt(bucket.mediaAutonomia ?? 0, 1)}/5
-          </span>
-          <span
-            className="flex items-center gap-1.5 font-mono text-[10px] tabular"
-            style={{ color: tintaDaClasse(k, tema) }}
-          >
-            <span
-              aria-hidden="true"
-              className="inline-block size-[7px] shrink-0"
-              style={
-                confianca === 'MEDIDO'
-                  ? { background: corDaClasse(k, tema) }
-                  : { boxShadow: `inset 0 0 0 1.5px ${corDaClasse(k, tema)}` }
-              }
-            />
-            {comPrefixoEstimado(rotuloCanonico(k), confianca)}
-            <span className="text-soft">· classe média {numeroPt(bucket.mediaClasse ?? 0, 1)}</span>
-          </span>
-        </>
+      {/* Autonomia: existe em TODO mês com resolução — independe da linguagem (§4.4). */}
+      {!semResolucao && (
+        <span className="flex items-center gap-1.5 font-mono text-[10px] text-mid tabular">
+          <span className="h-[2px] w-2.5 rounded-ci-sm bg-ink" aria-hidden="true" />
+          aut. média {numeroPt(bucket.mediaAutonomia as number, 1)}/5
+        </span>
       )}
 
-      {clicavel && bucket.total > 1 && (
+      {/* Complexidade: só quando ao menos uma resolução do mês foi classificada. */}
+      {k != null && bucket.mediaClasse != null ? (
+        <span
+          className="flex items-center gap-1.5 font-mono text-[10px] tabular"
+          style={{ color: tintaDaClasse(k, tema) }}
+        >
+          <span
+            aria-hidden="true"
+            className="inline-block size-[7px] shrink-0"
+            style={
+              CONFIANCA_BIG_O === 'MEDIDO'
+                ? { background: corDaClasse(k, tema) }
+                : { boxShadow: `inset 0 0 0 1.5px ${corDaClasse(k, tema)}` }
+            }
+          />
+          {comPrefixoEstimado(rotuloCanonico(k), CONFIANCA_BIG_O)}
+          <span className="text-soft">· classe média {numeroPt(bucket.mediaClasse, 1)}</span>
+        </span>
+      ) : (
+        !semResolucao && (
+          <span className="font-mono text-[10px] text-soft">sem métrica de complexidade</span>
+        )
+      )}
+
+      {clicavel && bucket.comMetrica.length > 1 && (
         <span className="font-mono text-[9px] text-soft">clique → a mais recente do mês</span>
       )}
     </div>
@@ -621,15 +649,6 @@ function Tooltip({
 // ════════════════════════════════════════════════════════════════════════════
 
 type Tema = PropsGrafico['tema']
-
-/**
- * A confiança de um MÊS é a do seu elo mais fraco: só é MEDIDO quando TODAS as resoluções do
- * mês são MEDIDO. Regra 3 (00-INDICE §2.7): na dúvida, nunca afirmar que a métrica foi medida.
- */
-function confiancaDoBucket(bucket: BucketMes): Confianca {
-  if (bucket.total === 0) return 'ESTIMADO'
-  return bucket.pontos.every((p) => p.confiancaTempo === 'MEDIDO') ? 'MEDIDO' : 'ESTIMADO'
-}
 
 /**
  * Variante da `posicaoCallout` (spec 02 §2.9 + Lacuna F) calibrada para a Linha: aqui os pontos
@@ -647,17 +666,26 @@ function posicaoTooltip(x: number, y: number) {
   }
 }
 
-/** Texto nativo do `<title>` da coluna — é o que o leitor de tela lê ao focar o mês. */
+/**
+ * Texto nativo do `<title>`/`aria-label` da coluna — é o que o leitor de tela lê ao focar o mês.
+ * "sem resolução" é reservado ao mês em que NADA foi enviado. Mês com resoluções sem métrica
+ * diz quantas ficaram sem classe: o trabalho existiu, só não pôde ser medido.
+ */
 function resumoDoBucket(d: DadosBucket): string {
-  const { bucket, k, confianca } = d
+  const { bucket, k } = d
   if (bucket.total === 0) return `${bucket.rotulo} ${bucket.ano}: sem resolução`
-  const classe = comPrefixoEstimado(rotuloCanonico(k), confianca)
-  return (
-    `${bucket.rotulo} ${bucket.ano}: ${bucket.total} ` +
-    `${pluralPt(bucket.total, 'resolução', 'resoluções')} · ` +
-    `autonomia média ${numeroPt(bucket.mediaAutonomia ?? 0, 1)} de 5 · ` +
-    `complexidade típica ${classe}`
-  )
+
+  const partes = [
+    `${bucket.rotulo} ${bucket.ano}: ${pluralPt(bucket.total, 'resolução', 'resoluções')}`,
+    `autonomia média ${numeroPt(bucket.mediaAutonomia as number, 1)} de 5`,
+  ]
+  if (k != null) {
+    partes.push(`complexidade típica ${comPrefixoEstimado(rotuloCanonico(k), CONFIANCA_BIG_O)}`)
+  }
+  if (bucket.semMetrica > 0) {
+    partes.push(`${bucket.semMetrica} sem métrica de complexidade`)
+  }
+  return partes.join(' · ')
 }
 
 function meses(n: number): string {
@@ -666,12 +694,14 @@ function meses(n: number): string {
 
 function rotuloAcessivel(buckets: BucketMes[], tendencia: string, carregando: boolean): string {
   if (carregando) return 'Carregando a evolução mensal.'
-  const comDado = buckets.filter((b) => b.total > 0).length
-  if (comDado === 0) return 'Evolução mensal: nenhuma resolução analisada.'
+  const comResolucao = buckets.filter((b) => b.total > 0).length
+  if (comResolucao === 0) return 'Evolução mensal: nenhuma resolução enviada.'
+  const semMetrica = buckets.reduce((s, b) => s + b.semMetrica, 0)
+  const nota = semMetrica > 0 ? ` ${semMetrica} resolução(ões) sem métrica de complexidade.` : ''
   return (
     `Evolução mensal em ${meses(buckets.length)}, ` +
-    `${comDado} com resolução. Autonomia média (1 a 5) e complexidade típica (O(1) a O(n!)). ` +
-    `${tendencia}.`
+    `${comResolucao} com resolução. Autonomia média (1 a 5) e complexidade típica ` +
+    `(O(1) a O(n!), estimada). ${tendencia}.${nota}`
   )
 }
 

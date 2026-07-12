@@ -19,11 +19,13 @@
 import { useMemo, useState } from 'react'
 import { Folder } from 'lucide-react'
 import {
+  CONFIANCA_BIG_O,
   LINGUAGEM_META,
   NOTA_METRICAS_SO_JAVA,
   comPrefixoEstimado,
   corDaClasse,
   rotuloCanonico,
+  rotuloConfiancaMotor,
   rotuloCurto,
   tintaDaClasse,
 } from '@/domain/enums'
@@ -344,7 +346,7 @@ export function Carta({
       )}
 
       {/* ── Vazio: o céu fica, as estrelas é que não existem ─────────────── */}
-      {vazio && <CartaVazia total={dataset.total} semMetrica={dataset.semMetrica} />}
+      {vazio && <CartaVazia total={dataset.total} semMetrica={dataset.semMetrica.total} />}
     </div>
   )
 }
@@ -381,9 +383,15 @@ function Estrela({
 }: EstrelaProps) {
   const escuro = tema === 'dark'
   const cor = corDaClasse(ponto.k, tema)
-  const medido = ponto.confiancaTempo === 'MEDIDO'
-  // Núcleo da estrela selecionada: branco-estelar no escuro; no claro assume a cor da classe.
-  const nucleoSel = escuro ? '#FFF3E6' : cor
+  /*
+   * REGRA 3 (inviolável). MEDIDO × ≈ ESTIMADO é natureza do TIPO da métrica, não do valor:
+   * a classe de tempo SEMPRE sai de inferência estática → SEMPRE ≈ ESTIMADO → núcleo VAZADO.
+   * (A confiança do motor — ALTA/MEDIA/BAIXA — é outro eixo e vira TEXTO no callout.)
+   */
+  const medido = CONFIANCA_BIG_O === 'MEDIDO'
+  // Núcleo da estrela selecionada: branco-estelar no escuro; no claro, `currentColor` = a
+  // cor da classe (o token `--estrela-nucleo` foi desenhado exatamente para isso).
+  const nucleoSel = 'var(--estrela-nucleo)'
 
   const raioHalo = ativa && !selecionada ? HALO_R_HOVER : HALO_R
   const opacidadeHalo = ativa && !selecionada ? 0.35 : 0.2
@@ -396,6 +404,8 @@ function Estrela({
       tabIndex={0}
       aria-label={descricao}
       aria-current={selecionada ? 'true' : undefined}
+      // `color` alimenta o `currentColor` de `--estrela-nucleo` no modo claro.
+      style={{ color: cor }}
       className={cn('outline-none', clicavel && 'cursor-pointer')}
       onClick={() => onSelecionar?.(ponto.resolucaoId)}
       onKeyDown={(e) => {
@@ -455,13 +465,17 @@ function Estrela({
   )
 }
 
-/** O texto que o leitor de tela e o `title` do mouse dizem — a estrela inteira em uma frase. */
+/**
+ * O texto que o leitor de tela e o `title` do mouse dizem — a estrela inteira em uma frase.
+ * A complexidade é ESTIMADA (nunca "medida"); a confiança do motor entra como qualificador.
+ */
 function descrever(p: PontoPlotavel): string {
   const lingua = LINGUAGEM_META[p.linguagem]?.label ?? p.linguagem
-  const tempo = comPrefixoEstimado(rotuloCanonico(p.k), p.confiancaTempo).trim()
-  const mccabe = p.ciclomatica != null ? ` · ciclomática ${p.ciclomatica}` : ''
-  const confianca = p.confiancaTempo === 'MEDIDO' ? 'medida' : 'estimada'
-  return `${p.desafioTitulo} · ${lingua} · complexidade de tempo ${tempo} (${confianca})${mccabe} · autonomia ${p.autonomia} de 5 · enviada ${dataCompleta(p.submetidaEm)}`
+  const tempo = comPrefixoEstimado(rotuloCanonico(p.k), CONFIANCA_BIG_O).trim()
+  const mccabe = p.ciclomatica != null ? ` · ciclomática ${p.ciclomatica} (medida)` : ''
+  const natureza = CONFIANCA_BIG_O === 'MEDIDO' ? 'medida' : 'estimada por análise estática'
+  const motor = rotuloConfiancaMotor(p.confiancaTempo)
+  return `${p.desafioTitulo} · ${lingua} · complexidade de tempo ${tempo} (${natureza}${motor ? `, ${motor}` : ''})${mccabe} · autonomia ${p.autonomia} de 5 · enviada ${dataCompleta(p.submetidaEm)}`
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -479,10 +493,11 @@ function DecoracaoSelecionada({
 }) {
   const escuro = tema === 'dark'
   const cor = corDaClasse(ponto.k, tema)
-  const cruzeta = escuro ? '#FFF3E6' : 'var(--ink)'
+  // Token do sistema: branco-estelar no escuro, `currentColor` (= a classe) no claro.
+  const cruzeta = 'var(--estrela-nucleo)'
 
   return (
-    <g aria-hidden className="pointer-events-none">
+    <g aria-hidden className="pointer-events-none" style={{ color: cor }}>
       {/* Guias tracejadas até o eixo Y (a classe) e até a base (a autonomia) — na cor da
           classe: é a leitura do par (autonomia × complexidade) daquela resolução. */}
       <line
@@ -559,8 +574,8 @@ function Callout({
   const lingua = LINGUAGEM_META[ponto.linguagem]?.label ?? ponto.linguagem
   const { left, top, transform } = posicaoCallout(pos.x, pos.y)
 
-  const tempo = comPrefixoEstimado(rotuloCanonico(ponto.k), ponto.confiancaTempo)
-  const mccabe = ponto.ciclomatica != null ? ` · M=${ponto.ciclomatica}` : ''
+  const tempo = comPrefixoEstimado(rotuloCanonico(ponto.k), CONFIANCA_BIG_O)
+  const motor = rotuloConfiancaMotor(ponto.confiancaTempo)
 
   return (
     // aria-hidden: tudo isto já está no `aria-label` da estrela — não repetir para o leitor.
@@ -573,10 +588,20 @@ function Callout({
         {escuro && <span className="mr-1">✦</span>}
         {ponto.desafioTitulo} · {lingua}
       </span>
-      <span className="font-mono tabular text-[10px]" style={{ color: tinta }}>
-        {tempo}
-        {mccabe} · aut {ponto.autonomia}/5
+
+      {/*
+       * UMA COR POR SEMÂNTICA (regras 1 e 4): só a CLASSE veste o colormap. A ciclomática é
+       * contagem (não é classe) e a autonomia é NEUTRA — pintá-las com a tinta da classe diria
+       * ao aluno "sua autonomia 4 é laranja porque a solução é O(n²)", que é a associação que
+       * este sistema existe para impedir.
+       */}
+      <span className="tabular flex items-center gap-1.5 font-mono text-[10px]">
+        <span style={{ color: tinta }}>{tempo}</span>
+        {ponto.ciclomatica != null && <span className="text-mid">· M={ponto.ciclomatica}</span>}
+        <span className="text-ink">· aut {ponto.autonomia}/5</span>
       </span>
+
+      {motor && <span className="font-mono text-[9.5px] text-soft">{motor}</span>}
     </div>
   )
 }

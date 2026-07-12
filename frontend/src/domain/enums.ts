@@ -22,6 +22,7 @@ import {
 import type {
   CategoriaConceito,
   LinguagemProgramacao,
+  NivelConfianca,
   Role,
   StatusConta,
   TipoMetrica,
@@ -137,6 +138,17 @@ export interface TipoMetricaMeta {
   ehClasseBigO: boolean
 }
 
+/**
+ * A NATUREZA da métrica — a ÚNICA fonte de MEDIDO × ≈ ESTIMADO.
+ *
+ * ⚠ Não derive isto de `NivelConfianca` (ALTA/MEDIA/BAIXA). São dois eixos distintos:
+ *   · aqui: a métrica é contada (MEDIDO) ou inferida (≈ ESTIMADO)? É propriedade do TIPO.
+ *     Big-O de tempo/espaço é SEMPRE estimado — inferir a complexidade de um código
+ *     arbitrário é indecidível no caso geral. `ALTA` significa "o motor reconheceu todos os
+ *     construtos", NÃO "o Big-O foi medido".
+ *   · `NivelConfianca`: quanta confiança o motor tem no valor que ele mesmo ESTIMOU
+ *     (ver `CONFIANCA_MOTOR_LABEL`). Vira texto ao lado do valor, nunca preenche marcador.
+ */
 export const TIPO_METRICA_META: Record<TipoMetrica, TipoMetricaMeta> = {
   COMPLEXIDADE_CICLOMATICA: {
     rotulo: 'CICLOMÁTICA',
@@ -159,4 +171,26 @@ export const TIPO_METRICA_META: Record<TipoMetrica, TipoMetricaMeta> = {
     confianca: 'ESTIMADO',
     ehClasseBigO: true,
   },
+}
+
+/** Atalho: a natureza (sempre ≈ ESTIMADO) da classe de complexidade de TEMPO. */
+export const CONFIANCA_BIG_O: Confianca = TIPO_METRICA_META.BIG_O_TEMPO.confianca
+
+// ---- Confiança do MOTOR (eixo secundário) ----
+
+/**
+ * Quanto o motor confia no valor que ele PRÓPRIO estimou (`NivelConfianca` do backend).
+ * ALTA = reconheceu todos os construtos · MEDIA = assumiu ao menos um default conservador ·
+ * BAIXA = não conseguiu classificar. NÃO é MEDIDO/ESTIMADO — ver `TIPO_METRICA_META`.
+ */
+export const CONFIANCA_MOTOR_LABEL: Record<NivelConfianca, string> = {
+  ALTA: 'alta',
+  MEDIA: 'média',
+  BAIXA: 'baixa',
+}
+
+/** `"confiança do motor: alta"` — ou `null` quando o backend não informou. */
+export function rotuloConfiancaMotor(nivel: NivelConfianca | null | undefined): string | null {
+  if (!nivel) return null
+  return `confiança do motor: ${CONFIANCA_MOTOR_LABEL[nivel]}`
 }

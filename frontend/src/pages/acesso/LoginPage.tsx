@@ -1,12 +1,19 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { AlertTriangle, ArrowRight } from 'lucide-react'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input, PasswordInput } from '@/components/ui/input'
 import { FormField } from '@/components/ui/form-field'
+import { Avatar } from '@/components/Avatar'
 import { useAuth } from '@/auth/useAuth'
 import { apiErrorMessage } from '@/lib/api'
-import { Avatar } from '@/components/Avatar'
+
+/*
+ * A · Login (spec 03 §A) — cartão 424px sobre o céu.
+ * O `AuthLayout` traz a nebulosa dupla (`login`), o starfield (10 estrelas), o header
+ * com a marca e o alternador de tema, e o próprio cartão. Aqui é só o miolo.
+ */
 
 /**
  * Contas semeadas no banco para a fase de desenvolvimento. O bloco de "acesso rápido"
@@ -59,91 +66,133 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout>
-      <form
-        onSubmit={onSubmit}
-        className="flex w-[424px] max-w-full flex-col gap-5 rounded-2xl border border-border bg-surface p-8 shadow-[0_30px_70px_-30px_rgba(0,0,0,.85)]"
-      >
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-[22px] font-bold tracking-tight text-heading">Bem-vindo de volta</h1>
-          <span className="text-[13.5px] text-muted">Entre para acessar seu portfólio.</span>
-        </div>
+    <AuthLayout width={424} nebula="login" estrelas="media">
+      <BarraDeInstrumento />
 
-        <FormField label="E-mail" htmlFor="email">
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            placeholder="voce@exemplo.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </FormField>
+      <div className="flex flex-col gap-[6px]">
+        <h1 className="text-[22px] leading-tight font-semibold tracking-[-.02em] text-ink">
+          Bem-vindo de volta
+        </h1>
+        <p className="text-[13px] text-mid">Entre para acessar seu portfólio.</p>
+      </div>
 
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="senha" className="text-[12.5px] font-semibold text-label">
-              Senha
-            </label>
-            <Link to="/recuperar-senha" className="text-[12px] font-medium text-brand-strong hover:underline">
-              Esqueci minha senha
+      <form onSubmit={onSubmit} className="flex flex-col gap-[18px]">
+        <Input
+          id="email"
+          type="email"
+          label="E-mail"
+          mono
+          size="lg"
+          autoComplete="email"
+          placeholder="ana@exemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+
+        <FormField
+          label="Senha"
+          htmlFor="senha"
+          action={
+            <Link
+              to="/recuperar-senha"
+              className="font-mono text-[11px] text-steel hover:text-steel-hover"
+            >
+              esqueci a senha
             </Link>
-          </div>
+          }
+        >
           <PasswordInput
             id="senha"
+            mono
+            size="lg"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </div>
+        </FormField>
 
         {error && (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12.5px] text-danger">
+          <p
+            role="alert"
+            className="flex items-start gap-[7px] rounded-ci border border-erro-line bg-erro-bg px-[11px] py-[9px] text-[12px] leading-snug text-erro-texto"
+          >
+            <AlertTriangle size={13} strokeWidth={2} aria-hidden className="mt-[1px] shrink-0" />
             {error}
-          </div>
+          </p>
         )}
 
-        <Button type="submit" size="lg" loading={loading} className="w-full">
+        <Button type="submit" size="lg" font="sans" fullWidth loading={loading}>
           Entrar
         </Button>
-
-        {import.meta.env.DEV && (
-          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border-strong bg-bg-deep/60 p-3">
-            <span className="text-[10.5px] font-semibold uppercase tracking-wider text-subtle">
-              Acesso rápido · ambiente de teste
-            </span>
-            <div className="flex flex-col gap-2">
-              {CONTAS_TESTE.map((conta) => (
-                <button
-                  key={conta.email}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => entrarComo(conta.email)}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-2 px-3 py-2 text-left transition-colors hover:border-brand-strong/50 hover:bg-surface disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <Avatar name={conta.nome} size={28} />
-                    <span className="flex flex-col leading-tight">
-                      <span className="text-[13px] font-semibold text-heading">{conta.nome}</span>
-                      <span className="text-[11px] text-muted">{conta.descricao}</span>
-                    </span>
-                  </span>
-                  <span className="font-mono text-[11px] text-subtle">entrar →</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="border-t border-border pt-4 text-center text-[13px] text-muted">
-          Não tem conta?{' '}
-          <Link to="/criar-conta" className="font-semibold text-brand-strong hover:underline">
-            Criar conta
-          </Link>
-        </div>
       </form>
+
+      {import.meta.env.DEV && <AcessoRapido loading={loading} onEntrar={entrarComo} />}
+
+      <p className="border-t border-line pt-[15px] text-center text-[12.5px] text-mid">
+        Não tem conta?{' '}
+        <Link to="/criar-conta" className="font-medium text-steel hover:text-steel-hover">
+          Criar conta
+        </Link>
+      </p>
     </AuthLayout>
+  )
+}
+
+/** Barra de instrumento do cartão: rótulo `ACESSO` + LED vivo (spec 03 §A, item 1). */
+function BarraDeInstrumento() {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="font-mono text-[10px] tracking-[.14em] text-soft uppercase">Acesso</span>
+      <span aria-hidden className="ci-blink size-[6px] shrink-0 rounded-full bg-ink" />
+    </div>
+  )
+}
+
+/**
+ * Ferramenta do pesquisador (só em `import.meta.env.DEV`): entra com uma das contas semeadas.
+ * Bloco de recuo (`recess`) com hairline tracejada — lê como instrumento, não como parte do produto.
+ */
+function AcessoRapido({
+  loading,
+  onEntrar,
+}: {
+  loading: boolean
+  onEntrar: (email: string) => void
+}) {
+  return (
+    <section
+      aria-label="Acesso rápido do ambiente de teste"
+      className="flex flex-col gap-[10px] rounded-ci border border-dashed border-line bg-recess p-[12px]"
+    >
+      <span className="font-mono text-[10px] tracking-[.14em] text-soft uppercase">
+        Acesso rápido · ambiente de teste
+      </span>
+
+      <div className="flex flex-col gap-[7px]">
+        {CONTAS_TESTE.map((conta) => (
+          <button
+            key={conta.email}
+            type="button"
+            disabled={loading}
+            onClick={() => onEntrar(conta.email)}
+            className="ci-foco-botao flex cursor-pointer items-center justify-between gap-3 rounded-ci border border-line bg-panel px-[11px] py-[8px] text-left transition-colors duration-100 hover:border-line-strong hover:bg-elevated disabled:cursor-not-allowed disabled:opacity-55"
+          >
+            <span className="flex items-center gap-[10px]">
+              <Avatar name={conta.nome} size={28} />
+              <span className="flex flex-col gap-[2px] leading-none">
+                <span className="text-[13px] font-medium text-ink">{conta.nome}</span>
+                <span className="text-[11px] text-mid">{conta.descricao}</span>
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-[5px] font-mono text-[11px] text-steel">
+              entrar
+              <ArrowRight size={12} strokeWidth={2} aria-hidden />
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }

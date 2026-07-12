@@ -1,15 +1,24 @@
 /*
  * DATASET — a resposta da API virando algo plotável. É aqui que mora a honestidade
  * científica do painel: o que não pode ser medido não é inventado, e o que é descartado
- * é CONTADO e mostrado.
+ * é CONTADO e EXPLICADO.
+ *
+ * ⚠ NÃO EXISTE aqui nenhuma tradução de `NivelConfianca` (ALTA/MEDIA/BAIXA) para
+ * MEDIDO/ESTIMADO. Os dois eixos são diferentes e confundi-los faz o gráfico afirmar que
+ * uma estimativa foi medida:
+ *   · MEDIDO × ≈ ESTIMADO = natureza do TIPO da métrica. Big-O de tempo/espaço é SEMPRE
+ *     ≈ ESTIMADO (inferência estática; indecidível no caso geral). Ciclomática é MEDIDA.
+ *     Fonte única: `TIPO_METRICA_META` (@/domain/enums).
+ *   · ALTA/MEDIA/BAIXA = confiança do MOTOR no valor que ele próprio estimou. É informação
+ *     secundária, exibida como TEXTO — nunca preenche um marcador.
  *
  * Fontes: docs/design/specs/02-graficos.md §0.4 · 00-INDICE.md §4.4 e §6-A (Lacunas 2 e 11)
  *         frontend/src/types/api.ts (PontoCartaDTO — leia os comentários dele).
  */
-import type { NivelConfianca, PontoCartaDTO } from '@/types/api'
+import type { PontoCartaDTO } from '@/types/api'
 import {
   type ClasseK,
-  type Confianca,
+  LINGUAGEM_COM_METRICAS,
   ehPlotavel,
   rotuloCanonico,
 } from '@/domain/enums'
@@ -19,24 +28,31 @@ import {
   AUTONOMIA_MIN,
   type Constelacao,
   type DatasetCarta,
+  type DescartesDataset,
   type NivelAutonomia,
+  type PontoBase,
   type PontoPlotavel,
 } from './tipos'
 
+/** Nenhum descarte. */
+const SEM_DESCARTE: DescartesDataset = {
+  total: 0,
+  calculando: 0,
+  semAnalisador: 0,
+  naoClassificado: 0,
+}
+
 /** Dataset vazio — estado inicial / erro. Evita `dataset?.pontos` espalhado nas telas. */
-export const DATASET_VAZIO: DatasetCarta = { pontos: [], semMetrica: 0, total: 0, constelacoes: [] }
+export const DATASET_VAZIO: DatasetCarta = {
+  pontos: [],
+  todas: [],
+  semMetrica: SEM_DESCARTE,
+  total: 0,
+  constelacoes: [],
+}
 
 /** Uma constelação precisa de pelo menos 2 pontos (§6-A, Lacuna 11). */
 export const MIN_PONTOS_CONSTELACAO = 2
-
-/**
- * Confiança do backend → vocabulário do design (00-INDICE §2.7, regra 3).
- * `ALTA` = MEDIDO · `MEDIA`/`BAIXA` = ≈ ESTIMADO.
- * `null` → ESTIMADO: na dúvida, NUNCA afirmar que a métrica foi medida.
- */
-export function confiancaDeNivel(nivel: NivelConfianca | null | undefined): Confianca {
-  return nivel === 'ALTA' ? 'MEDIDO' : 'ESTIMADO'
-}
 
 /**
  * REGRA DE PLOTABILIDADE (contrato §6-A, Lacuna 2). Um ponto só existe se tem classe de
@@ -45,11 +61,23 @@ export function confiancaDeNivel(nivel: NivelConfianca | null | undefined): Conf
  *   - `tempoOrdem === null` → não analisada, ou linguagem sem analisador (só Java tem).
  *   - `tempoOrdem === -1`   → DESCONHECIDO: o motor rodou e não conseguiu classificar.
  *
- * Os dois casos NÃO plotam — e nenhum deles some em silêncio (entram em `semMetrica`).
+ * Os dois casos NÃO plotam — e nenhum deles some em silêncio (entram em `semMetrica`,
+ * decomposto por motivo).
  * ⚠ `0` é O(1), uma complexidade legítima: jamais tratar 0 como ausência de dado.
  */
 export function ehPontoPlotavel(dto: PontoCartaDTO): boolean {
   return ehPlotavel(dto.tempoOrdem)
+}
+
+/**
+ * POR QUE esta resolução não virou ponto. A ordem dos testes é a ordem da causa:
+ * a linguagem sem analisador nunca chega a ser analisada, então ela vem ANTES de
+ * `!analisada` (senão uma resolução em Python ficaria eternamente "calculando").
+ */
+function motivoDoDescarte(dto: PontoCartaDTO): keyof Omit<DescartesDataset, 'total'> {
+  if (dto.linguagem !== LINGUAGEM_COM_METRICAS) return 'semAnalisador'
+  if (!dto.analisada) return 'calculando'
+  return 'naoClassificado'
 }
 
 /** Autonomia sempre 1..5 (o backend valida; aqui é só um cinto de segurança). */
@@ -65,30 +93,42 @@ function parseData(iso: string): Date {
   return Number.isNaN(d.getTime()) ? new Date(0) : d
 }
 
-/** Um DTO plotável → o ponto de desenho. Não chame direto: use `montarDataset`. */
-function paraPonto(dto: PontoCartaDTO): PontoPlotavel {
-  const k = dto.tempoOrdem as ClasseK // garantido por `ehPontoPlotavel`
+/** Todo DTO → o mínimo comum (autonomia, tempo, linguagem). Plotável ou não. */
+function paraBase(dto: PontoCartaDTO): PontoBase {
   return {
     resolucaoId: dto.resolucaoId,
     desafioId: dto.desafioId,
     desafioTitulo: dto.desafioTitulo,
     linguagem: dto.linguagem,
     autonomia: nivelAutonomia(dto.indiceAutonomiaIA),
-    k,
-    // -1 (DESCONHECIDO) e null colapsam em null: nos dois casos não há classe para colorir.
-    kEspaco: ehPlotavel(dto.espacoOrdem) ? (dto.espacoOrdem as ClasseK) : null,
-    ciclomatica: dto.ciclomatica,
-    confiancaTempo: confiancaDeNivel(dto.confiancaTempo),
-    // O rótulo do backend é a fonte, mas `k` é a verdade: se vierem divergentes, vale `k`.
-    tempoRotulo: rotuloCanonico(k),
-    espacoRotulo: dto.espacoRotulo,
-    visibilidade: dto.visibilidade,
+    analisada: dto.analisada,
+    k: ehPlotavel(dto.tempoOrdem) ? (dto.tempoOrdem as ClasseK) : null,
     submetidaEm: parseData(dto.submetidaEm),
   }
 }
 
+/** Um DTO plotável → o ponto de desenho. Não chame direto: use `montarDataset`. */
+function paraPonto(dto: PontoCartaDTO): PontoPlotavel {
+  const k = dto.tempoOrdem as ClasseK // garantido por `ehPontoPlotavel`
+  return {
+    ...paraBase(dto),
+    k,
+    // `kEspaco` é a classe COLORÍVEL; `espacoOrdem` guarda o cru, porque -1 (o motor não
+    // classificou → `?`) é semanticamente diferente de null (não há dado → `—`).
+    kEspaco: ehPlotavel(dto.espacoOrdem) ? (dto.espacoOrdem as ClasseK) : null,
+    espacoOrdem: dto.espacoOrdem,
+    ciclomatica: dto.ciclomatica,
+    // Confiança do MOTOR (ALTA/MEDIA/BAIXA) — não é MEDIDO/ESTIMADO. Vira texto.
+    confiancaTempo: dto.confiancaTempo,
+    // O rótulo do backend é a fonte, mas `k` é a verdade: se vierem divergentes, vale `k`.
+    tempoRotulo: rotuloCanonico(k),
+    espacoRotulo: dto.espacoRotulo,
+    visibilidade: dto.visibilidade,
+  }
+}
+
 /** Ordem cronológica ascendente; empate resolvido pelo id (render estável entre reloads). */
-function porTempoAsc(a: PontoPlotavel, b: PontoPlotavel): number {
+function porTempoAsc(a: PontoBase, b: PontoBase): number {
   const d = a.submetidaEm.getTime() - b.submetidaEm.getTime()
   return d !== 0 ? d : a.resolucaoId.localeCompare(b.resolucaoId)
 }
@@ -123,19 +163,29 @@ export function montarConstelacoes(pontosOrdenados: PontoPlotavel[]): Constelaca
  *
  * Garantias do contrato (os 5 gráficos dependem delas):
  *   1. `pontos` contém SÓ resoluções com classe de tempo válida (0..7).
- *   2. `pontos` está em ordem CRONOLÓGICA ASCENDENTE — as Órbitas usam o índice do array
- *      como `i` do ângulo (`θᵢ = -90° + i·(360°/n)`), sem reordenar nada.
- *   3. `semMetrica` = quantas resoluções foram descartadas. O rodapé do painel exibe esse
- *      número (`rotuloRodape`): o descarte é visível, nunca silencioso.
- *   4. `total` = tudo que o backend mandou.
+ *   2. `pontos` e `todas` estão em ordem CRONOLÓGICA ASCENDENTE — as Órbitas usam o índice
+ *      do array como `i` do ângulo (`θᵢ = -90° + i·(360°/n)`), sem reordenar nada.
+ *   3. `todas` contém TUDO (inclusive o que não plota): a série de autonomia da Linha e a
+ *      contagem mensal saem daqui. Autonomia é autodeclarada e independe da linguagem —
+ *      um mês só com resoluções em Python NÃO é um mês "sem resolução".
+ *   4. `semMetrica` diz quantas ficaram de fora E POR QUÊ. O rodapé do painel exibe isso
+ *      (`rotuloRodape`): o descarte é visível e explicado, nunca silencioso.
  */
 export function montarDataset(pontos: PontoCartaDTO[]): DatasetCarta {
   const total = pontos.length
+  const todas = pontos.map(paraBase).sort(porTempoAsc)
   const plotaveis = pontos.filter(ehPontoPlotavel).map(paraPonto).sort(porTempoAsc)
+
+  const semMetrica: DescartesDataset = { ...SEM_DESCARTE, total: total - plotaveis.length }
+  for (const dto of pontos) {
+    if (ehPontoPlotavel(dto)) continue
+    semMetrica[motivoDoDescarte(dto)] += 1
+  }
 
   return {
     pontos: plotaveis,
-    semMetrica: total - plotaveis.length,
+    todas,
+    semMetrica,
     total,
     constelacoes: montarConstelacoes(plotaveis),
   }
@@ -143,13 +193,24 @@ export function montarDataset(pontos: PontoCartaDTO[]): DatasetCarta {
 
 /**
  * Rodapé do painel — a linha da honestidade (§4.4 do índice):
- *   "18 de 23 resoluções plotadas · 5 sem métrica"
+ *   "18 de 23 resoluções plotadas · 2 calculando · 3 sem analisador"
  * Quando tudo plotou, o sufixo some ("23 de 23 resoluções plotadas").
+ *
+ * O descarte NÃO é um balde só: dizer "5 sem métrica · métricas só para Java" quando as 5
+ * são Java recém-submetidas é dar a explicação errada para um número certo.
  */
 export function rotuloRodape(dataset: DatasetCarta): string {
   const { pontos, semMetrica, total } = dataset
   const base = `${pontos.length} de ${pluralPt(total, 'resolução plotada', 'resoluções plotadas')}`
-  return semMetrica > 0 ? `${base} · ${semMetrica} sem métrica` : base
+  if (semMetrica.total === 0) return base
+
+  const partes: string[] = []
+  if (semMetrica.calculando > 0) partes.push(`${semMetrica.calculando} calculando`)
+  if (semMetrica.semAnalisador > 0) partes.push(`${semMetrica.semAnalisador} sem analisador`)
+  if (semMetrica.naoClassificado > 0) {
+    partes.push(pluralPt(semMetrica.naoClassificado, 'não classificada', 'não classificadas'))
+  }
+  return `${base} · ${partes.join(' · ')}`
 }
 
 /** O ponto selecionado (painel "estrela selecionada"). `null` quando não há seleção. */

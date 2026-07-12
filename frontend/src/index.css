@@ -42,7 +42,10 @@
     --ink-on: #fbfcfe; /* texto SOBRE ink */
     --body: #3a4658; /* corpo de leitura 14–15px */
     --mid: #55617a; /* texto secundário, rótulos mono, ícones */
-    --soft: #8a94a8; /* terciário, placeholder, hints */
+    /* AA (regra 8): a tabela §2.1 traz #8A94A8, que dá 2,95:1 sobre `panel` — reprova para
+       texto < 18,66px, e `soft` é o token dos hints/`sem métrica` (10,5–12px). Escurecido
+       para passar 4,5:1 sobre panel (5,4:1), bg (5,0:1) e recess (4,8:1). */
+    --soft: #5f6880; /* terciário, placeholder, hints */
     --steel: #55617a; /* links / linhas de constelação (derivado, §6 Lacuna 5) */
     --steel-hover: #1a2436; /* hover de link (derivado) */
     --badge: #1a2436; /* satélite do logo, estrelas */
@@ -161,7 +164,9 @@
     --ink-on: #0a0d14;
     --body: #c6cee0;
     --mid: #a6afc9;
-    --soft: #6b738f;
+    /* AA (regra 8): a tabela §2.1 traz #6B738F = 4,08:1 sobre `panel` — reprova para texto
+       < 18,66px. Clareado para 6,3:1 sobre panel e 5,5:1 sobre `elevated`. */
+    --soft: #8a93ad;
     --steel: #8fa6c9;
     --steel-hover: #c7d2e6;
     --badge: #d6deff;
@@ -175,7 +180,12 @@
     --graf-vazio: #3a4358;
     --estrela-nucleo: #fff3e6;
 
-    /* ---- Atmosfera · canais -------------------------------------------- */
+    /* ---- Atmosfera · canais --------------------------------------------
+       ⚠ NÃO É RESÍDUO DA MARCA MORTA. Os tripletes índigo/violeta abaixo são a paleta da
+       NEBULOSA, definida em spec 01 §6.2 e sancionada pelo inventário §7.1 ("cenário… a
+       única licença poética"). Ficam contidos: sempre `aria-hidden` + `pointer-events:none`,
+       nunca em botão/chip/cartão, e no modo claro viram tinta (26,36,54). Regra 1 (colormap
+       é a única cor) vale para COMPONENTE — não para o céu. Não "corrija" isto. */
     --estrela-rgb: 255, 255, 255;
     --estrela-azul-rgb: 214, 224, 255;
     --estrela-stop: 60%;
@@ -461,6 +471,25 @@
   outline: none;
   border-color: var(--ink);
   box-shadow: var(--anel-input);
+}
+
+/* Campo VÁLIDO (Select 04 §7.4): anel verde a 22%. Em classe, e não inline, para que o
+   `:focus-visible` abaixo continue vencendo — foco visível sempre ganha do estado. */
+.ci-anel-valido[data-valido] {
+  box-shadow: 0 0 0 2px rgba(var(--sucesso-rgb), 0.22);
+}
+.ci-anel-valido:focus-visible {
+  box-shadow: var(--anel-botao);
+}
+
+/* Realce da célula da Matriz (hover/seleção). Vive numa CLASSE, e não num `style` inline,
+   porque inline venceria o `box-shadow` do `:focus-visible` acima — e a célula focada +
+   em hover ficaria SEM foco visível (WCAG 2.4.7). O foco sempre ganha. */
+.ci-celula-matriz[data-realce] {
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+.ci-celula-matriz:focus-visible {
+  box-shadow: var(--anel-botao);
 }
 
 /* ============================================================================

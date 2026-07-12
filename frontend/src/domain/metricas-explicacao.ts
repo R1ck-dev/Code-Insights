@@ -46,7 +46,7 @@ export const METRICA_EXPLICACAO: Record<TipoMetrica, MetricaExplicacao> = {
   },
   BIG_O_TEMPO: {
     titulo: 'Complexidade de tempo (Big O)',
-    subtitulo: 'Estimativa heurística a partir do AST',
+    subtitulo: 'Estimativa por análise estática do AST',
     secoes: [
       {
         rotulo: 'O que mede',
@@ -72,7 +72,7 @@ export const METRICA_EXPLICACAO: Record<TipoMetrica, MetricaExplicacao> = {
   },
   COMPLEXIDADE_ESPACO: {
     titulo: 'Complexidade de espaço',
-    subtitulo: 'Estimativa heurística a partir do AST',
+    subtitulo: 'Estimativa por análise estática do AST',
     secoes: [
       {
         rotulo: 'O que mede',

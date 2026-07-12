@@ -35,14 +35,16 @@ export function InfoButton({
 }: InfoButtonProps) {
   return (
     <Dialog>
+      {/* 24×24: mínimo de alvo do WCAG 2.5.8 (AA). O ícone continua em 15px — o que cresce é
+          a área clicável, não o desenho. É o `?` que aparece em toda métrica e gráfico. */}
       <DialogTrigger
         aria-label={ariaLabel}
         className={cn(
-          'ci-foco-botao inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-ci text-soft transition-colors hover:bg-elevated hover:text-ink',
+          'ci-foco-botao inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-ci text-soft transition-colors hover:bg-elevated hover:text-ink',
           className,
         )}
       >
-        <HelpCircle size={size} strokeWidth={2} />
+        <HelpCircle size={size} strokeWidth={2} aria-hidden />
       </DialogTrigger>
 
       <DialogContent className="max-w-[520px] rounded-ci border-line-strong bg-panel shadow-modal">

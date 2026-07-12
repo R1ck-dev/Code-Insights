@@ -56,12 +56,17 @@ const SECOES_COMUNS: readonly InfoSecao[] = [
   {
     rotulo: 'Medido × ≈ estimado',
     texto:
-      'Marcador cheio = medido diretamente na árvore sintática do código. Marcador vazado, com o prefixo ≈, = estimado por análise estática: é uma heurística e pode divergir do pior caso real. A incerteza nunca é escondida.',
+      'Marcador cheio = medido diretamente na árvore sintática (AST) do código — é o caso da complexidade ciclomática. Marcador vazado, com o prefixo ≈, = inferido por análise estática: é o caso de toda classe Big O, porque determinar a complexidade exata de um código qualquer é indecidível no caso geral. Por isso as estrelas da complexidade são sempre vazadas: a incerteza nunca é escondida.',
+  },
+  {
+    rotulo: 'Confiança do motor',
+    texto:
+      'É um segundo eixo, e não se confunde com o primeiro: diz quanto o motor confia no valor que ele mesmo estimou (alta = reconheceu todos os construtos; média = assumiu algum default conservador; baixa = não classificou). Confiança alta não transforma uma estimativa em medição.',
   },
   {
     rotulo: 'O que não está no gráfico',
     texto:
-      'Resoluções sem classe de complexidade não viram ponto — hoje as métricas de complexidade só existem para Java, e o motor pode não classificar um código. O rodapé diz quantas ficaram de fora; nenhuma some em silêncio.',
+      'Resoluções sem classe de complexidade não viram ponto: a análise ainda pode estar rodando, a linguagem pode não ter analisador (hoje só Java tem) ou o motor pode não ter conseguido classificar o código. O rodapé diz quantas ficaram de fora e por quê; nenhuma some em silêncio. A autonomia, essa, é autodeclarada e continua valendo em qualquer linguagem.',
   },
 ]
 
@@ -135,12 +140,17 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       {
         rotulo: 'Como ler',
         texto:
-          'Dois sinais por mês: a autonomia média (linha clara e neutra — autonomia nunca usa o colormap) e a classe de complexidade média arredondada (linha colorida pela classe). Ler as duas juntas é o ponto: subir a autonomia enquanto a complexidade desce é o amadurecimento.',
+          'Dois sinais por mês: a autonomia média (linha clara e neutra — autonomia nunca usa o colormap) e a classe de complexidade média arredondada (linha colorida pela classe). As duas são lidas juntas: a hipótese da pesquisa é que autonomia crescente e complexidade decrescente andam juntas ao longo do tempo. O gráfico mostra o que aconteceu no seu caso — ele não avalia a sua solução.',
       },
       {
-        rotulo: 'Meses vazios',
+        rotulo: 'Complexidade típica do mês',
         texto:
-          'Mês sem resolução fica vago e a linha se interrompe. Interpolar por cima de um mês sem dado inventaria uma tendência que não aconteceu.',
+          'É a média das classes Big O de tempo das resoluções analisadas naquele mês, arredondada para uma classe real. Como toda classe Big O aqui, vem de análise estática da AST — é uma estimativa (marcador vazado, prefixo ≈), não uma medição, e só existe para Java. Difere da "complexidade típica" do card ao lado, que é a MEDIANA de todo o histórico: são estatísticas diferentes do mesmo dado, e podem apontar classes diferentes.',
+      },
+      {
+        rotulo: 'Meses vazios e meses sem métrica',
+        texto:
+          'Mês SEM RESOLUÇÃO fica vago e as duas linhas se interrompem — interpolar por cima inventaria uma tendência que não aconteceu. Já o mês com resoluções que não têm métrica (ex.: Python) NÃO é um mês vazio: a linha de autonomia atravessa normalmente (a autonomia é autodeclarada e independe da linguagem) e só a linha de complexidade se interrompe.',
       },
       ...SECOES_COMUNS,
     ],
@@ -158,7 +168,7 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       {
         rotulo: 'Para que serve',
         texto:
-          'A matriz mostra onde o portfólio se concentra. Densidade no canto de baixa autonomia e alta complexidade é o retrato de quem ainda depende da IA para força bruta.',
+          'A matriz mostra onde o portfólio se concentra. Concentração à esquerda indica resoluções feitas com mais apoio de IA; concentração no topo, classes de complexidade mais custosas. O gráfico descreve a distribuição — a leitura do que isso significa é sua.',
       },
       ...SECOES_COMUNS,
     ],
@@ -255,7 +265,12 @@ export function PainelDeGraficos({
           <span className="tabular font-mono text-[10.5px] text-mid">
             {carregando ? 'carregando resoluções…' : rotuloRodape(dataset)}
           </span>
-          {!carregando && dataset.semMetrica > 0 && (
+          {/*
+           * A nota só-Java explica UM dos três motivos de descarte. Colá-la em qualquer
+           * descarte faria o aluno que acabou de submeter 3 resoluções EM JAVA ler
+           * "3 sem métrica · métricas só para Java" — explicação falsa para número certo.
+           */}
+          {!carregando && dataset.semMetrica.semAnalisador > 0 && (
             <span className="font-mono text-[10.5px] text-soft">· {NOTA_METRICAS_SO_JAVA}</span>
           )}
         </footer>

@@ -111,6 +111,14 @@ export interface ResolucaoDetalheDTO {
  * Confiança do motor no valor que ele mesmo calculou. ALTA = nenhuma suposição;
  * MEDIA = ao menos um default conservador ("assumi que este laço roda n vezes");
  * BAIXA = não foi possível classificar (rótulo "?").
+ *
+ * ⚠ NÃO É O EIXO MEDIDO × ≈ ESTIMADO. `ALTA` significa "o motor reconheceu TODOS os
+ * construtos do código" — não significa que o Big O foi MEDIDO. Inferir a complexidade de um
+ * código arbitrário é indecidível no caso geral: Big O de tempo/espaço é SEMPRE uma
+ * estimativa, com qualquer nível de confiança. Quem decide MEDIDO/≈ESTIMADO é o TIPO da
+ * métrica (`TIPO_METRICA_META` em `@/domain/enums`), e só ele.
+ * Este nível é informação SECUNDÁRIA: vira texto ("confiança do motor: alta"), nunca preenche
+ * um marcador nem tira o `≈` de um valor.
  */
 export type NivelConfianca = 'ALTA' | 'MEDIA' | 'BAIXA'
 
@@ -190,9 +198,12 @@ export interface ResumoDashboardDTO {
  *   sentinela de "vazio"/"sem métrica": teste sempre `== null` e `=== -1` explicitamente,
  *   nunca `if (!tempoOrdem)`.
  * - Para plotar: só entram pontos com `ordem != null && ordem >= 0`. Os demais contam no
- *   rodapé "N de M resoluções plotadas · X sem métrica".
- * - `confiancaTempo` distingue MEDIDO (`ALTA`) de ≈ ESTIMADO (`MEDIA`/`BAIXA`) — a incerteza
- *   nunca pode ser escondida na UI.
+ *   rodapé "N de M resoluções plotadas", decompostos por motivo (calculando · sem analisador ·
+ *   não classificada).
+ * - ⚠ `confiancaTempo` **NÃO** é MEDIDO × ≈ ESTIMADO. É a confiança do MOTOR na própria
+ *   estimativa (ver `NivelConfianca`, acima). Big O é SEMPRE ≈ ESTIMADO, inclusive com
+ *   confiança ALTA. Mapear `ALTA → MEDIDO` faz o gráfico AFIRMAR que a estimativa foi medida —
+ *   o oposto da regra 3 (nunca esconder a incerteza da métrica).
  */
 export interface PontoCartaDTO {
   resolucaoId: string

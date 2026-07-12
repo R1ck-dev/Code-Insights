@@ -1,3 +1,16 @@
+/*
+ * Tela K · Desafio público (modo leitura) — spec 03 §K.
+ *
+ * O visitante vê o enunciado, quem escreveu e a lista de resoluções. Nenhuma ação de dono
+ * (sem editar, sem nova resolução, sem alterar visibilidade) — só leitura e dois convites.
+ *
+ * Regras que esta tela carrega:
+ *  - 401 é um estado de produto, não um erro genérico: o desafio existe e pede conta ("Entre
+ *    para ver este desafio"). 400/404 mostram a mensagem do backend + volta ao portfólio.
+ *  - A métrica de cada resolução vive dentro da `ResolucaoLinha` (que já sabe distinguir
+ *    MEDIDO × ≈ ESTIMADO, `calculando` e `sem métrica` — métrica só existe para Java).
+ *  - Autonomia é neutra; a única cor da tela é o colormap dos chips Big-O.
+ */
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Code2, ExternalLink, Eye } from 'lucide-react'
@@ -8,18 +21,38 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { QueryBoundary, LoadingSection, ErrorState } from '@/components/page/states'
 import { Avatar } from '@/components/Avatar'
-import { AutonomyMeter } from '@/components/AutonomyMeter'
-import {
-  AnalysisStatus,
-  LanguageBadge,
-  VisibilityBadge,
-} from '@/components/domain/badges'
+import { StatusChip } from '@/components/domain/badges'
+import { ResolucaoLinha } from '@/components/domain/ResolucaoLinha'
 import { useDesafioDetalhe } from '@/features/desafios/hooks'
 import { useResolucoesDoDesafio } from '@/features/resolucoes/hooks'
 import { formatDate, pluralPt } from '@/lib/utils'
 import { apiErrorMessage, apiErrorStatus } from '@/lib/api'
 
-/** Visitante-03 — desafio público em modo leitura (sem ações de dono). */
+/** Envelope da tela: o corpo público (spec: `padding: 26px 48px 40px; gap: 22px`). */
+function Corpo({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-[22px] px-5 pt-[26px] pb-10 sm:px-8 lg:px-12">
+      {children}
+    </div>
+  )
+}
+
+/** Nota permanente do visitante: recuo + hairline, tinta terciária, sem alarme. */
+function NotaModoLeitura() {
+  return (
+    <div className="flex items-start gap-[9px] rounded-ci border border-line bg-recess px-3.5 py-[13px]">
+      <Eye size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-steel" />
+      <p className="text-[12px] leading-[1.5] text-soft">
+        Você está vendo este portfólio em modo leitura.{' '}
+        <Link to="/criar-conta" className="font-semibold text-steel hover:text-steel-hover">
+          Crie uma conta
+        </Link>{' '}
+        para montar o seu.
+      </p>
+    </div>
+  )
+}
+
 export function DesafioPublicoPage() {
   const { usuarioId, desafioId } = useParams<{ usuarioId: string; desafioId: string }>()
   const desafioQuery = useDesafioDetalhe(desafioId)
@@ -30,9 +63,9 @@ export function DesafioPublicoPage() {
 
   if (desafioQuery.isPending) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <Corpo>
         <LoadingSection />
-      </div>
+      </Corpo>
     )
   }
 
@@ -40,63 +73,82 @@ export function DesafioPublicoPage() {
   // 401 → convida a entrar; 400/404 (não encontrado / sem acesso) → mostra a mensagem do backend.
   if (desafioQuery.isError || !desafioQuery.data) {
     const precisaLogin = apiErrorStatus(desafioQuery.error) === 401
-    const msg = precisaLogin
-      ? 'Entre para ver este desafio.'
-      : apiErrorMessage(desafioQuery.error, 'Não foi possível carregar este desafio.')
+
     return (
-      <div className="mx-auto flex w-full max-w-lg flex-col items-center gap-5 px-4 py-16 sm:px-6 lg:px-8">
-        <ErrorState message={msg} className="w-full" />
-        <div className="flex items-center gap-3">
-          {precisaLogin ? (
-            <>
-              <Link to="/entrar" className={buttonClasses({ variant: 'primary' })}>
+      <div className="mx-auto flex w-full max-w-[440px] flex-col gap-4 px-5 py-16">
+        {precisaLogin ? (
+          <>
+            <ErrorState
+              title="Entre para ver este desafio"
+              message="Este desafio só é visível para quem tem conta. Entre com a sua ou crie uma — o portfólio é grátis."
+            />
+            <div className="flex items-center gap-2.5">
+              <Link to="/entrar" className={buttonClasses({ fullWidth: true })}>
                 Entrar
               </Link>
-              <Link to="/criar-conta" className={buttonClasses({ variant: 'secondary' })}>
+              <Link
+                to="/criar-conta"
+                className={buttonClasses({ variant: 'secondary', fullWidth: true })}
+              >
                 Criar conta
               </Link>
-            </>
-          ) : (
-            <Link to={portfolioTo} className={buttonClasses({ variant: 'secondary' })}>
+            </div>
+          </>
+        ) : (
+          <>
+            <ErrorState
+              message={apiErrorMessage(desafioQuery.error, 'Não foi possível carregar este desafio.')}
+              onRetry={() => void desafioQuery.refetch()}
+            />
+            <Link
+              to={portfolioTo}
+              className={buttonClasses({ variant: 'secondary', fullWidth: true })}
+            >
               Voltar ao portfólio
             </Link>
-          )}
-        </div>
+          </>
+        )}
       </div>
     )
   }
 
   const desafio = desafioQuery.data
+  const rotuloLinkExterno = desafio.plataformaOrigem
+    ? `Abrir no ${desafio.plataformaOrigem}`
+    : 'Abrir link'
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-      {/* Voltar ao portfólio do autor */}
+    <Corpo>
+      {/* a) Voltar ao portfólio do autor — mono, tinta de link */}
       <Link
         to={portfolioTo}
-        className="inline-flex w-fit items-center gap-2 text-[13px] font-medium text-brand-strong transition-colors hover:text-brand"
+        className="ci-foco-botao inline-flex w-fit items-center gap-2 rounded-ci font-mono text-[12.5px] text-steel transition-colors hover:text-steel-hover"
       >
-        <ArrowLeft size={15} />
+        <ArrowLeft size={15} strokeWidth={2} aria-hidden />
         Portfólio de @{desafio.autorUsername}
       </Link>
 
-      {/* Cabeçalho: título, chips, visibilidade, datas, link externo */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-heading">{desafio.titulo}</h1>
-          <div className="flex flex-wrap items-center gap-2">
+      {/* b) Cabeçalho do desafio */}
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-[11px]">
+          <h1 className="text-[26px] leading-tight font-bold tracking-[-.02em] text-ink sm:text-[28px]">
+            {desafio.titulo}
+          </h1>
+          <div className="flex flex-wrap items-center gap-[9px]">
             {desafio.plataformaOrigem && <Chip>{desafio.plataformaOrigem}</Chip>}
-            {desafio.identificadorExterno && <Chip mono>#{desafio.identificadorExterno}</Chip>}
-            <VisibilityBadge visibilidade={desafio.visibilidade} />
-            <span className="font-mono text-xs text-subtle">
-              criado em {formatDate(desafio.criadoEm)}
-            </span>
-            {desafio.atualizadoEm !== desafio.criadoEm && (
-              <span className="font-mono text-xs text-subtle">
-                · atualizado em {formatDate(desafio.atualizadoEm)}
-              </span>
+            {desafio.identificadorExterno && (
+              <Chip className="tabular">#{desafio.identificadorExterno}</Chip>
             )}
+            <StatusChip status={desafio.visibilidade === 'PUBLICO' ? 'publico' : 'privado'} />
+            <time
+              dateTime={desafio.criadoEm}
+              className="tabular font-mono text-[11.5px] text-soft"
+            >
+              criado em {formatDate(desafio.criadoEm)}
+            </time>
           </div>
         </div>
+
         {desafio.urlExterna && (
           <a
             href={desafio.urlExterna}
@@ -104,59 +156,61 @@ export function DesafioPublicoPage() {
             rel="noreferrer"
             className={buttonClasses({ variant: 'secondary' })}
           >
-            Abrir link
-            <ExternalLink size={15} className="text-muted" />
+            {rotuloLinkExterno}
+            <ExternalLink size={15} strokeWidth={2} aria-hidden className="text-mid" />
           </a>
         )}
       </div>
 
-      {/* Enunciado + coluna lateral (autor / modo leitura) */}
+      {/* c) Enunciado + coluna lateral (autor / modo leitura) */}
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[1.5fr_1fr]">
         <Card className="flex flex-col gap-3.5 p-5">
-          <span className="text-sm font-semibold text-heading">Enunciado</span>
+          <h2 className="text-[14px] font-semibold text-ink">Enunciado</h2>
           {desafio.enunciado ? (
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-fg">
+            <p className="text-[14px] leading-[1.65] break-words whitespace-pre-wrap text-body">
               {desafio.enunciado}
             </p>
           ) : (
-            <p className="text-sm text-muted">Sem enunciado.</p>
+            <p className="text-[13px] text-soft">Sem enunciado.</p>
           )}
         </Card>
 
         <div className="flex flex-col gap-4">
-          <Card className="flex flex-col gap-4 p-[18px]">
-            <span className="text-[13px] font-semibold text-muted">Sobre o autor</span>
+          <Card className="flex flex-col gap-3.5 p-[18px]">
+            <span className="font-mono text-[11px] tracking-[.08em] text-mid uppercase">
+              Sobre o autor
+            </span>
+
             <div className="flex items-center gap-3">
-              <Avatar name={desafio.autorUsername} size={44} />
-              <span className="text-sm font-semibold text-heading">@{desafio.autorUsername}</span>
+              <Avatar name={desafio.autorUsername} size={44} className="font-bold" />
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-[14px] font-semibold text-ink">
+                  @{desafio.autorUsername}
+                </span>
+                <span className="tabular font-mono text-[11.5px] text-soft">
+                  {pluralPt(desafio.qtdResolucoes, 'resolução', 'resoluções')} neste desafio
+                </span>
+              </div>
             </div>
+
             <Link
               to={portfolioTo}
-              className={buttonClasses({ variant: 'secondary', size: 'sm', className: 'w-full' })}
+              className={buttonClasses({ variant: 'secondary', size: 'sm', fullWidth: true })}
             >
               Ver portfólio
             </Link>
           </Card>
 
-          <div className="flex items-start gap-2.5 rounded-xl border border-border bg-bg-deep p-3.5">
-            <Eye size={15} className="mt-0.5 shrink-0 text-brand-strong" />
-            <span className="text-xs leading-relaxed text-muted">
-              Você está vendo em modo leitura.{' '}
-              <Link to="/criar-conta" className="font-semibold text-brand-strong hover:text-brand">
-                Crie uma conta
-              </Link>{' '}
-              para montar o seu.
-            </span>
-          </div>
+          <NotaModoLeitura />
         </div>
       </div>
 
-      {/* Resoluções do desafio (leitura, sem ações de edição).
-          Rótulo neutro: o endpoint não filtra por visibilidade da resolução. */}
-      <section className="flex flex-col gap-4">
+      {/* d) Resoluções. Rótulo neutro de propósito: o endpoint não filtra por visibilidade da
+          resolução — chamar a lista de "públicas" mentiria para o autor logado no próprio desafio. */}
+      <section className="flex flex-col gap-3.5">
         <div className="flex items-center gap-2.5">
-          <h3 className="text-base font-semibold text-heading">Resoluções</h3>
-          <Chip mono>{pluralPt(desafio.qtdResolucoes, 'resolução', 'resoluções')}</Chip>
+          <h2 className="text-[16px] font-semibold text-ink">Resoluções</h2>
+          <Chip className="tabular">{desafio.qtdResolucoes}</Chip>
         </div>
 
         <QueryBoundary query={resolucoesQuery}>
@@ -164,45 +218,43 @@ export function DesafioPublicoPage() {
             dados.itens.length === 0 ? (
               <EmptyState
                 icon={Code2}
-                title="Nenhuma resolução"
-                description="Este desafio ainda não tem resoluções."
+                title="Nenhuma resolução ainda."
+                description="Este desafio ainda não tem nenhuma resolução visível."
               />
             ) : (
-              <div className="flex flex-col gap-4">
-                <ul className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3">
+                <ul className="flex flex-col gap-2.5">
                   {dados.itens.map((r) => (
                     <li key={r.id}>
-                      <Link
+                      {/*
+                       * `tempoOrdem` fica UNDEFINED de propósito: a lista pública não tem acesso
+                       * à métrica (a carta celeste é `@CurrentUserId` — é a carta de quem está
+                       * logado, não a do dono do portfólio). Undefined = "não sei", e a linha
+                       * mostra `—`. NUNCA `sem métrica`: essa resolução Java TEM métrica, e o
+                       * visitante a vê ao abrir a resolução. A lista não pode negar o que a
+                       * tela seguinte afirma.
+                       * TODO (backend): expor `tempoOrdem`/`confianca` em `ResolucaoResumoDTO`
+                       * e passar aqui — o `MetricaSlot` já está pronto para receber.
+                       */}
+                      <ResolucaoLinha
+                        variant="cartao"
+                        dataFormato="longa"
                         to={`/u/${usuarioId ?? ''}/desafios/${desafioId ?? ''}/resolucoes/${r.id}`}
-                        className="block"
-                      >
-                        <Card className="flex flex-wrap items-center justify-between gap-4 p-4 transition-colors hover:border-border-strong hover:bg-surface-2">
-                          <div className="flex flex-wrap items-center gap-3">
-                            <LanguageBadge linguagem={r.linguagem} />
-                            <AnalysisStatus analisada={r.analisada} />
-                            <span className="font-mono text-[11.5px] text-subtle">
-                              {formatDate(r.submetidaEm)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-xs text-muted">Autonomia</span>
-                            <AutonomyMeter size="sm" value={r.indiceAutonomiaIA} />
-                          </div>
-                        </Card>
-                      </Link>
+                        linguagem={r.linguagem}
+                        autonomia={r.indiceAutonomiaIA}
+                        analisada={r.analisada}
+                        submetidaEm={r.submetidaEm}
+                      />
                     </li>
                   ))}
                 </ul>
-                <Pagination
-                  page={pagina}
-                  totalPages={dados.totalPaginas}
-                  onChange={setPagina}
-                />
+
+                <Pagination page={pagina} totalPages={dados.totalPaginas} onChange={setPagina} />
               </div>
             )
           }
         </QueryBoundary>
       </section>
-    </div>
+    </Corpo>
   )
 }

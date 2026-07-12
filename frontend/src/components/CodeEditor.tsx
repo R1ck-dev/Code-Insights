@@ -1,33 +1,17 @@
-import { useState, type CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import { LANG_LABEL, type CodeLang } from '@/components/CodeBlock'
-import { useTheme } from '@/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 
-/** Pele de input do Órbita: corpo em `recess`, hairline `line-strong`, foco = borda `ink` + anel .3/.14. */
-const SKIN = {
-  dark: {
-    bg: '#05060B',
-    header: '#0B0F1A',
-    border: '#2A3658',
-    divider: '#1E2740',
-    focusBorder: '#EDF0FA',
-    focusRing: 'rgba(237,240,250,.3)',
-    hd: '#A6AFC9',
-    soft: '#6B738F',
-    ink: '#EDF0FA',
-  },
-  light: {
-    bg: '#EAEFF6',
-    header: '#FBFCFE',
-    border: '#C3CAD8',
-    divider: '#D3DAE6',
-    focusBorder: '#1A2436',
-    focusRing: 'rgba(26,36,54,.14)',
-    hd: '#55617A',
-    soft: '#8A94A8',
-    ink: '#1A2436',
-  },
-}
+/*
+ * Editor de código: textarea monospace com cabeçalho (ponto de linguagem + rótulo) e contador
+ * de caracteres.
+ *
+ * ⚠ NÃO existe aqui uma tabela de cores. Antes, um objeto `SKIN` hardcodava 9 hex × 2 temas —
+ * uma SEGUNDA CÓPIA da tabela de tokens, invisível a um find/replace e destinada a driftar no
+ * primeiro token que mudasse. O CodeEditor não é paleta de sintaxe (essa é a única exceção do
+ * sistema, e vive no CodeBlock): é cromo de input, e cromo de input sai dos tokens.
+ * O anel de foco vem de `.ci-foco-input` — não se reconstrói `--anel-input` à mão.
+ */
 
 interface CodeEditorProps {
   value: string
@@ -40,11 +24,13 @@ interface CodeEditorProps {
   minHeight?: number
   className?: string
   id?: string
+  /** Campo com erro — o `FormField` que o embrulha já desenha a mensagem. */
+  'aria-invalid'?: boolean
+  /** `id` da mensagem de erro/hint (ex.: `codigo-erro`). */
+  'aria-describedby'?: string
 }
 
 /**
- * Editor de código: textarea monospace com cabeçalho (ponto de linguagem + rótulo) e contador
- * de caracteres. Tema vem de `useTheme()`.
  * (Realce ao vivo — via CodeMirror — fica como evolução futura.)
  */
 export function CodeEditor({
@@ -56,37 +42,31 @@ export function CodeEditor({
   minHeight = 300,
   className,
   id,
+  'aria-invalid': invalid,
+  'aria-describedby': describedBy,
 }: CodeEditorProps) {
-  const { theme } = useTheme()
-  const [focused, setFocused] = useState(false)
-  const S = SKIN[theme]
   const langColor = lang ? LANG_LABEL[lang]?.[1] : undefined
 
   return (
     <div
-      className={cn('overflow-hidden rounded-[3px] border transition-colors', className)}
-      style={{
-        background: S.bg,
-        borderColor: focused ? S.focusBorder : S.border,
-        boxShadow: focused ? `0 0 0 2px ${S.focusRing}` : undefined,
-      }}
+      className={cn(
+        'overflow-hidden rounded-ci border border-line-strong bg-recess transition-colors',
+        'focus-within:border-ink focus-within:shadow-anel-input',
+        className,
+      )}
     >
-      <div
-        className="flex h-[38px] items-center justify-between border-b px-3"
-        style={{ background: S.header, borderColor: S.divider }}
-      >
+      <div className="flex h-[38px] items-center justify-between border-b border-line bg-panel px-3">
         <div className="flex min-w-0 items-center gap-2">
           {langColor && (
-            <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: langColor }} />
+            <span
+              aria-hidden
+              className="h-[9px] w-[9px] shrink-0 rounded-full"
+              style={{ background: langColor }}
+            />
           )}
-          <span className="truncate font-mono text-[12px] font-medium" style={{ color: S.hd }}>
-            {label}
-          </span>
+          <span className="truncate font-mono text-[12px] font-medium text-mid">{label}</span>
         </div>
-        <span
-          className="shrink-0 font-mono text-[11px] tabular-nums"
-          style={{ color: S.soft }}
-        >
+        <span className="tabular shrink-0 font-mono text-[11px] text-soft">
           {value.length} caracteres
         </span>
       </div>
@@ -94,20 +74,15 @@ export function CodeEditor({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         spellCheck={false}
-        className="block w-full resize-y bg-transparent px-4 py-3 font-mono text-[13px] leading-[1.7] outline-none placeholder:text-[var(--ci-editor-soft)]"
-        style={
-          {
-            minHeight,
-            tabSize: 2,
-            color: S.ink,
-            caretColor: S.ink,
-            '--ci-editor-soft': S.soft,
-          } as CSSProperties
-        }
+        aria-invalid={invalid || undefined}
+        aria-describedby={describedBy}
+        className={cn(
+          'block w-full resize-y bg-transparent px-4 py-3 font-mono text-[13px] leading-[1.7]',
+          'text-ink caret-ink placeholder:text-soft outline-none',
+        )}
+        style={{ minHeight, tabSize: 2 } as CSSProperties}
       />
     </div>
   )

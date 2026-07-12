@@ -5,15 +5,20 @@
  * `PontoPlotavel` é o `PontoCartaDTO` (types/api.ts) já RESOLVIDO para desenho:
  *   - `k` é uma classe real do colormap (0..7) — quem não tem classe de tempo não vira
  *     ponto (ver `dataset.ts`, regra de plotabilidade);
- *   - `confiancaTempo` já está no vocabulário do design (MEDIDO / ESTIMADO), não no do
- *     backend (ALTA / MEDIA / BAIXA);
  *   - `submetidaEm` já é `Date` (a ordem cronológica é dado: ângulo das Órbitas,
  *     sequência das constelações, buckets da Linha).
  *
+ * ⚠ MEDIDO × ≈ ESTIMADO é propriedade do TIPO da métrica, não do valor:
+ *   Big-O de tempo/espaço é SEMPRE ≈ ESTIMADO (inferência estática, indecidível no caso
+ *   geral); a ciclomática é SEMPRE MEDIDA (contagem no AST). A fonte única é
+ *   `TIPO_METRICA_META` (`@/domain/enums`). `confiancaTempo` aqui é OUTRO eixo: a confiança
+ *   do MOTOR no valor que ele mesmo estimou (ALTA/MEDIA/BAIXA) — vira texto, NUNCA preenche
+ *   um marcador. Confundir os dois eixos é afirmar que uma estimativa foi medida.
+ *
  * ⚠ `k === 0` é O(1) — a MELHOR classe, não "vazio". Nunca `if (!k)`.
  */
-import type { LinguagemProgramacao, Visibilidade } from '@/types/api'
-import type { ClasseK, Confianca, Tema } from '@/domain/enums'
+import type { LinguagemProgramacao, NivelConfianca, Visibilidade } from '@/types/api'
+import type { ClasseK, Tema } from '@/domain/enums'
 
 /** Índice de Autonomia IA — autodeclarado, 1 (mais apoio de IA) a 5 (mais autônomo). */
 export type NivelAutonomia = 1 | 2 | 3 | 4 | 5
@@ -25,10 +30,12 @@ export const AUTONOMIA_MAX = 5
 export const TOTAL_AUTONOMIA = 5
 
 /**
- * Uma resolução pronta para desenhar. Só existe se a resolução TEM classe de tempo
- * (`ehPlotavel(tempoOrdem)`); ausências não viram ponto — viram `semMetrica` no rodapé.
+ * TODA resolução do portfólio, plotável ou não. Existe porque a AUTONOMIA é autodeclarada e
+ * INDEPENDE da linguagem (§4.4): uma resolução em Python não vira estrela, mas continua sendo
+ * trabalho feito naquele mês — descartá-la da série de autonomia (ou do "quantas resoluções
+ * teve este mês") transformaria "não sei medir" em "não aconteceu".
  */
-export interface PontoPlotavel {
+export interface PontoBase {
   resolucaoId: string
   /** Agrupador das constelações: resoluções do mesmo desafio formam uma trajetória. */
   desafioId: string
@@ -36,21 +43,39 @@ export interface PontoPlotavel {
   linguagem: LinguagemProgramacao
   /** Eixo X da Carta · raio das Órbitas · colunas da Matriz. NEUTRA — nunca colormap. */
   autonomia: NivelAutonomia
+  /** `false` = a análise assíncrona ainda não rodou (≠ "não tem métrica"). */
+  analisada: boolean
+  /** Classe de TEMPO (0..7) quando plotável; `null` quando não há classe. */
+  k: ClasseK | null
+  /** Já parseada. Ordem cronológica ascendente é garantida por `montarDataset`. */
+  submetidaEm: Date
+}
+
+/**
+ * Uma resolução pronta para desenhar. Só existe se a resolução TEM classe de tempo
+ * (`ehPlotavel(tempoOrdem)`); ausências não viram ponto — viram `semMetrica` no rodapé.
+ */
+export interface PontoPlotavel extends PontoBase {
   /** Classe de TEMPO (0..7) = `k` do colormap. Eixo Y da Carta, cor de tudo. */
   k: ClasseK
   /** Classe de ESPAÇO (0..7) ou `null` quando não há dado / o motor não classificou. */
   kEspaco: ClasseK | null
+  /** Ordem CRUA do espaço: `-1` = o motor não classificou (`?`) ≠ `null` = não há dado. */
+  espacoOrdem: number | null
   /** Contagem de McCabe. NÃO é escala de colormap — só texto (callout: `M=4`). */
   ciclomatica: number | null
-  /** MEDIDO (marcador cheio) vs ESTIMADO (marcador vazado + prefixo `≈`). Regra 3. */
-  confiancaTempo: Confianca
+  /**
+   * Confiança do MOTOR no valor que ele mesmo estimou (ALTA/MEDIA/BAIXA) — o eixo
+   * SECUNDÁRIO. NÃO é MEDIDO×ESTIMADO: Big-O de tempo é sempre ≈ ESTIMADO
+   * (`TIPO_METRICA_META.BIG_O_TEMPO.confianca`). Vira texto ("confiança do motor: alta"),
+   * nunca preenche marcador.
+   */
+  confiancaTempo: NivelConfianca | null
   /** Rótulo canônico da classe de tempo: `O(n log n)`. Nunca nulo (deriva de `k`). */
   tempoRotulo: string
   /** Rótulo cru do espaço (`O(1)`, `?`) — `null` quando não há dado. */
   espacoRotulo: string | null
   visibilidade: Visibilidade
-  /** Já parseada. Ordem cronológica ascendente é garantida por `montarDataset`. */
-  submetidaEm: Date
 }
 
 /**
@@ -66,16 +91,38 @@ export interface Constelacao {
 }
 
 /**
+ * O DESCARTE, DECOMPOSTO. Um balde único ("5 sem métrica") colapsaria três estados
+ * incompatíveis e coleria neles a explicação errada (§4.4: o descartado é contado E
+ * explicado). Os três motivos, mutuamente exclusivos:
+ */
+export interface DescartesDataset {
+  /** `calculando + semAnalisador + naoClassificado` — o que NÃO virou ponto. */
+  total: number
+  /** Java, mas a análise assíncrona ainda não terminou. Vai virar ponto sozinha. */
+  calculando: number
+  /** Linguagem sem analisador (hoje: tudo que não é Java) — é aqui que a nota só-Java vale. */
+  semAnalisador: number
+  /** O motor rodou e não classificou (`ordem === -1`), ou não produziu classe de tempo. */
+  naoClassificado: number
+}
+
+/**
  * O dataset canônico dos 5 gráficos. `semMetrica` NUNCA é escondido: o rodapé do painel
- * exibe "18 de 23 resoluções plotadas · 5 sem métrica" (`rotuloRodape`, em `dataset.ts`).
- * Esconder o descarte seria desonesto — é o oposto do que a pesquisa exige.
+ * exibe "18 de 23 resoluções plotadas · 2 calculando · 1 sem analisador" (`rotuloRodape`,
+ * em `dataset.ts`). Esconder (ou explicar errado) o descarte seria desonesto — é o oposto
+ * do que a pesquisa exige.
  */
 export interface DatasetCarta {
   /** Resoluções plotáveis, em ordem cronológica ASCENDENTE (contrato das Órbitas). */
   pontos: PontoPlotavel[]
-  /** Quantas resoluções o backend mandou e NÃO puderam ser plotadas (sem classe de tempo). */
-  semMetrica: number
-  /** Total recebido = `pontos.length + semMetrica`. */
+  /**
+   * TODAS as resoluções recebidas (plotáveis ou não), em ordem cronológica ascendente.
+   * A Linha lê daqui a série de AUTONOMIA — que independe da linguagem (§4.4).
+   */
+  todas: PontoBase[]
+  /** O que ficou de fora dos gráficos, por motivo. */
+  semMetrica: DescartesDataset
+  /** Total recebido = `pontos.length + semMetrica.total` = `todas.length`. */
   total: number
   /** Trajetórias por desafio (≥ 2 resoluções plotáveis). */
   constelacoes: Constelacao[]

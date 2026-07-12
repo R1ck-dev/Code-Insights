@@ -26,22 +26,30 @@ function parse(iso: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-/** ISO → "dd/mm/aaaa". */
+/**
+ * Separador de data do sistema Órbita: ponto, nunca barra (contrato §2.5 — "Datas em dd.mm.aaaa").
+ * O Intl pt-BR entrega "11/07/2026"; a hora usa `:` e não é afetada.
+ */
+function comPontos(formatado: string): string {
+  return formatado.replace(/\//g, '.')
+}
+
+/** ISO → "dd.mm.aaaa". */
 export function formatDate(iso: string | null | undefined): string {
   const d = parse(iso)
-  return d ? dateFmt.format(d) : '—'
+  return d ? comPontos(dateFmt.format(d)) : '—'
 }
 
-/** ISO → "dd/mm/aaaa · HH:MM". */
+/** ISO → "dd.mm.aaaa · HH:MM". */
 export function formatDateTime(iso: string | null | undefined): string {
   const d = parse(iso)
-  return d ? dateTimeFmt.format(d).replace(', ', ' · ') : '—'
+  return d ? comPontos(dateTimeFmt.format(d)).replace(', ', ' · ') : '—'
 }
 
-/** ISO → "dd/mm". */
+/** ISO → "dd.mm". */
 export function formatDayMonth(iso: string | null | undefined): string {
   const d = parse(iso)
-  return d ? dayMonthFmt.format(d) : '—'
+  return d ? comPontos(dayMonthFmt.format(d)) : '—'
 }
 
 /** "ana.dev" → "AD"; "maria" → "MA". Até 2 caracteres. */

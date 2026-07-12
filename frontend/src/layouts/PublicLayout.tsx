@@ -17,6 +17,14 @@ export function PublicLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
+      {/* Pular para o conteúdo (WCAG 2.4.1 — Bypass Blocks). */}
+      <a
+        href="#conteudo"
+        className="ci-foco-botao sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-ci focus:border focus:border-line-strong focus:bg-panel focus:px-3 focus:py-2 focus:font-mono focus:text-[12.5px] focus:text-ink"
+      >
+        Pular para o conteúdo
+      </a>
+
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line-soft bg-bg/85 px-5 backdrop-blur sm:px-8">
         <Link to="/" aria-label="Início" className="ci-foco-botao rounded-ci">
           <Logo size={26} />
@@ -41,7 +49,7 @@ export function PublicLayout() {
         </div>
       </header>
 
-      <main className="min-w-0 flex-1">
+      <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 outline-none">
         <Outlet />
       </main>
     </div>

@@ -52,7 +52,7 @@ export function DialogContent({
             aria-label="Fechar"
             className="ci-foco-botao absolute right-[14px] top-[14px] flex h-7 w-7 cursor-pointer items-center justify-center rounded-ci text-soft transition-colors hover:bg-elevated hover:text-ink"
           >
-            <X size={16} strokeWidth={2} />
+            <X size={16} strokeWidth={2} aria-hidden />
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -75,7 +75,7 @@ export function DialogHeader({ className, icon: Icon, children, ...props }: Dial
       )}
       {...props}
     >
-      {Icon && <Icon size={18} strokeWidth={2} className="mt-px shrink-0 text-soft" />}
+      {Icon && <Icon size={18} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-soft" />}
       <div className="flex min-w-0 flex-col gap-1.5">{children}</div>
     </div>
   )
@@ -158,6 +158,7 @@ export function DialogIconTile({
       <Icon
         size={destrutivo ? 21 : 22}
         strokeWidth={2}
+        aria-hidden
         className={destrutivo ? 'text-erro-texto' : 'text-steel'}
       />
     </div>

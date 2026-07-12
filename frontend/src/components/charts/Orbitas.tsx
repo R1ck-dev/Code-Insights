@@ -21,10 +21,12 @@ import { useId, useMemo, useState } from 'react'
 import { Folder } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
 import {
+  CONFIANCA_BIG_O,
   comPrefixoEstimado,
   corDaClasse,
   LINGUAGEM_META,
   rotuloCanonico,
+  rotuloConfiancaMotor,
   tintaDaClasse,
 } from '@/domain/enums'
 import { cn } from '@/lib/utils'
@@ -52,6 +54,17 @@ const SEL_NUCLEO_R = 3.2
 
 /** Alvo de clique invisível: o núcleo de 2.4px é pequeno demais para mouse e para toque. */
 const ALVO_R = 12
+
+/**
+ * REGRA 3 (inviolável): o núcleo CHEIO é reservado à métrica MEDIDA. A classe de tempo é
+ * inferida por análise estática → SEMPRE ≈ ESTIMADA → núcleo VAZADO (o mesmo par cheio/vazado
+ * da Carta e da Linha). Antes as Órbitas pintavam TODA estrela como cheia — a incerteza sumia
+ * do gráfico e só sobrevivia no callout.
+ */
+const NUCLEO_MEDIDO = CONFIANCA_BIG_O === 'MEDIDO'
+/** Espessura do anel do núcleo vazado. */
+const NUCLEO_TRACO = 1.3
+const SEL_NUCLEO_TRACO = 1.6
 
 /** O raio-guia do tempo (12h) para na borda do anel externo. */
 const GUIA_R = ORBITA_RAIO_MAX
@@ -219,7 +232,19 @@ export function Orbitas({
                     opacity={ativa ? HALO_OPACIDADE_HOVER : tema === 'dark' ? HALO_OPACIDADE : 0.18}
                     className="transition-[r,opacity] duration-150 motion-reduce:transition-none"
                   />
-                  <circle cx={x} cy={y} r={NUCLEO_R} fill={cor} />
+                  {/* MEDIDO = disco cheio · ≈ ESTIMADO = anel vazado (regra 3). */}
+                  {NUCLEO_MEDIDO ? (
+                    <circle cx={x} cy={y} r={NUCLEO_R} fill={cor} />
+                  ) : (
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={NUCLEO_R + 0.2}
+                      fill="none"
+                      stroke={cor}
+                      strokeWidth={NUCLEO_TRACO}
+                    />
+                  )}
                   {ponto.resolucaoId === focoId && (
                     <circle
                       cx={x}
@@ -265,16 +290,26 @@ export function Orbitas({
                 strokeWidth={1}
                 opacity={tema === 'dark' ? 0.5 : 0.6}
               />
-              <circle
-                cx={selecionada.x}
-                cy={selecionada.y}
-                r={SEL_NUCLEO_R}
-                fill={
-                  tema === 'dark'
-                    ? 'var(--estrela-nucleo)'
-                    : corDaClasse(selecionada.ponto.k, tema)
-                }
-              />
+              {/* Selecionada: cheia só se a métrica fosse MEDIDA. Estimada = anel (regra 3). */}
+              {NUCLEO_MEDIDO ? (
+                <circle
+                  cx={selecionada.x}
+                  cy={selecionada.y}
+                  r={SEL_NUCLEO_R}
+                  fill="var(--estrela-nucleo)"
+                  style={{ color: corDaClasse(selecionada.ponto.k, tema) }}
+                />
+              ) : (
+                <circle
+                  cx={selecionada.x}
+                  cy={selecionada.y}
+                  r={SEL_NUCLEO_R}
+                  fill="none"
+                  stroke="var(--estrela-nucleo)"
+                  strokeWidth={SEL_NUCLEO_TRACO}
+                  style={{ color: corDaClasse(selecionada.ponto.k, tema) }}
+                />
+              )}
             </g>
           )}
 
@@ -335,7 +370,8 @@ export function Orbitas({
           raio: autonomia · ângulo: tempo · cor: classe
         </p>
         <p className="font-mono text-[9.5px] leading-none text-soft">
-          t₀ = 12h (mais antiga) · sentido horário · centro = mais apoio de IA
+          t₀ = 12h (mais antiga) · sentido horário · centro = mais apoio de IA · núcleo vazado = ≈
+          estimado
         </p>
       </div>
     </div>
@@ -361,6 +397,7 @@ function Callout({
   const cor = corDaClasse(ponto.k, tema)
   const tinta = tintaDaClasse(ponto.k, tema)
   const pos = posicaoCallout(x, y, ORBITA_VIEWBOX)
+  const motor = rotuloConfiancaMotor(ponto.confiancaTempo)
 
   return (
     <div
@@ -372,31 +409,33 @@ function Callout({
         {tema === 'dark' ? '✦ ' : ''}
         {ponto.desafioTitulo} · {LINGUAGEM_META[ponto.linguagem].label}
       </span>
-      <span className="tabular font-mono text-[10px]" style={{ color: tinta }}>
-        {linhaMetricas(ponto)}
+
+      {/* Uma cor por semântica: só a CLASSE veste o colormap. Ciclomática = contagem (mid),
+          autonomia = NEUTRA (ink) — regras 1 e 4. */}
+      <span className="tabular flex items-center gap-1.5 font-mono text-[10px]">
+        <span style={{ color: tinta }}>
+          {comPrefixoEstimado(rotuloCanonico(ponto.k), CONFIANCA_BIG_O)}
+        </span>
+        {ponto.ciclomatica != null && <span className="text-mid">· M={ponto.ciclomatica}</span>}
+        <span className="text-ink">· aut {ponto.autonomia}/5</span>
       </span>
+
       <span className="tabular font-mono text-[9.5px] text-soft">
         enviada {dataCompleta(ponto.submetidaEm)}
+        {motor ? ` · ${motor}` : ''}
       </span>
     </div>
   )
 }
 
-/** `≈ O(n²) · M=4 · aut 4/5` — o `≈` só quando a classe é ESTIMADA (regra 3). */
-function linhaMetricas(ponto: PontoPlotavel): string {
-  const classe = comPrefixoEstimado(rotuloCanonico(ponto.k), ponto.confiancaTempo)
-  const partes = [classe]
-  if (ponto.ciclomatica != null) partes.push(`M=${ponto.ciclomatica}`)
-  partes.push(`aut ${ponto.autonomia}/5`)
-  return partes.join(' · ')
-}
-
 function rotuloAcessivel(ponto: PontoPlotavel): string {
-  const classe = comPrefixoEstimado(rotuloCanonico(ponto.k), ponto.confiancaTempo)
-  const ciclo = ponto.ciclomatica != null ? `, ciclomática ${ponto.ciclomatica}` : ''
+  const classe = comPrefixoEstimado(rotuloCanonico(ponto.k), CONFIANCA_BIG_O)
+  const natureza = CONFIANCA_BIG_O === 'MEDIDO' ? 'medida' : 'estimada por análise estática'
+  const ciclo = ponto.ciclomatica != null ? `, ciclomática ${ponto.ciclomatica} (medida)` : ''
+  const motor = rotuloConfiancaMotor(ponto.confiancaTempo)
   return (
     `${ponto.desafioTitulo}, ${LINGUAGEM_META[ponto.linguagem].label}, ` +
-    `autonomia ${ponto.autonomia} de 5, tempo ${classe}${ciclo}, ` +
+    `autonomia ${ponto.autonomia} de 5, tempo ${classe} (${natureza}${motor ? `, ${motor}` : ''})${ciclo}, ` +
     `enviada em ${dataCompleta(ponto.submetidaEm)}`
   )
 }

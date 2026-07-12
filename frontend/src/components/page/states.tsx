@@ -43,7 +43,7 @@ export function ErrorState({
       )}
     >
       <div className="flex items-center gap-2">
-        <AlertTriangle size={15} strokeWidth={2} className="shrink-0 text-erro-texto" />
+        <AlertTriangle size={15} strokeWidth={2} aria-hidden className="shrink-0 text-erro-texto" />
         <span className="text-[12.5px] font-semibold text-erro-texto">{title}</span>
       </div>
 
@@ -55,7 +55,7 @@ export function ErrorState({
           onClick={onRetry}
           className="ci-foco-botao mt-0.5 inline-flex h-[31px] cursor-pointer items-center gap-[7px] self-start rounded-ci border border-line-strong px-[11px] font-mono text-[12px] font-medium text-ink transition-colors hover:bg-elevated"
         >
-          <RefreshCw size={13} strokeWidth={2} />
+          <RefreshCw size={13} strokeWidth={2} aria-hidden />
           Tentar novamente
         </button>
       )}

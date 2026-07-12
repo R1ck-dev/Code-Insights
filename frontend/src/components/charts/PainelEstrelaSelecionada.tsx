@@ -15,7 +15,17 @@ import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
 import { StatusChip } from '@/components/domain/badges'
-import { PREFIXO_ESTIMADO, corDaClasse, rotuloCanonico, tintaDaClasse } from '@/domain/enums'
+import {
+  CONFIANCA_BIG_O,
+  ORDEM_DESCONHECIDA,
+  PREFIXO_ESTIMADO,
+  ROTULO_DESCONHECIDO,
+  TIPO_METRICA_META,
+  corDaClasse,
+  rotuloCanonico,
+  rotuloConfiancaMotor,
+  tintaDaClasse,
+} from '@/domain/enums'
 import { useTheme } from '@/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 import { dataCompleta } from './escalas'
@@ -60,7 +70,13 @@ export function PainelEstrelaSelecionada({
   }
 
   const escuro = theme === 'dark'
-  const estimadoTempo = ponto.confiancaTempo === 'ESTIMADO'
+  /*
+   * Big-O de tempo/espaço é ESTIMADO por natureza (`TIPO_METRICA_META`) — não se deriva isso
+   * do `NivelConfianca`. A confiança do motor (alta/média/baixa) é o eixo secundário e sai
+   * como TEXTO abaixo, exatamente como a tela D já faz.
+   */
+  const estimadoTempo = CONFIANCA_BIG_O === 'ESTIMADO'
+  const confiancaMotor = rotuloConfiancaMotor(ponto.confiancaTempo)
 
   return (
     <aside className={cn(CARTAO, className)} aria-live="polite">
@@ -96,16 +112,23 @@ export function PainelEstrelaSelecionada({
         </LinhaMetrica>
 
         <LinhaMetrica rotulo="espaço">
-          {ponto.kEspaco === null ? (
-            <SemMetrica />
-          ) : (
+          {/*
+           * TRÊS estados, não dois (types/api.ts): `-1` = o motor rodou e NÃO classificou (`?`)
+           * — é resultado. `null` = não há dado (`—`) — é ausência. Colapsar os dois apagaria a
+           * diferença entre "tentei e não consegui" e "não tenho analisador".
+           */}
+          {ponto.kEspaco !== null ? (
             /* O espaço sai da mesma análise estática do tempo: é ESTIMADO por natureza. */
             <ValorClasse
               k={ponto.kEspaco}
               texto={rotuloCanonico(ponto.kEspaco)}
-              estimado
+              estimado={TIPO_METRICA_META.COMPLEXIDADE_ESPACO.confianca === 'ESTIMADO'}
               tema={theme}
             />
+          ) : ponto.espacoOrdem === ORDEM_DESCONHECIDA ? (
+            <NaoClassificado />
+          ) : (
+            <SemMetrica />
           )}
         </LinhaMetrica>
 
@@ -119,6 +142,11 @@ export function PainelEstrelaSelecionada({
             </span>
           )}
         </LinhaMetrica>
+
+        {/* Eixo secundário: quanto o motor confia na ESTIMATIVA que ele mesmo fez. */}
+        {confiancaMotor && (
+          <span className="font-mono text-[10.5px] text-soft">{confiancaMotor}</span>
+        )}
       </dl>
 
       {/* ── Autonomia (neutra) + ação ───────────────────────────────────────── */}
@@ -132,7 +160,7 @@ export function PainelEstrelaSelecionada({
         className="ci-foco-botao -mx-1 inline-flex items-center gap-1 self-start rounded-ci px-1 py-0.5 font-mono text-[12px] text-steel transition-colors hover:text-steel-hover"
       >
         Ver resolução
-        <ChevronRight size={14} strokeWidth={2} />
+        <ChevronRight size={14} strokeWidth={2} aria-hidden />
       </Link>
     </aside>
   )
@@ -151,7 +179,23 @@ function LinhaMetrica({ rotulo, children }: { rotulo: string; children: React.Re
 
 /** `—` em `soft`: a ausência de métrica é dita, nunca disfarçada de zero. */
 function SemMetrica() {
-  return <span className="font-mono text-[15px] font-semibold text-soft">—</span>
+  return (
+    <span className="font-mono text-[15px] font-semibold text-soft" title="Sem dado de métrica">
+      —
+    </span>
+  )
+}
+
+/** `?` em `soft`: o motor RODOU e não classificou. É um resultado, não uma ausência. */
+function NaoClassificado() {
+  return (
+    <span
+      className="font-mono text-[15px] font-semibold text-soft"
+      title="O motor analisou o código e não conseguiu classificar esta complexidade"
+    >
+      {ROTULO_DESCONHECIDO}
+    </span>
+  )
 }
 
 /**

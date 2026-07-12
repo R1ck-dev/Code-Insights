@@ -40,9 +40,15 @@ export function SelectTrigger({
   const campo = variant === 'campo'
   return (
     <SelectPrimitive.Trigger
-      style={valid ? { boxShadow: '0 0 0 2px rgba(var(--sucesso-rgb), 0.22)', ...style } : style}
+      /*
+       * O anel de "campo válido" sai por CLASSE (`ci-anel-valido` + `data-valido`), não por
+       * `style` inline: inline vencia o `box-shadow` do `:focus-visible` e, depois de escolher
+       * a categoria, tabular até o trigger não mostrava foco nenhum (WCAG 2.4.7).
+       */
+      data-valido={valid ? true : undefined}
+      style={style}
       className={cn(
-        'ci-foco-botao inline-flex cursor-pointer items-center rounded-ci border font-mono outline-none transition-colors',
+        'ci-foco-botao ci-anel-valido inline-flex cursor-pointer items-center rounded-ci border font-mono outline-none transition-colors',
         'disabled:cursor-not-allowed disabled:opacity-55',
         campo
           ? 'h-10 w-full justify-between gap-2 bg-recess px-3 text-[13px] text-ink data-[placeholder]:text-mid'
@@ -58,12 +64,13 @@ export function SelectTrigger({
       )}
       {...props}
     >
-      {Icon && <Icon size={14} strokeWidth={2} className="shrink-0 text-steel" />}
+      {Icon && <Icon size={14} strokeWidth={2} aria-hidden className="shrink-0 text-steel" />}
       <span className="truncate">{children}</span>
       <SelectPrimitive.Icon asChild>
         <ChevronDown
           size={campo ? 15 : 14}
           strokeWidth={2}
+          aria-hidden
           className="shrink-0 text-soft"
         />
       </SelectPrimitive.Icon>
@@ -91,11 +98,11 @@ export function SelectContent({
         {...props}
       >
         <SelectPrimitive.ScrollUpButton className="flex h-5 items-center justify-center text-soft">
-          <ChevronUp size={13} strokeWidth={2} />
+          <ChevronUp size={13} strokeWidth={2} aria-hidden />
         </SelectPrimitive.ScrollUpButton>
         <SelectPrimitive.Viewport className="flex flex-col">{children}</SelectPrimitive.Viewport>
         <SelectPrimitive.ScrollDownButton className="flex h-5 items-center justify-center text-soft">
-          <ChevronDown size={13} strokeWidth={2} />
+          <ChevronDown size={13} strokeWidth={2} aria-hidden />
         </SelectPrimitive.ScrollDownButton>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
@@ -120,7 +127,7 @@ export function SelectItem({
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator className="absolute right-2.5 text-ink">
-        <Check size={13} strokeWidth={2} />
+        <Check size={13} strokeWidth={2} aria-hidden />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )

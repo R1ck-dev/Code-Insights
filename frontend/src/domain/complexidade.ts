@@ -65,8 +65,9 @@ export const COMPLEXIDADE_ORDEM_MAX = TOTAL_CLASSES - 1
  * para um ponto/valor sem classe — a ausência de medida não é uma medida.
  */
 export const COR_SEM_METRICA: Record<Tema, string> = {
-  dark: '#6B738F',
-  light: '#8A94A8',
+  // Espelho do token `--soft` (index.css) — já corrigido para passar AA em texto pequeno.
+  dark: '#8A93AD',
+  light: '#5F6880',
 }
 
 /** Texto de lista/atividade quando não há métrica (§4.4 do índice). */

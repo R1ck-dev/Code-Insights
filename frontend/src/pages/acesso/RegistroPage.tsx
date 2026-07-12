@@ -1,29 +1,36 @@
 import { useMemo, useState, type FormEvent } from 'react'
-import { Check } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthLayout } from '@/layouts/AuthLayout'
+import { AuthCard, AuthLayout } from '@/layouts/AuthLayout'
 import { Button, buttonClasses } from '@/components/ui/button'
 import { Input, PasswordInput } from '@/components/ui/input'
-import { FormField } from '@/components/ui/form-field'
+import type { NivelSenha } from '@/components/ui/password-strength'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useRegistrar } from '@/features/identity/hooks'
 import { apiErrorMessage } from '@/lib/api'
 
+/*
+ * E · Registro (spec 03 §E) — cartão 424px, padding 28, gap 16.
+ * Nebulosa `auth` + starfield esparso vêm do AuthLayout; a tela é só o miolo.
+ */
+
 const USERNAME_RE = /^[A-Za-z0-9._-]+$/
 
-function passwordStrength(pw: string): { score: number; label: string; color: string } {
+/**
+ * Nível de força da senha. O CÁLCULO é da página; o desenho é do `PasswordStrength`
+ * (4 segmentos, cores dos tokens semânticos) — nenhum hex mora aqui.
+ */
+function nivelSenha(pw: string): NivelSenha {
   let score = 0
   if (pw.length >= 8) score++
   if (pw.length >= 12) score++
   if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++
   if (/\d/.test(pw) || /[^A-Za-z0-9]/.test(pw)) score++
-  const meta = [
-    { label: 'Fraca', color: '#F0563F' },
-    { label: 'Fraca', color: '#F0563F' },
-    { label: 'Média', color: '#E0A21E' },
-    { label: 'Boa', color: '#9CC15A' },
-    { label: 'Forte', color: '#2FB863' },
-  ][score]
-  return { score, ...meta }
+
+  if (score <= 1) return 'fraca'
+  if (score === 2) return 'media'
+  if (score === 3) return 'forte'
+  return 'muito-forte'
 }
 
 export function RegistroPage() {
@@ -36,7 +43,11 @@ export function RegistroPage() {
   const [error, setError] = useState<string | null>(null)
 
   const usernameValid = username.length >= 3 && username.length <= 50 && USERNAME_RE.test(username)
-  const strength = useMemo(() => passwordStrength(password), [password])
+  const usernameErro =
+    username.length > 0 && !USERNAME_RE.test(username)
+      ? 'Use apenas letras, números e os símbolos . _ -'
+      : null
+  const nivel = useMemo(() => nivelSenha(password), [password])
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
@@ -50,97 +61,109 @@ export function RegistroPage() {
   }
 
   return (
-    <AuthLayout topRight={<Link to="/entrar" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>Entrar</Link>}>
-      <form
-        onSubmit={onSubmit}
-        className="flex w-[424px] max-w-full flex-col gap-[18px] rounded-2xl border border-border bg-surface p-8 shadow-[0_30px_70px_-30px_rgba(0,0,0,.85)]"
-      >
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-[22px] font-bold tracking-tight text-heading">Criar sua conta</h1>
-          <span className="text-[13.5px] text-muted">Comece a montar seu portfólio de código.</span>
+    <AuthLayout
+      card={false}
+      topRight={
+        <div className="flex items-center gap-[9px]">
+          <ThemeToggle size={36} />
+          <Link
+            to="/entrar"
+            className={buttonClasses({
+              variant: 'secondary',
+              size: 'sm',
+              className: 'h-[34px] text-[12px]',
+            })}
+          >
+            entrar
+          </Link>
         </div>
-
-        <FormField
-          label="Nome de usuário"
-          htmlFor="username"
-          hint={
-            <>
-              3–50 · letras, números e <span className="font-mono text-muted">. _ -</span>
-            </>
-          }
-        >
-          <div className="relative flex items-center">
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className={usernameValid ? 'border-success pr-10' : undefined}
-              autoComplete="username"
-              required
-            />
-            {usernameValid && <Check size={16} className="absolute right-3 text-success" />}
+      }
+    >
+      <AuthCard width={424} className="p-[28px]">
+        <form onSubmit={onSubmit} className="flex flex-col gap-[16px]">
+          <div className="flex flex-col gap-[6px]">
+            <h1 className="text-[21px] leading-tight font-semibold tracking-[-.02em] text-ink">
+              Criar sua conta
+            </h1>
+            <p className="text-[13px] text-mid">Comece a montar seu portfólio de código.</p>
           </div>
-        </FormField>
 
-        <FormField label="E-mail" htmlFor="email">
+          <Input
+            id="username"
+            label="Nome de usuário"
+            mono
+            size="lg"
+            autoComplete="username"
+            autoFocus
+            placeholder="ana.dev"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            valid={usernameValid}
+            error={usernameErro}
+            hint={
+              <>
+                3–50 · letras, números e <span className="font-mono text-mid">. _ -</span>
+              </>
+            }
+            required
+          />
+
           <Input
             id="email"
+            label="E-mail"
             type="email"
+            mono
+            size="lg"
             autoComplete="email"
+            placeholder="ana@exemplo.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </FormField>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="senha" className="text-[12.5px] font-semibold text-label">
-            Senha
-          </label>
           <PasswordInput
             id="senha"
+            label="Senha"
+            mono
+            size="lg"
             autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             minLength={8}
+            strength={password ? nivel : null}
+            hint="Mínimo de 8 caracteres."
             required
           />
-          {password && (
-            <div className="flex items-center gap-2.5">
-              <div className="flex flex-1 gap-1.5">
-                {[0, 1, 2, 3].map((i) => (
-                  <span
-                    key={i}
-                    className="h-[5px] flex-1 rounded-full"
-                    style={{ background: i < strength.score ? strength.color : 'var(--border-strong)' }}
-                  />
-                ))}
-              </div>
-              <span className="text-[11.5px] font-semibold" style={{ color: strength.color }}>
-                {strength.label}
-              </span>
+
+          {error && (
+            <div
+              role="alert"
+              className="flex items-start gap-[9px] rounded-ci border border-erro-line bg-erro-bg px-[13px] py-[10px] text-[12.5px] leading-snug text-erro-texto"
+            >
+              <AlertTriangle size={14} strokeWidth={2} aria-hidden className="mt-[1px] shrink-0" />
+              {error}
             </div>
           )}
-          <span className="text-[11.5px] text-subtle">Mínimo de 8 caracteres.</span>
-        </div>
 
-        {error && (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12.5px] text-danger">
-            {error}
-          </div>
-        )}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            font="sans"
+            fullWidth
+            loading={registrar.isPending}
+          >
+            Criar conta
+          </Button>
 
-        <Button type="submit" size="lg" loading={registrar.isPending} className="w-full">
-          Criar conta
-        </Button>
-
-        <div className="text-center text-[13px] text-muted">
-          Já tem conta?{' '}
-          <Link to="/entrar" className="font-semibold text-brand-strong hover:underline">
-            Entrar
-          </Link>
-        </div>
-      </form>
+          <p className="text-center text-[12.5px] text-mid">
+            Já tem conta?{' '}
+            <Link to="/entrar" className="font-medium">
+              Entrar
+            </Link>
+          </p>
+        </form>
+      </AuthCard>
     </AuthLayout>
   )
 }

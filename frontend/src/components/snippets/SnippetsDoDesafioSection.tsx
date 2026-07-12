@@ -5,10 +5,12 @@ import { Card } from '@/components/ui/card'
 import { Chip } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/page/states'
 import { CodeBlock } from '@/components/CodeBlock'
 import { SnippetFormDialog } from '@/components/snippets/SnippetFormDialog'
 import { CATEGORIA_META } from '@/domain/enums'
 import { useSnippetsDoDesafio } from '@/features/snippets/hooks'
+import { apiErrorMessage } from '@/lib/api'
 import type { CategoriaConceito, SnippetDTO } from '@/types/api'
 
 /**
@@ -42,6 +44,13 @@ export function SnippetsDoDesafioSection({ desafioId }: { desafioId: string }) {
             <Skeleton key={i} className="h-24 w-full" />
           ))}
         </div>
+      ) : query.isError ? (
+        /* Erro NÃO é vazio. `data ?? []` fazia a falha do GET virar "nenhum snippet
+           vinculado" — a plataforma afirmando ausência de dado que ela não conseguiu ler. */
+        <ErrorState
+          message={apiErrorMessage(query.error, 'Não foi possível carregar os snippets deste desafio.')}
+          onRetry={() => void query.refetch()}
+        />
       ) : snippets.length === 0 ? (
         <EmptyState
           size="sm"

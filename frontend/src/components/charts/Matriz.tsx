@@ -12,14 +12,7 @@
  * ⚠ CSS Grid, não SVG: o domínio é discreto (5 × 8 = 40 células) e a geometria é uma
  * tabela. SVG só acrescentaria cálculo de coordenada para nada.
  */
-import {
-  type CSSProperties,
-  type KeyboardEvent,
-  type MouseEvent,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { type CSSProperties, type MouseEvent, useMemo, useRef, useState } from 'react'
 import { Folder } from 'lucide-react'
 
 import { EmptyState } from '@/components/ui/empty-state'
@@ -136,7 +129,7 @@ export function Matriz({
   const vazio = !carregando && dataset.pontos.length === 0
 
   function aoEntrar(
-    e: MouseEvent<HTMLDivElement>,
+    e: MouseEvent<HTMLButtonElement>,
     k: ClasseK,
     autonomia: NivelAutonomia,
     contagem: number,
@@ -222,41 +215,48 @@ export function Matriz({
                       temDado && !carregando
                         ? `linear-gradient(${rgbaDeHex(cor, celula.alpha)}, ${rgbaDeHex(cor, celula.alpha)})`
                         : undefined,
-                    boxShadow: realce ? 'inset 0 0 0 1px var(--ink)' : undefined,
                   }
 
+                  /*
+                   * A célula é um <button> DE VERDADE (não um div com onKeyDown): teclado,
+                   * leitor de tela e clique saem de graça. As não-selecionáveis continuam
+                   * focáveis — quem navega por teclado tem de conseguir LER as 40 contagens,
+                   * não só a única que dá para clicar.
+                   */
                   return (
                     <div
                       key={celula.autonomia}
                       role="gridcell"
-                      aria-label={rotuloCelula(celula.contagem, celula.autonomia, linha.k)}
                       aria-selected={estaSelecionada || undefined}
-                      tabIndex={idParaSelecionar ? 0 : -1}
-                      className={cn(
-                        'ci-foco-botao flex select-none items-center justify-center rounded-ci-sm font-mono text-[11px] tabular',
-                        'motion-safe:transition-shadow motion-safe:duration-100',
-                        carregando && 'ci-pulse',
-                        idParaSelecionar ? 'cursor-pointer' : 'cursor-default',
-                        temDado ? 'text-ink' : 'text-graf-vazio',
-                      )}
-                      style={estilo}
-                      onMouseEnter={(e) => aoEntrar(e, linha.k, celula.autonomia, celula.contagem)}
-                      onFocus={() => setHover(null)}
-                      onClick={
-                        idParaSelecionar ? () => onSelecionar?.(idParaSelecionar) : undefined
-                      }
-                      onKeyDown={
-                        idParaSelecionar
-                          ? (e: KeyboardEvent<HTMLDivElement>) => {
-                              if (e.key !== 'Enter' && e.key !== ' ') return
-                              e.preventDefault()
-                              onSelecionar?.(idParaSelecionar)
-                            }
-                          : undefined
-                      }
+                      className="contents"
                     >
-                      {/* Vazio é `·`, nunca `0`: ausência de resolução não é uma medida. */}
-                      {carregando ? '' : temDado ? celula.contagem : '·'}
+                      <button
+                        type="button"
+                        // `data-realce` em vez de box-shadow inline: um style inline venceria
+                        // o anel de `:focus-visible` e a célula focada ficaria sem foco visível.
+                        data-realce={realce || undefined}
+                        aria-label={rotuloCelula(celula.contagem, celula.autonomia, linha.k)}
+                        aria-pressed={idParaSelecionar ? estaSelecionada : undefined}
+                        disabled={carregando}
+                        className={cn(
+                          'ci-foco-botao ci-celula-matriz flex w-full select-none items-center justify-center rounded-ci-sm font-mono text-[11px] tabular',
+                          'motion-safe:transition-shadow motion-safe:duration-100',
+                          carregando && 'ci-pulse',
+                          idParaSelecionar ? 'cursor-pointer' : 'cursor-default',
+                          temDado ? 'text-ink' : 'text-graf-vazio',
+                        )}
+                        style={estilo}
+                        onMouseEnter={(e) =>
+                          aoEntrar(e, linha.k, celula.autonomia, celula.contagem)
+                        }
+                        onFocus={() => setHover(null)}
+                        onClick={
+                          idParaSelecionar ? () => onSelecionar?.(idParaSelecionar) : undefined
+                        }
+                      >
+                        {/* Vazio é `·`, nunca `0`: ausência de resolução não é uma medida. */}
+                        {carregando ? '' : temDado ? celula.contagem : '·'}
+                      </button>
                     </div>
                   )
                 })}
@@ -283,13 +283,21 @@ export function Matriz({
             <span className="font-mono text-[11px] font-semibold text-ink tabular">
               {contagemPorExtenso(hover.contagem)}
             </span>
-            <span
-              className="font-mono text-[10px] tabular"
-              style={{
-                color: hover.contagem > 0 ? tintaDaClasse(hover.k, tema) : 'var(--soft)',
-              }}
-            >
-              autonomia {hover.autonomia} · {rotuloCanonico(hover.k)}
+            {/*
+             * Regra 4 (inviolável): AUTONOMIA É NEUTRA. Pintar "autonomia 4" com a tinta da
+             * classe diria que a autonomia é laranja porque a solução é O(n²) — a associação
+             * que este sistema existe para impedir. Só a CLASSE veste o colormap.
+             */}
+            <span className="flex items-center gap-1 font-mono text-[10px] tabular">
+              <span className="text-ink">autonomia {hover.autonomia}</span>
+              <span className="text-soft">·</span>
+              <span
+                style={{
+                  color: hover.contagem > 0 ? tintaDaClasse(hover.k, tema) : 'var(--soft)',
+                }}
+              >
+                {rotuloCanonico(hover.k)}
+              </span>
             </span>
           </div>
         )}
