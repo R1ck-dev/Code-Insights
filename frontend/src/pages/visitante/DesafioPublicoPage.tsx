@@ -224,18 +224,14 @@ export function DesafioPublicoPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 <ul className="flex flex-col gap-2.5">
+                  {/*
+                   * `tempoOrdem` vem do próprio `ResolucaoResumoDTO` — o visitante vê na lista o
+                   * mesmo Big-O que veria ao abrir a resolução. `0..7` → chip ≈ ESTIMADO ·
+                   * `-1` → `?` (o motor não classificou) · `null` → sem métrica (não-Java).
+                   * ⚠ `0` é O(1), não "vazio".
+                   */}
                   {dados.itens.map((r) => (
                     <li key={r.id}>
-                      {/*
-                       * `tempoOrdem` fica UNDEFINED de propósito: a lista pública não tem acesso
-                       * à métrica (a carta celeste é `@CurrentUserId` — é a carta de quem está
-                       * logado, não a do dono do portfólio). Undefined = "não sei", e a linha
-                       * mostra `—`. NUNCA `sem métrica`: essa resolução Java TEM métrica, e o
-                       * visitante a vê ao abrir a resolução. A lista não pode negar o que a
-                       * tela seguinte afirma.
-                       * TODO (backend): expor `tempoOrdem`/`confianca` em `ResolucaoResumoDTO`
-                       * e passar aqui — o `MetricaSlot` já está pronto para receber.
-                       */}
                       <ResolucaoLinha
                         variant="cartao"
                         dataFormato="longa"
@@ -243,6 +239,8 @@ export function DesafioPublicoPage() {
                         linguagem={r.linguagem}
                         autonomia={r.indiceAutonomiaIA}
                         analisada={r.analisada}
+                        tempoOrdem={r.tempoOrdem}
+                        confiancaTempo={r.confiancaTempo}
                         submetidaEm={r.submetidaEm}
                       />
                     </li>

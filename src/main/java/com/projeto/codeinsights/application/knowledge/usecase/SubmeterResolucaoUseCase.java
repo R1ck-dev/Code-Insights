@@ -44,6 +44,8 @@ public class SubmeterResolucaoUseCase {
         Resolucao salva = resolucaoRepository.salvar(resolucao);
         eventPublisher.publishEvent(new ResolucaoParaAnalisarEvent(salva.getId()));
 
+        // Metricas nulas: a analise e assincrona (evento acima) e ainda nao rodou. Nulo = sem dado,
+        // e nao O(1) — a lista mostrara "calculando" ate a analise concluir.
         return new ResolucaoResumoDTO(
                 salva.getId(),
                 salva.getDesafioId(),
@@ -52,6 +54,9 @@ public class SubmeterResolucaoUseCase {
                 salva.getIndiceAutonomiaIA(),
                 salva.getVisibilidade(),
                 salva.isAnalisada(),
+                null,
+                null,
+                null,
                 salva.getSubmetidaEm());
     }
 }

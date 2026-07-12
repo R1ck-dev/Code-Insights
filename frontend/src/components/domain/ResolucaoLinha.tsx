@@ -4,13 +4,20 @@
  * A linha inteira é um <Link> de verdade. Slots, na ordem do protótipo:
  *   LangChip · rótulo · AutonomyMeter (sm) · métrica · analisada · data
  *
+ * A métrica vem do próprio `ResolucaoResumoDTO` (`tempoRotulo`/`tempoOrdem`/`confiancaTempo`):
+ * a lista de resoluções de um desafio é ONDE o aluno compara suas tentativas lado a lado, e a
+ * trajetória de amadurecimento algorítmico é o dado central da pesquisa — uma lista sem Big-O a
+ * esconde. Não há consulta extra por linha (o backend traz a métrica na mesma página).
+ *
  * Regras que o componente carrega para nenhuma tela reinventar:
  *  - MÉTRICA SÓ EXISTE PARA JAVA (§4.4): outra linguagem → `sem métrica` em mono 10.5 soft.
  *    Nunca um valor vazio, nunca um `—` solto.
  *  - `analisada === false` (Java) → chip `calculando` com spinner.
+ *  - `tempoOrdem` 0..7 → BigOChip (`0` é `O(1)`, uma complexidade legítima — jamais "vazio").
  *  - `tempoOrdem === -1` → o motor rodou e NÃO classificou: BigOChip neutro `?` (≠ sem métrica).
  *  - `tempoOrdem === undefined` → A LISTA NÃO CARREGOU A MÉTRICA (não é o mesmo que não haver
- *    métrica!): `—` neutro. Dizer "sem métrica" aqui seria mentir sobre o dado.
+ *    métrica!): `—` neutro. Dizer "sem métrica" aqui seria mentir sobre o dado. Hoje nenhuma
+ *    tela cai nesse estado — fica como rede de segurança para futuras fontes sem a métrica.
  *  - Big-O é ≈ ESTIMADO por natureza (`TIPO_METRICA_META`) — nunca derivado do `NivelConfianca`.
  *  - Autonomia é NEUTRA (osso/tinta), nunca colormap.
  */
@@ -41,9 +48,11 @@ export function SemMetrica({ className }: { className?: string }) {
 
 /**
  * "A métrica existe, mas esta lista não a carregou" — estado honesto de DESCONHECIMENTO.
- * A lista de resoluções do backend não traz complexidade; quem tem o dado é a carta celeste
- * (e o portfólio público não tem acesso a ela). Renderizar `sem métrica` aqui afirmaria uma
- * ausência que não existe — o visitante clica na linha e vê `≈ O(n²)` na tela seguinte.
+ * Renderizar `sem métrica` aqui afirmaria uma ausência que não existe: o usuário clicaria na
+ * linha e veria `≈ O(n²)` na tela seguinte. A lista não pode negar o que o detalhe afirma.
+ *
+ * Hoje `ResolucaoResumoDTO` já traz a complexidade de tempo, então nenhuma tela chega aqui —
+ * o estado sobrevive como rede de segurança para uma fonte futura que não carregue a métrica.
  */
 function MetricaNaoCarregada() {
   return (

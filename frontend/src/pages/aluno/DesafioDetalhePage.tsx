@@ -11,11 +11,11 @@
  *    submetendo uma NOVA resolução ao mesmo desafio.
  *  - Métrica só existe para Java (§4.4). O slot de métrica da linha resolve os 3 estados
  *    (Big-O · calculando · sem métrica) — a incerteza (≈ ESTIMADO) nunca é escondida.
- *  - `ResolucaoResumoDTO` não traz complexidade; o `k` do colormap vem da carta celeste
- *    (`useCartaCeleste`, já em cache pelo dashboard), casada por `resolucaoId`. Sem ela,
- *    a linha degrada para o estado honesto "sem métrica" — nunca um valor inventado.
+ *  - O `k` do colormap vem do próprio `ResolucaoResumoDTO` (`tempoOrdem`): é aqui que o aluno
+ *    compara suas tentativas lado a lado, então o chip de Big-O tem de estar na LISTA, não só
+ *    no detalhe. Nenhuma consulta extra — o backend traz a métrica na mesma página.
  */
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ExternalLink, FileCode2, Globe, Lock, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageContainer } from '@/components/page/PageContainer'
@@ -50,8 +50,7 @@ import {
   useRemoverDesafio,
 } from '@/features/desafios/hooks'
 import { useResolucoesDoDesafio } from '@/features/resolucoes/hooks'
-import { useCartaCeleste } from '@/features/metricas/hooks'
-import type { DesafioDetalheDTO, PontoCartaDTO } from '@/types/api'
+import type { DesafioDetalheDTO } from '@/types/api'
 
 export function DesafioDetalhePage() {
   const { desafioId } = useParams<{ desafioId: string }>()
@@ -291,22 +290,6 @@ function ListaResolucoes({ desafioId }: { desafioId: string }) {
   const [pagina, setPagina] = useState(0)
   const query = useResolucoesDoDesafio(desafioId, pagina)
 
-  /*
-   * A carta celeste é a única fonte de `tempoOrdem`/`confiança` por resolução (o
-   * `ResolucaoResumoDTO` não os traz). Consulta em cache — o dashboard já a usa.
-   *
-   * ⚠ ENQUANTO ELA NÃO CHEGA (ou se falhar), a linha NÃO pode dizer "sem métrica": esse rótulo
-   * é reservado à linguagem sem analisador (§4.4). "Ainda não carreguei" vira esqueleto;
-   * "não consegui carregar" vira `—`. Afirmar ausência de métrica onde há métrica é pior do
-   * que não mostrar nada.
-   */
-  const carta = useCartaCeleste()
-  const metricas = useMemo(() => {
-    const mapa = new Map<string, PontoCartaDTO>()
-    for (const ponto of carta.data ?? []) mapa.set(ponto.resolucaoId, ponto)
-    return mapa
-  }, [carta.data])
-
   return (
     <QueryBoundary query={query} loading={<ListaEsqueleto />}>
       {(lista) =>
@@ -331,24 +314,20 @@ function ListaResolucoes({ desafioId }: { desafioId: string }) {
               <h3 className="sr-only">
                 {pluralPt(lista.totalItens, 'resolução', 'resoluções')} deste desafio
               </h3>
-              {lista.itens.map((r) => {
-                const ponto = metricas.get(r.id)
-                return (
-                  <ResolucaoLinha
-                    key={r.id}
-                    to={`/app/resolucoes/${r.id}`}
-                    linguagem={r.linguagem}
-                    autonomia={r.indiceAutonomiaIA}
-                    analisada={r.analisada}
-                    // `undefined` = não sei (carta com erro) · `null` = a carta respondeu e
-                    // esta resolução não tem classe de tempo. São coisas diferentes.
-                    tempoOrdem={carta.isSuccess ? (ponto?.tempoOrdem ?? null) : undefined}
-                    confiancaTempo={ponto?.confiancaTempo}
-                    carregandoMetrica={carta.isPending}
-                    submetidaEm={r.submetidaEm}
-                  />
-                )
-              })}
+              {/* `tempoOrdem` vem da própria lista: `0..7` → chip ≈ Big-O · `-1` → `?` (o motor
+                  não classificou) · `null` → sem métrica. Nunca tratar `0` como vazio: é O(1). */}
+              {lista.itens.map((r) => (
+                <ResolucaoLinha
+                  key={r.id}
+                  to={`/app/resolucoes/${r.id}`}
+                  linguagem={r.linguagem}
+                  autonomia={r.indiceAutonomiaIA}
+                  analisada={r.analisada}
+                  tempoOrdem={r.tempoOrdem}
+                  confiancaTempo={r.confiancaTempo}
+                  submetidaEm={r.submetidaEm}
+                />
+              ))}
             </Card>
 
             <Pagination

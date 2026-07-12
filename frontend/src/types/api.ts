@@ -82,6 +82,21 @@ export interface DesafioDetalheDTO {
 }
 
 // ---- Knowledge: Resoluções ----
+/**
+ * Resumo de uma resolução para LISTAS (as resoluções de um desafio). Traz a complexidade
+ * de **tempo** — e só ela: é nesta lista que o aluno compara suas tentativas lado a lado.
+ * Espaço e ciclomática ficam no detalhe (`ResultadoMetricaDTO`).
+ *
+ * Mesmas regras de leitura do `PontoCartaDTO` (ver abaixo), que valem para TODO campo de
+ * métrica da API:
+ *  - `null` = **não há dado** (`analisada === false`, ou linguagem sem analisador — hoje só Java).
+ *  - `tempoOrdem === -1` = **DESCONHECIDO**: o motor rodou e não classificou (rótulo `"?"`).
+ *    Semanticamente DIFERENTE de `null`.
+ *  - ⚠ `0` é `O(1)` — complexidade legítima, nunca sentinela de vazio. Teste `== null` e
+ *    `=== -1` explicitamente, nunca `if (!tempoOrdem)`.
+ *  - `confiancaTempo` é a confiança do MOTOR, **não** o eixo MEDIDO × ≈ ESTIMADO. Big-O é
+ *    sempre ≈ ESTIMADO (`TIPO_METRICA_META`), inclusive com confiança `ALTA`.
+ */
 export interface ResolucaoResumoDTO {
   id: string
   desafioId: string
@@ -90,6 +105,11 @@ export interface ResolucaoResumoDTO {
   indiceAutonomiaIA: number
   visibilidade: Visibilidade
   analisada: boolean
+  /** Ex.: `"O(n log n)"`, ou `"?"` quando `tempoOrdem === -1`. */
+  tempoRotulo: string | null
+  /** `k` do colormap: 0..7; `-1` = desconhecido; `null` = sem dado. */
+  tempoOrdem: number | null
+  confiancaTempo: NivelConfianca | null
   submetidaEm: string
 }
 
