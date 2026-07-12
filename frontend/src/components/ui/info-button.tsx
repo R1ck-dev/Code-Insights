@@ -22,8 +22,8 @@ interface InfoButtonProps {
 }
 
 /**
- * Gatilho "?" que abre um diálogo explicando um conceito em seções (técnico +
- * leigo). Reutilizado no retrato de métricas e nos cards do dashboard.
+ * Gatilho "?" que abre o diálogo explicando um conceito em seções (técnico +
+ * leigo). Vive ao lado das métricas — no card e no gráfico da complexidade típica.
  */
 export function InfoButton({
   titulo,
@@ -35,29 +35,37 @@ export function InfoButton({
 }: InfoButtonProps) {
   return (
     <Dialog>
+      {/* 24×24: mínimo de alvo do WCAG 2.5.8 (AA). O ícone continua em 15px — o que cresce é
+          a área clicável, não o desenho. É o `?` que aparece em toda métrica e gráfico. */}
       <DialogTrigger
         aria-label={ariaLabel}
         className={cn(
-          'inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-subtle transition-colors hover:bg-surface-2 hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40',
+          'ci-foco-botao inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-ci text-soft transition-colors hover:bg-elevated hover:text-ink',
           className,
         )}
       >
-        <HelpCircle size={size} />
+        <HelpCircle size={size} strokeWidth={2} aria-hidden />
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <div className="flex flex-col gap-0.5 pr-6">
-            <DialogTitle>{titulo}</DialogTitle>
-            {subtitulo && <DialogDescription>{subtitulo}</DialogDescription>}
+
+      <DialogContent className="max-w-[520px] rounded-ci border-line-strong bg-panel shadow-modal">
+        <DialogHeader className="border-line">
+          <div className="flex flex-col gap-1 pr-6">
+            <DialogTitle className="text-[18px] font-semibold text-ink">{titulo}</DialogTitle>
+            {subtitulo && (
+              <DialogDescription className="font-mono text-[11px] tracking-[.04em] text-soft">
+                {subtitulo}
+              </DialogDescription>
+            )}
           </div>
         </DialogHeader>
+
         <DialogBody>
-          {secoes.map((s) => (
-            <div key={s.rotulo} className="flex flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-subtle">
-                {s.rotulo}
+          {secoes.map((secao) => (
+            <div key={secao.rotulo} className="flex flex-col gap-1.5">
+              <span className="font-mono text-[11px] uppercase tracking-[.08em] text-mid">
+                {secao.rotulo}
               </span>
-              <p className="text-[13.5px] leading-relaxed text-fg">{s.texto}</p>
+              <p className="text-[13px] leading-[1.55] text-body">{secao.texto}</p>
             </div>
           ))}
         </DialogBody>

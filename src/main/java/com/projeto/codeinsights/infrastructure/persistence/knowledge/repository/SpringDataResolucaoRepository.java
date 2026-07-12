@@ -65,4 +65,35 @@ public interface SpringDataResolucaoRepository extends JpaRepository<ResolucaoJp
             """)
     List<Object[]> atividadeRecentePorAutor(@Param("autorId") UUID autorId,
             @Param("tipo") TipoMetrica tipo, Pageable pageable);
+
+    // Carta celeste: TODAS as resolucoes do autor + titulo do desafio + as tres metricas, numa unica
+    // query (um left join por tipo — ha no maximo 1 resultado por (resolucao, tipo), entao as juncoes
+    // nao multiplicam linhas). Resolucao nao analisada casa com nenhuma metrica e vem com nulos.
+    @Query("""
+            select r.id, d.id, d.titulo, r.linguagem, r.indiceAutonomiaIA, r.analisada,
+                   r.visibilidade, r.submetidaEm,
+                   mt.rotulo, mt.valor, mt.confianca,
+                   me.rotulo, me.valor,
+                   mc.valor
+            from ResolucaoJpaEntity r
+            join r.desafio d
+            left join ResultadoMetricaJpaEntity mt on mt.resolucao = r and mt.tipo = :tipoTempo
+            left join ResultadoMetricaJpaEntity me on me.resolucao = r and me.tipo = :tipoEspaco
+            left join ResultadoMetricaJpaEntity mc on mc.resolucao = r and mc.tipo = :tipoCiclomatica
+            where r.autor.id = :autorId
+            order by r.submetidaEm asc
+            """)
+    List<Object[]> pontosCartaPorAutor(@Param("autorId") UUID autorId,
+            @Param("tipoTempo") TipoMetrica tipoTempo,
+            @Param("tipoEspaco") TipoMetrica tipoEspaco,
+            @Param("tipoCiclomatica") TipoMetrica tipoCiclomatica);
+
+    // Reanalise do corpus: apenas os ids. Trazer o codigo-fonte de todas as resolucoes de uma vez
+    // nao escala; cada uma e recarregada e reprocessada na sua propria transacao. Ordem por data de
+    // submissao para a passada ser reproduzivel.
+    @Query("select r.id from ResolucaoJpaEntity r order by r.submetidaEm asc")
+    List<UUID> listarTodosIds();
+
+    @Query("select r.id from ResolucaoJpaEntity r where r.autor.id = :autorId order by r.submetidaEm asc")
+    List<UUID> listarIdsPorAutor(@Param("autorId") UUID autorId);
 }

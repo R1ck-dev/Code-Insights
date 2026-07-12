@@ -36,10 +36,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/esqueci-senha").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/redefinir-senha").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/ativar").permitAll()
-                        // Perfil proprio e diretorio de portfolios exigem autenticacao
-                        // (precedem a regra publica /api/usuarios/* logo abaixo).
+                        // Perfil proprio exige autenticacao (precede a regra publica /api/usuarios/* abaixo).
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios/publicos").authenticated()
+                        // Diretorio de portfolios (tela Explorar): publico, pois so lista perfis
+                        // que ja sao publicos. Serve as duas rotas do front: /explorar e /app/explorar.
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios/publicos").permitAll()
                         // Portfolio publico de um autor
                         .requestMatchers(HttpMethod.GET, "/api/desafios/autor/**").permitAll()
                         // Leitura anonima de recursos publicos (a visibilidade e validada no use case;

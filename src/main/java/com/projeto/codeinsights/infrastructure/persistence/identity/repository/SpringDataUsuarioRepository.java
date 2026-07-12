@@ -24,4 +24,10 @@ public interface SpringDataUsuarioRepository extends JpaRepository<UsuarioJpaEnt
     // por username (filtro vazio = todos, pois "" esta contido em qualquer string).
     Page<UsuarioJpaEntity> findByVisibilidadePerfilAndStatusAndIdNotAndUsernameContainingIgnoreCase(
             Visibilidade visibilidadePerfil, StatusConta status, UUID id, String username, Pageable pageable);
+
+    // Mesma consulta para o visitante anonimo, que nao tem "proprio" a excluir.
+    // Reusar a consulta acima com id nulo geraria "id <> null" (UNKNOWN em SQL),
+    // que descarta todas as linhas e devolveria a lista vazia.
+    Page<UsuarioJpaEntity> findByVisibilidadePerfilAndStatusAndUsernameContainingIgnoreCase(
+            Visibilidade visibilidadePerfil, StatusConta status, String username, Pageable pageable);
 }

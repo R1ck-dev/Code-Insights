@@ -1,36 +1,73 @@
-import { useState } from 'react'
+/*
+ * C · DASHBOARD (spec 04 §2) — a carta do portfólio do aluno.
+ *
+ * Composição: saudação + ações · 3 stats · painel de gráficos (+ estrela selecionada) ·
+ * complexidade típica · distribuição · atividade recente.
+ *
+ * O gráfico NÃO mora mais aqui: o SVG artesanal de "Evolução" foi substituído pelo
+ * `PainelDeGraficos` (Carta · Linha · Matriz), que traz o seletor, os estados de cada
+ * visualização e o rodapé honesto ("N de M resoluções plotadas · X sem métrica"). A
+ * página só busca o dado (`useCartaCeleste` + `montarDataset`) e é dona da seleção — que
+ * também alimenta o `PainelEstrelaSelecionada` ao lado.
+ *
+ * ⚠ Das 5 visualizações originais restaram 3:
+ * · "Espectro" saiu do seletor — era a mesma distribuição duas vezes na mesma tela, e a única
+ *   que não plotava resoluções (logo, não tinha o que selecionar). O histograma por classe
+ *   continua aqui, no `DistribuicaoCard` (`linhasEspectro`), e agora é o ÚNICO.
+ * · "Espiral" (ex-Órbitas) saiu — era redundante com a Linha temporal: mesma pergunta
+ *   (autonomia × tempo, complexidade × tempo) por canais perceptuais mais fracos (tamanho e
+ *   ângulo, em vez de posição num eixo). Menos gráficos, cada um dizendo uma coisa.
+ */
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
-import { Braces, Code2, Minus, Plus, Target, TrendingDown, TrendingUp } from 'lucide-react'
+import { Braces, Code2, Gauge, Plus, RefreshCw, Target } from 'lucide-react'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
+import { ErrorState } from '@/components/page/states'
 import { Card } from '@/components/ui/card'
 import { buttonClasses } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { AutonomyMeter } from '@/components/AutonomyMeter'
+import { EmptyState } from '@/components/ui/empty-state'
 import { InfoButton } from '@/components/ui/info-button'
-import { AnalysisStatus, ComplexityBadge, LanguageBadge } from '@/components/domain/badges'
-import { useAuth } from '@/auth/useAuth'
-import { useEvolucao, useResumoDashboard } from '@/features/metricas/hooks'
+import { Skeleton } from '@/components/ui/skeleton'
+import { BarraColormap } from '@/components/BarraColormap'
+import { AtividadeLinha } from '@/components/domain/AtividadeLinha'
+import { ConfidenceChip } from '@/components/domain/badges'
 import {
-  COMPLEXIDADE_ORDEM_MAX,
-  complexityHexByOrdinal,
-  complexityRotuloByOrdinal,
-  prettyBigO,
+  type DatasetCarta,
+  GRANULARIDADE_PADRAO,
+  type Granularidade,
+  PainelDeGraficos,
+  PainelEstrelaSelecionada,
+  grupoDeIrmaos,
+  linhasEspectro,
+  montarDataset,
+  pontoPorId,
+  useGraficoNaUrl,
+} from '@/components/charts'
+import { useAuth } from '@/auth/useAuth'
+import { useCartaCeleste, useResumoDashboard } from '@/features/metricas/hooks'
+import {
+  type ClasseK,
+  CONFIANCA_BIG_O,
+  NOTA_METRICAS_SO_JAVA,
+  ROTULO_DESCONHECIDO,
+  comPrefixoEstimado,
+  corDaClasse,
+  rotuloCanonico,
+  tintaDaClasse,
 } from '@/domain/enums'
-import { cn, formatDate } from '@/lib/utils'
-import type {
-  AtividadeRecenteDTO,
-  DistribuicaoItemDTO,
-  EvolucaoMensalDTO,
-  GranularidadeTempo,
-  ResumoDashboardDTO,
-} from '@/types/api'
+import { useTheme } from '@/theme/ThemeProvider'
+import { apiErrorMessage } from '@/lib/api'
+import { cn, pluralPt } from '@/lib/utils'
+import type { ResumoDashboardDTO } from '@/types/api'
 
 type ResumoQuery = UseQueryResult<ResumoDashboardDTO>
 
-// ---- helpers de derivação (puros) ----
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS PUROS (preservados da versão anterior)
+// ════════════════════════════════════════════════════════════════════════════
 
 type Tendencia = 'alta' | 'baixa' | 'estavel' | 'insuficiente'
 
@@ -45,56 +82,36 @@ function tendencia(valores: (number | null)[]): Tendencia {
 }
 
 /**
- * Mediana ponderada da complexidade a partir da distribuição (por ordinal).
- * Resoluções não classificadas (ordem -1, rótulo "?") ficam de fora: "não sei" não é uma
- * complexidade menor que O(1), e incluí-las puxaria a mediana para baixo. Elas seguem
- * visíveis nas barras de distribuição, onde a contagem é informativa.
+ * Mediana da classe de complexidade das resoluções PLOTÁVEIS.
+ *
+ * ⚠ UMA FONTE SÓ. Antes, este card lia `resumo.distribuicaoBigO` (endpoint /resumo) enquanto o
+ * Espectro ao lado lia a carta celeste (/carta): duas estatísticas do MESMO dado, com populações
+ * diferentes, exibidas lado a lado sem explicação. Agora os dois — e a Distribuição — derivam de
+ * `dataset`, que é o que os gráficos plotam. Se as contagens divergirem, é bug, não recorte.
+ *
+ * Resoluções não classificadas (ordem -1) já ficaram fora de `dataset.pontos`: "não sei" não é
+ * uma complexidade menor que O(1), e incluí-las puxaria a mediana para baixo. Elas continuam
+ * CONTADAS (e explicadas) no rodapé da Distribuição.
  */
-function medianaComplexidade(itens: DistribuicaoItemDTO[]): { rotulo: string; ordem: number } | null {
-  const classificados = itens.filter((i) => i.ordem >= 0)
-  const total = classificados.reduce((s, i) => s + i.total, 0)
-  if (total === 0) return null
-  const ordenados = [...classificados].sort((a, b) => a.ordem - b.ordem)
-  const alvo = Math.ceil(total / 2)
-  let acc = 0
-  for (const i of ordenados) {
-    acc += i.total
-    if (acc >= alvo) return { rotulo: i.rotulo, ordem: i.ordem }
-  }
-  return ordenados[ordenados.length - 1] ?? null
+function medianaDeK(dataset: DatasetCarta): ClasseK | null {
+  if (dataset.pontos.length === 0) return null
+  const ks = dataset.pontos.map((p) => p.k).sort((a, b) => a - b)
+  // Mediana inferior: é sempre uma classe REAL que o aluno de fato escreveu (nunca uma média).
+  return ks[Math.floor((ks.length - 1) / 2)]
 }
 
-function plural(n: number, singular: string, pluralForma: string): string {
-  return `${n} ${n === 1 ? singular : pluralForma}`
+/** Decimal em pt-BR: `3.8` → `3,8`. */
+function decimal(n: number): string {
+  return n.toFixed(1).replace('.', ',')
 }
 
 /**
- * Textos dos "?" do dashboard. O de complexidade/evolução explica de propósito
- * que o card (mediana geral) e a linha do gráfico (média por período) são
- * estatísticas diferentes — por isso podem mostrar classes Big O diferentes.
+ * Textos dos "?" do dashboard. O de complexidade explica de propósito que o card (mediana de
+ * todo o histórico) e a linha do gráfico (média por período) são estatísticas diferentes —
+ * por isso podem mostrar classes Big O diferentes.
+ * O "?" de cada gráfico é do próprio `PainelDeGraficos`.
  */
 const DASH_INFO = {
-  evolucao: {
-    titulo: 'Como ler a evolução',
-    subtitulo: 'Duas séries ao longo do tempo (mês/semana/dia)',
-    secoes: [
-      {
-        rotulo: 'Linha cheia — Autonomia',
-        texto:
-          'A média do seu Índice de Autonomia IA (1 a 5) das resoluções enviadas em cada período. Subir significa que você declarou ter feito com mais autonomia.',
-      },
-      {
-        rotulo: 'Linha tracejada — Complexidade',
-        texto:
-          'A complexidade de tempo (Big O) típica das resoluções de cada período, como uma média aproximada. Serve para ler a tendência: cair costuma indicar soluções mais eficientes com o tempo.',
-      },
-      {
-        rotulo: 'Difere do card ao lado',
-        texto:
-          'Aqui o valor é por período e aproximado; o card "Complexidade típica" usa a mediana de todo o seu histórico. Por serem estatísticas diferentes, podem mostrar classes diferentes — use o gráfico para a tendência e o card para o valor típico geral.',
-      },
-    ],
-  },
   complexidade: {
     titulo: 'Complexidade típica',
     subtitulo: 'Mediana do seu histórico analisado',
@@ -102,7 +119,7 @@ const DASH_INFO = {
       {
         rotulo: 'O que é',
         texto:
-          'A classe Big O de tempo que fica no meio de todas as suas resoluções já analisadas (mediana). Por ser a mediana, é sempre uma classe real que você de fato escreveu.',
+          'A classe Big O de tempo que fica no meio de todas as suas resoluções plotadas (mediana). Por ser a mediana, é sempre uma classe real que você de fato escreveu — nunca uma média inventada entre duas classes.',
       },
       {
         rotulo: 'Por que a mediana',
@@ -110,9 +127,19 @@ const DASH_INFO = {
           'A mediana é robusta a extremos: uma ou outra solução muito custosa (ex.: O(n²)) não distorce o valor típico, ao contrário de uma média.',
       },
       {
-        rotulo: 'Difere do gráfico',
+        rotulo: '≈ Estimado, não medido',
         texto:
-          'Pode diferir da linha de complexidade do gráfico de Evolução, que é uma média por período (aproximada). Não é erro: são recortes e estatísticas diferentes.',
+          'A classe de tempo vem de análise estática da árvore sintática (AST) — é uma estimativa (determinar a complexidade exata de um código qualquer é indecidível no caso geral), e por isso o valor leva o prefixo ≈ e o marcador vazado. Só existe para Java. Confiança alta do motor não muda isso: continua sendo estimativa.',
+      },
+      {
+        rotulo: 'Difere do gráfico "Linha"',
+        texto:
+          'A Linha mostra a média das classes MÊS A MÊS; este card mostra a mediana de TODO o histórico. Mesma fonte de dados (as resoluções plotadas), estatísticas diferentes — por isso podem apontar classes diferentes. Não é erro.',
+      },
+      {
+        rotulo: 'O que não entra na conta',
+        texto:
+          'Resoluções ainda calculando, em linguagem sem analisador, ou que o motor não conseguiu classificar não entram na mediana — "não sei" não é uma complexidade. Elas aparecem contadas no rodapé da Distribuição, ao lado.',
       },
     ],
   },
@@ -128,611 +155,515 @@ const DASH_INFO = {
       {
         rotulo: 'Como ler',
         texto:
-          'Quanto maior a média, mais autônomo você declarou ter sido no conjunto das suas soluções. O medidor mostra essa média nos 5 segmentos.',
+          'Quanto maior a média, mais autônomo você declarou ter sido no conjunto das suas soluções. É um dado autodeclarado — não é medido no código, e independe da linguagem.',
       },
       {
         rotulo: 'Tendência',
         texto:
-          'A legenda "em alta/queda/estável" compara a autonomia das primeiras e das últimas resoluções — um sinal do seu amadurecimento ao longo do tempo.',
+          'A legenda "tendência de alta/queda/estável" compara a autonomia das primeiras e das últimas resoluções — um sinal do seu amadurecimento ao longo do tempo.',
       },
     ],
   },
 }
 
-// ---- cards ----
+const TENDENCIA_LABEL: Record<Tendencia, string> = {
+  alta: 'tendência de alta',
+  baixa: 'tendência de queda',
+  estavel: 'tendência estável',
+  insuficiente: 'sua média atual',
+}
 
-/** Card de um número agregado (Desafios / Resoluções / Snippets) + legenda. */
+// ════════════════════════════════════════════════════════════════════════════
+// PEÇAS
+// ════════════════════════════════════════════════════════════════════════════
+
+const ROTULO = 'font-mono text-[11px] uppercase tracking-[.08em] text-mid'
+const NOTA = 'font-mono text-[10.5px] text-soft'
+
+/** Um dos 3 stats (spec 04 §2.2): rótulo mono + ícone · valor mono 33/600 · legenda mono. */
 function StatCard({
+  rotulo,
   icon: Icon,
-  label,
+  info,
   query,
-  select,
-  caption,
+  valor,
+  legenda,
 }: {
+  rotulo: string
   icon: LucideIcon
-  label: string
+  info?: React.ReactNode
   query: ResumoQuery
-  select: (r: ResumoDashboardDTO) => number
-  caption: (r: ResumoDashboardDTO) => string
+  valor: (r: ResumoDashboardDTO) => React.ReactNode
+  legenda: (r: ResumoDashboardDTO) => React.ReactNode
 }) {
   return (
-    <Card className="flex flex-col gap-2.5 p-[18px]">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-muted">{label}</span>
-        <div className="flex h-8 w-8 items-center justify-center rounded-[9px] bg-brand/10">
-          <Icon size={17} className="text-brand-strong" />
+    <Card className="flex flex-col gap-[9px] p-[17px]">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className={ROTULO}>{rotulo}</span>
+          {info}
         </div>
+        <Icon size={16} strokeWidth={2} className="shrink-0 text-soft" aria-hidden />
       </div>
+
       {query.isPending ? (
-        <Skeleton className="h-[34px] w-16" />
+        <>
+          <Skeleton className="h-[33px] w-20" />
+          <Skeleton className="h-[11px] w-32" />
+        </>
       ) : query.isError ? (
-        <span className="font-mono text-[28px] font-bold text-subtle">—</span>
+        <>
+          <ValorAusente />
+          {/* Erro sem saída não é estado, é beco: todo erro oferece o caminho de volta. */}
+          <BotaoTentarNovamente onClick={() => void query.refetch()} />
+        </>
       ) : (
         <>
-          <span className="font-mono text-[34px] font-bold leading-none text-heading tabular-nums">
-            {select(query.data)}
-          </span>
-          <span className="text-[12px] text-subtle">{caption(query.data)}</span>
+          {valor(query.data)}
+          <span className={cn(NOTA, 'tabular')}>{legenda(query.data)}</span>
         </>
       )}
     </Card>
   )
 }
 
-/** Autonomia IA média: número preciso + medidor de 5 segmentos + tendência. */
-function AutonomiaCard({ query }: { query: ResumoQuery }) {
-  const media = query.data?.mediaAutonomia
-  const trend = tendencia(query.data?.evolucao.map((p) => p.mediaAutonomia) ?? [])
-  const trendLabel: Record<Tendencia, string> = {
-    alta: 'em alta nos últimos meses',
-    baixa: 'em queda nos últimos meses',
-    estavel: 'estável nos últimos meses',
-    insuficiente: 'sua média atual',
-  }
+/** Retry compacto dos cards do dashboard (o `ErrorState` cheio não cabe num stat de 33px). */
+function BotaoTentarNovamente({ onClick }: { onClick: () => void }) {
   return (
-    <Card className="flex flex-col gap-3 p-[18px]">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold text-muted">Autonomia IA média</span>
-        <InfoButton
-          titulo={DASH_INFO.autonomia.titulo}
-          subtitulo={DASH_INFO.autonomia.subtitulo}
-          secoes={DASH_INFO.autonomia.secoes}
-          ariaLabel="O que é a Autonomia IA média?"
-        />
-      </div>
-      {query.isPending ? (
-        <Skeleton className="h-[30px] w-24" />
-      ) : query.isError ? (
-        <span className="font-mono text-[26px] font-bold text-subtle">—</span>
-      ) : media == null ? (
-        <span className="text-[13px] text-subtle">Sem resoluções ainda</span>
-      ) : (
-        <>
-          <div className="flex items-baseline gap-1">
-            <span className="font-mono text-[32px] font-bold leading-none text-heading tabular-nums">
-              {media.toFixed(1).replace('.', ',')}
-            </span>
-            <span className="font-mono text-[17px] text-subtle">/5</span>
-          </div>
-          <AutonomyMeter value={media} size="md" showLabel={false} />
-          <span className="text-[11.5px] text-subtle">{trendLabel[trend]}</span>
-        </>
-      )}
-    </Card>
+    <button
+      type="button"
+      onClick={onClick}
+      className="ci-foco-botao inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-ci font-mono text-[10.5px] text-erro-texto transition-colors hover:text-ink"
+    >
+      <RefreshCw size={11} strokeWidth={2} aria-hidden />
+      não foi possível carregar · tentar novamente
+    </button>
   )
 }
 
-/** Complexidade típica: mediana das resoluções analisadas. */
-function ComplexidadeTipicaCard({ query }: { query: ResumoQuery }) {
-  const mediana = query.data ? medianaComplexidade(query.data.distribuicaoBigO) : null
+/** Valor de stat: mono 33/600, tabular. */
+function Valor({ children }: { children: React.ReactNode }) {
   return (
-    <Card className="flex flex-1 flex-col justify-center gap-2 p-[18px]">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold text-muted">Complexidade típica</span>
-        <InfoButton
-          titulo={DASH_INFO.complexidade.titulo}
-          subtitulo={DASH_INFO.complexidade.subtitulo}
-          secoes={DASH_INFO.complexidade.secoes}
-          ariaLabel="O que é a Complexidade típica?"
-        />
-      </div>
-      {query.isPending ? (
-        <Skeleton className="h-[28px] w-28" />
-      ) : query.isError ? (
-        <span className="font-mono text-[24px] font-semibold text-subtle">—</span>
-      ) : mediana == null ? (
-        <span className="text-[13px] leading-relaxed text-subtle">Sem análises ainda.</span>
-      ) : (
-        <>
-          <span
-            className="font-mono text-[30px] font-semibold leading-none"
-            style={{ color: complexityHexByOrdinal(mediana.ordem) }}
-          >
-            {prettyBigO(mediana.rotulo)}
-          </span>
-          <span className="text-[11.5px] text-subtle">mediana das suas resoluções analisadas</span>
-        </>
-      )}
-    </Card>
-  )
-}
-
-/** Gráfico de linhas da evolução: autonomia (sólida) × complexidade típica (tracejada). */
-function EvolucaoChart({
-  pontos,
-  granularidade,
-}: {
-  pontos: EvolucaoMensalDTO[]
-  granularidade: GranularidadeTempo
-}) {
-  const n = pontos.length
-  const px = (i: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100)
-  const yAut = (v: number) => 100 - (Math.max(0, Math.min(5, v)) / 5) * 100
-  const yCx = (v: number) =>
-    100 - (Math.max(0, Math.min(COMPLEXIDADE_ORDEM_MAX, v)) / COMPLEXIDADE_ORDEM_MAX) * 100
-
-  const autPts = pontos.map((p, i) =>
-    p.mediaAutonomia == null
-      ? null
-      : {
-          x: px(i),
-          y: yAut(p.mediaAutonomia),
-          label: p.mediaAutonomia.toFixed(1).replace('.', ','),
-          title: `Autonomia ${p.mediaAutonomia.toFixed(1).replace('.', ',')} / 5`,
-        },
-  )
-  const cxPts = pontos.map((p, i) =>
-    p.mediaComplexidade == null
-      ? null
-      : {
-          x: px(i),
-          y: yCx(p.mediaComplexidade),
-          label: prettyBigO(complexityRotuloByOrdinal(Math.round(p.mediaComplexidade))),
-          title: `Complexidade típica ≈ ${prettyBigO(
-            complexityRotuloByOrdinal(Math.round(p.mediaComplexidade)),
-          )}`,
-        },
-  )
-  const toPolyline = (pts: ({ x: number; y: number } | null)[]) =>
-    pts
-      .filter((p): p is { x: number; y: number } => p != null)
-      .map((p) => `${p.x},${p.y}`)
-      .join(' ')
-
-  // Rótulos de valor quando há poucos pontos (evita o ponto "solto"); a linha só desenha com ≥ 2 pontos.
-  const esparso = n <= 3
-  const fmtLabel = (p: EvolucaoMensalDTO) =>
-    granularidade === 'MENSAL'
-      ? `${String(p.mes).padStart(2, '0')}/${String(p.ano).slice(2)}`
-      : `${String(p.dia).padStart(2, '0')}/${String(p.mes).padStart(2, '0')}`
-
-  return (
-    <div className="flex flex-col gap-2.5">
-      <div className="relative h-44 w-full">
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="absolute inset-0 h-full w-full"
-          aria-hidden
-        >
-          {[0, 25, 50, 75, 100].map((y) => (
-            <line
-              key={y}
-              x1="0"
-              y1={y}
-              x2="100"
-              y2={y}
-              stroke="var(--border)"
-              strokeWidth="1"
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          {n === 1 &&
-            [
-              { p: cxPts[0], color: 'var(--warning)' },
-              { p: autPts[0], color: 'var(--brand-strong)' },
-            ].map(({ p, color }, k) =>
-              p == null ? null : (
-                <line
-                  key={k}
-                  x1="0"
-                  y1={p.y}
-                  x2="100"
-                  y2={p.y}
-                  stroke={color}
-                  strokeWidth="1.5"
-                  strokeDasharray="3 3"
-                  strokeOpacity="0.5"
-                  vectorEffect="non-scaling-stroke"
-                />
-              ),
-            )}
-          {n > 1 && (
-            <>
-              <polyline
-                points={toPolyline(cxPts)}
-                fill="none"
-                stroke="var(--warning)"
-                strokeWidth="2"
-                strokeDasharray="4 3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-              <polyline
-                points={toPolyline(autPts)}
-                fill="none"
-                stroke="var(--brand-strong)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </>
-          )}
-        </svg>
-        {cxPts.map((p, i) =>
-          p == null ? null : (
-            <span key={`c${i}`}>
-              <span
-                className="absolute h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--warning)' }}
-                title={p.title}
-              />
-              {esparso && (
-                <span
-                  className="absolute -translate-x-1/2 translate-y-1.5 whitespace-nowrap font-mono text-[10px] font-semibold"
-                  style={{ left: `${p.x}%`, top: `${p.y}%`, color: 'var(--warning)' }}
-                >
-                  {p.label}
-                </span>
-              )}
-            </span>
-          ),
-        )}
-        {autPts.map((p, i) =>
-          p == null ? null : (
-            <span key={`a${i}`}>
-              <span
-                className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface"
-                style={{ left: `${p.x}%`, top: `${p.y}%`, background: 'var(--brand-strong)' }}
-                title={p.title}
-              />
-              {esparso && (
-                <span
-                  className="absolute -translate-x-1/2 -translate-y-[15px] whitespace-nowrap font-mono text-[10px] font-semibold text-brand-strong"
-                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                >
-                  {p.label}
-                </span>
-              )}
-            </span>
-          ),
-        )}
-      </div>
-      <div className="flex w-full">
-        {pontos.map((p) => (
-          <span
-            key={`${p.ano}-${p.mes}-${p.dia}`}
-            className="flex-1 text-center font-mono text-[10px] text-subtle"
-          >
-            {fmtLabel(p)}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function LegendSwatch({ color, dashed, label }: { color: string; dashed?: boolean; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5 text-[12px] text-muted">
-      <span
-        className="inline-block w-3.5"
-        style={
-          dashed
-            ? { borderTop: `2px dashed ${color}`, height: 0 }
-            : { height: 3, borderRadius: 2, background: color }
-        }
-      />
-      {label}
+    <span className="tabular font-mono text-[33px] font-semibold leading-none text-ink">
+      {children}
     </span>
   )
 }
 
-const GRANULARIDADES: { valor: GranularidadeTempo; label: string }[] = [
-  { valor: 'MENSAL', label: 'Mês' },
-  { valor: 'SEMANAL', label: 'Semana' },
-  { valor: 'DIARIO', label: 'Dia' },
-]
-
-/** Evolução: gráfico de linhas + legenda + seletor de granularidade (mês/semana/dia). */
-function EvolucaoCard() {
-  const [gran, setGran] = useState<GranularidadeTempo>('MENSAL')
-  const query = useEvolucao(gran)
-  const pontos = query.data ?? []
-  const escala = gran === 'MENSAL' ? 'mês' : gran === 'SEMANAL' ? 'semana' : 'dia'
-  return (
-    <Card className="flex flex-col gap-4 p-[18px]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex flex-col gap-0.5">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[14px] font-bold text-heading">Evolução</span>
-            <InfoButton
-              titulo={DASH_INFO.evolucao.titulo}
-              subtitulo={DASH_INFO.evolucao.subtitulo}
-              secoes={DASH_INFO.evolucao.secoes}
-              ariaLabel="Como ler o gráfico de evolução?"
-            />
-          </div>
-          <span className="text-[12px] text-subtle">
-            Autonomia IA × complexidade típica por {escala}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <div
-            role="group"
-            aria-label="Granularidade do gráfico"
-            className="inline-flex rounded-lg border border-border bg-surface-2 p-0.5"
-          >
-            {GRANULARIDADES.map((g) => (
-              <button
-                key={g.valor}
-                type="button"
-                onClick={() => setGran(g.valor)}
-                aria-pressed={gran === g.valor}
-                className={cn(
-                  'rounded-md px-2.5 py-1 text-[12px] font-semibold transition-colors',
-                  gran === g.valor ? 'bg-brand text-white' : 'text-muted hover:text-fg',
-                )}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-3.5">
-            <LegendSwatch color="var(--brand-strong)" label="Autonomia" />
-            <LegendSwatch color="var(--warning)" dashed label="Complexidade" />
-          </div>
-        </div>
-      </div>
-      {query.isPending ? (
-        <Skeleton className="h-44 w-full rounded" />
-      ) : query.isError ? (
-        <span className="text-[13px] text-subtle">Não foi possível carregar.</span>
-      ) : pontos.length === 0 ? (
-        <div className="flex h-44 items-center justify-center">
-          <span className="max-w-xs text-center text-[13px] leading-relaxed text-subtle">
-            Sem resoluções ainda — o gráfico de evolução aparece conforme você submete soluções.
-          </span>
-        </div>
-      ) : (
-        <EvolucaoChart pontos={pontos} granularidade={gran} />
-      )}
-    </Card>
-  )
+/** Ausência de dado — nunca um zero fingindo ser dado. */
+function ValorAusente() {
+  return <span className="font-mono text-[33px] font-semibold leading-none text-soft">—</span>
 }
 
-/** Uma linha da lista "Atividade recente". */
-function AtividadeRow({ a }: { a: AtividadeRecenteDTO }) {
+interface CartaQueryProps {
+  dataset: DatasetCarta
+  carregando: boolean
+  erro: boolean
+  onTentarNovamente: () => void
+  className?: string
+}
+
+/**
+ * Complexidade típica: MEDIANA das classes plotáveis + barra do colormap.
+ * Big O de tempo é ESTIMADO por natureza (AST) → prefixo `≈` + `ConfidenceChip` vazado.
+ * Fonte: o mesmo `dataset` dos gráficos — nunca uma segunda estatística paralela.
+ */
+function ComplexidadeTipicaCard({
+  dataset,
+  carregando,
+  erro,
+  onTentarNovamente,
+}: CartaQueryProps) {
+  const { theme } = useTheme()
+  const mediana = medianaDeK(dataset)
+
   return (
-    <Link
-      to={`/app/resolucoes/${a.resolucaoId}`}
-      className="flex items-center gap-3.5 border-t border-border-subtle px-3.5 py-[11px] transition-colors first:border-t-0 hover:bg-surface-2"
-    >
-      <LanguageBadge linguagem={a.linguagem} className="shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">{a.desafioTitulo}</span>
-      <AutonomyMeter
-        value={a.indiceAutonomiaIA}
-        size="sm"
-        showLabel={false}
-        className="hidden sm:inline-flex"
-      />
-      <span className="shrink-0">
-        {!a.analisada ? (
-          <AnalysisStatus analisada={false} />
-        ) : a.complexidadeRotulo ? (
-          <ComplexityBadge rotulo={a.complexidadeRotulo} valor={a.complexidadeOrdem ?? undefined} />
-        ) : (
-          <span className="font-mono text-[11px] text-neutral">sem métrica</span>
+    <Card className="flex flex-col gap-[11px] p-[17px]">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className={ROTULO}>Complexidade típica</span>
+          <InfoButton {...DASH_INFO.complexidade} ariaLabel="O que é a complexidade típica?" />
+        </div>
+        {mediana != null && !carregando && !erro && (
+          <ConfidenceChip tipo={CONFIANCA_BIG_O} compact />
         )}
-      </span>
-      <span className="hidden w-[76px] shrink-0 text-right font-mono text-[11.5px] text-subtle tabular-nums sm:inline">
-        {formatDate(a.submetidaEm)}
-      </span>
-    </Link>
-  )
-}
-
-/** Atividade recente: últimas resoluções submetidas. */
-function AtividadeRecenteCard({ query }: { query: ResumoQuery }) {
-  const itens = query.data?.atividadeRecente ?? []
-  return (
-    <Card className="flex flex-col overflow-hidden p-0">
-      <div className="flex items-center justify-between px-3.5 pb-2.5 pt-3">
-        <span className="text-[14px] font-bold text-heading">Atividade recente</span>
-        <Link to="/app/desafios" className="text-[12px] font-medium text-brand-strong hover:underline">
-          Ver tudo
-        </Link>
       </div>
-      {query.isPending ? (
-        <div className="flex flex-col gap-2 p-3.5 pt-1">
-          {[0, 1, 2, 3].map((k) => (
-            <Skeleton key={k} className="h-9 w-full rounded" />
-          ))}
-        </div>
-      ) : query.isError ? (
-        <span className="px-3.5 py-6 text-[13px] text-subtle">Não foi possível carregar.</span>
-      ) : itens.length === 0 ? (
-        <span className="px-3.5 py-8 text-center text-[13px] leading-relaxed text-subtle">
-          Nenhuma resolução ainda — submeta uma solução para ver sua atividade aqui.
-        </span>
-      ) : (
-        <div className="flex flex-col">
-          {itens.map((a) => (
-            <AtividadeRow key={a.resolucaoId} a={a} />
-          ))}
-        </div>
-      )}
-    </Card>
-  )
-}
 
-/** Distribuição de complexidade (Big O de tempo) em barras horizontais + rodapé de leitura. */
-function DistribuicaoCard({ query }: { query: ResumoQuery }) {
-  const itens = query.data ? [...query.data.distribuicaoBigO].sort((a, b) => a.ordem - b.ordem) : []
-  const max = Math.max(1, ...itens.map((i) => i.total))
-  const cxTrend = tendencia(query.data?.evolucao.map((p) => p.mediaComplexidade) ?? [])
-  const rodape: Record<Tendencia, { Icon: LucideIcon; color: string; texto: string }> = {
-    baixa: {
-      Icon: TrendingDown,
-      color: 'var(--success)',
-      texto: 'Suas soluções estão ficando mais eficientes.',
-    },
-    alta: {
-      Icon: TrendingUp,
-      color: 'var(--warning)',
-      texto: 'A complexidade típica das suas soluções vem subindo.',
-    },
-    estavel: {
-      Icon: Minus,
-      color: 'var(--subtle)',
-      texto: 'Complexidade típica estável entre os meses.',
-    },
-    insuficiente: {
-      Icon: Minus,
-      color: 'var(--subtle)',
-      texto: 'Distribuição das suas resoluções analisadas.',
-    },
-  }
-  const foot = rodape[cxTrend]
-
-  return (
-    <Card className="flex flex-col gap-3.5 p-[18px]">
-      <span className="text-[14px] font-bold text-heading">Distribuição de complexidade</span>
-      {query.isPending ? (
-        <div className="flex flex-col gap-2.5">
-          {[0, 1, 2, 3].map((k) => (
-            <Skeleton key={k} className="h-5 w-full rounded" />
-          ))}
-        </div>
-      ) : query.isError ? (
-        <span className="text-[13px] text-subtle">Não foi possível carregar.</span>
-      ) : itens.length === 0 ? (
-        <span className="text-[13px] leading-relaxed text-subtle">
-          Sem análises ainda — submeta resoluções em Java para ver a distribuição.
-        </span>
+      {carregando ? (
+        <>
+          <Skeleton className="h-[27px] w-28" />
+          <Skeleton className="h-2 w-full" />
+          <Skeleton className="h-[11px] w-40" />
+        </>
+      ) : erro ? (
+        <>
+          <span className="font-mono text-[27px] font-semibold leading-none text-soft">—</span>
+          <BarraColormap k={null} size="card" />
+          <BotaoTentarNovamente onClick={onTentarNovamente} />
+        </>
+      ) : mediana == null ? (
+        <>
+          <span className="font-mono text-[27px] font-semibold leading-none text-soft">—</span>
+          <BarraColormap k={null} size="card" />
+          <span className={cn(NOTA, 'leading-[1.5]')}>
+            Sem análises ainda. {NOTA_METRICAS_SO_JAVA}
+          </span>
+        </>
       ) : (
         <>
-          <div className="flex flex-col gap-2.5">
-            {itens.map((i) => {
-              const cor = complexityHexByOrdinal(i.ordem)
-              return (
-                <div key={i.rotulo} className="flex items-center gap-2.5">
-                  <span
-                    className="w-14 shrink-0 text-right font-mono text-[11.5px] font-semibold"
-                    style={{ color: cor }}
-                  >
-                    {prettyBigO(i.rotulo)}
-                  </span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-2">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${(i.total / max) * 100}%`, minWidth: 6, background: cor }}
-                    />
-                  </div>
-                  <span className="w-4 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-subtle">
-                    {i.total}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-          <div className="flex items-center gap-2 border-t border-border-subtle pt-3">
-            <foot.Icon size={15} style={{ color: foot.color }} />
-            <span className="text-[12px] text-muted">{foot.texto}</span>
-          </div>
+          <span
+            className="font-mono text-[27px] font-semibold leading-none"
+            style={{ color: tintaDaClasse(mediana, theme) }}
+          >
+            {comPrefixoEstimado(rotuloCanonico(mediana), CONFIANCA_BIG_O)}
+          </span>
+          <BarraColormap k={mediana} size="card" />
+          <span className={NOTA}>mediana das {dataset.pontos.length} resoluções plotadas</span>
         </>
       )}
     </Card>
   )
 }
 
+/** Uma linha do espectro: classe · trilho · contagem. */
+function LinhaEspectro({
+  rotulo,
+  contagem,
+  largura,
+  cor,
+}: {
+  rotulo: string
+  contagem: number
+  largura: number
+  cor?: string
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className={cn(
+          'w-[52px] shrink-0 text-right font-mono text-[11px]',
+          contagem > 0 ? 'text-mid' : 'text-soft',
+        )}
+      >
+        {rotulo}
+      </span>
+      <div className="h-2 flex-1 overflow-hidden rounded-ci-sm bg-recess">
+        {/* Contagem 0 = trilho vazio. Uma barra de 6px para zero resoluções seria dado falso. */}
+        {contagem > 0 && (
+          <div
+            className={cn('h-full', !cor && 'bg-line-strong')}
+            style={{ width: `${largura}%`, minWidth: 2, background: cor }}
+          />
+        )}
+      </div>
+      <span className="tabular w-3.5 shrink-0 text-right font-mono text-[11px] text-soft">
+        {contagem}
+      </span>
+    </div>
+  )
+}
+
+/**
+ * Distribuição · Espectro (spec 04 §2.3): contagem por classe. É o ÚNICO espectro da tela — a
+ * vista homônima saiu do seletor do `PainelDeGraficos` justamente porque duplicava este card.
+ *
+ * ⚠ MESMA FONTE do painel de gráficos (`dataset` — `linhasEspectro(dataset.pontos)`), e não
+ * `resumo.distribuicaoBigO`: as duas projeções do mesmo dado tinham populações diferentes e
+ * apareciam lado a lado, no mesmo viewport, com contagens que não batiam e nenhuma explicação.
+ * Agora batem por construção (a soma das linhas == `dataset.pontos.length`).
+ * O `?` (não classificadas) vira uma linha extra, e o rodapé conta e EXPLICA o que ficou de fora.
+ */
+function DistribuicaoCard({
+  dataset,
+  carregando,
+  erro,
+  onTentarNovamente,
+  className,
+}: CartaQueryProps) {
+  const { theme } = useTheme()
+  const linhas = linhasEspectro(dataset.pontos)
+  const { naoClassificado, semAnalisador, calculando } = dataset.semMetrica
+
+  return (
+    <Card className={cn('flex flex-col gap-[13px] p-[17px]', className)}>
+      <span className={ROTULO}>Distribuição · Espectro</span>
+
+      {carregando ? (
+        <div className="flex flex-col gap-[9px]">
+          {[0, 1, 2, 3, 4].map((k) => (
+            <Skeleton key={k} className="h-2 w-full" />
+          ))}
+        </div>
+      ) : erro ? (
+        <BotaoTentarNovamente onClick={onTentarNovamente} />
+      ) : dataset.total === 0 ? (
+        <span className="text-[12.5px] leading-[1.5] text-soft">
+          Sem análises ainda — submeta resoluções em Java para ver a distribuição.
+        </span>
+      ) : (
+        <>
+          <div className="flex flex-col gap-[9px]">
+            {linhas.map(({ k, curto, contagem, largura }) => (
+              <LinhaEspectro
+                key={k}
+                rotulo={curto}
+                contagem={contagem}
+                largura={largura}
+                cor={corDaClasse(k, theme)}
+              />
+            ))}
+
+            {/* `?` = o motor rodou e não classificou. Neutro: não é uma classe do colormap. */}
+            {naoClassificado > 0 && (
+              <LinhaEspectro
+                rotulo={ROTULO_DESCONHECIDO}
+                contagem={naoClassificado}
+                largura={100}
+              />
+            )}
+          </div>
+
+          {/* Rodapé da honestidade: o descarte é contado E explicado (§4.4). */}
+          {(semAnalisador > 0 || calculando > 0) && (
+            <span className={cn(NOTA, 'leading-[1.5]')}>
+              {[
+                calculando > 0 ? `${calculando} calculando` : null,
+                semAnalisador > 0 ? `${semAnalisador} sem analisador` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+              {semAnalisador > 0 ? ` · ${NOTA_METRICAS_SO_JAVA}` : ''}
+            </span>
+          )}
+        </>
+      )}
+    </Card>
+  )
+}
+
+/** Atividade recente (spec 04 §2.4): últimas resoluções submetidas. */
+function AtividadeRecenteCard({ query }: { query: ResumoQuery }) {
+  const itens = query.data?.atividadeRecente ?? []
+
+  return (
+    <Card className="flex flex-col overflow-hidden p-0">
+      <div className="flex items-center justify-between gap-3 px-4 pb-[11px] pt-3.5">
+        <h3 className="text-[13.5px] font-semibold text-ink">Atividade recente</h3>
+        <Link
+          to="/app/desafios"
+          className="ci-foco-botao rounded-ci px-1 py-0.5 font-mono text-[11px] text-steel transition-colors hover:text-steel-hover"
+        >
+          ver tudo
+        </Link>
+      </div>
+
+      {query.isPending ? (
+        <div className="flex flex-col gap-2 px-4 pb-4">
+          {[0, 1, 2, 3].map((k) => (
+            <Skeleton key={k} className="h-9 w-full" />
+          ))}
+        </div>
+      ) : query.isError ? (
+        <div className="px-4 pb-4">
+          <ErrorState
+            message={apiErrorMessage(query.error)}
+            onRetry={() => void query.refetch()}
+          />
+        </div>
+      ) : itens.length === 0 ? (
+        <EmptyState
+          icon={Code2}
+          size="sm"
+          title="Nenhuma resolução ainda."
+          description="Registre seu primeiro desafio para começar a carta."
+          action={
+            <Link to="/app/desafios" className={buttonClasses({ size: 'sm' })}>
+              <Plus size={14} strokeWidth={2} aria-hidden />
+              Novo desafio
+            </Link>
+          }
+          className="pb-6"
+        />
+      ) : (
+        <div className="flex flex-col">
+          {itens.map((a) => (
+            <AtividadeLinha
+              key={a.resolucaoId}
+              to={`/app/resolucoes/${a.resolucaoId}`}
+              titulo={a.desafioTitulo}
+              linguagem={a.linguagem}
+              autonomia={a.indiceAutonomiaIA}
+              analisada={a.analisada}
+              tempoOrdem={a.complexidadeOrdem}
+              submetidaEm={a.submetidaEm}
+              dataFormato="longa"
+            />
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TELA
+// ════════════════════════════════════════════════════════════════════════════
+
 export function DashboardPage() {
   const { user } = useAuth()
   const resumoQuery = useResumoDashboard()
+  const cartaQuery = useCartaCeleste()
 
-  const captionDesafios = (r: ResumoDashboardDTO) =>
-    `${plural(r.desafiosPublicos, 'público', 'públicos')} · ${plural(
-      r.totalDesafios - r.desafiosPublicos,
-      'privado',
-      'privados',
-    )}`
-  const captionResolucoes = (r: ResumoDashboardDTO) =>
-    `${plural(r.resolucoesAnalisadas, 'analisada', 'analisadas')} · ${
-      r.totalResolucoes - r.resolucoesAnalisadas
-    } calculando`
-  const captionSnippets = (r: ResumoDashboardDTO) =>
-    `em ${plural(r.totalCategorias, 'categoria', 'categorias')}`
+  const dataset = useMemo(() => montarDataset(cartaQuery.data ?? []), [cartaQuery.data])
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
+  const selecionado = pontoPorId(dataset, selecionadoId)
+
+  /*
+   * As duas LENTES do painel de gráficos moram AQUI, e não dentro dele: o `PainelEstrelaSelecionada`
+   * ao lado precisa das duas para saber quem são as IRMÃS da resolução selecionada — os gráficos
+   * agrupam por critérios diferentes (célula autonomia × classe na Carta e na Matriz; bucket do
+   * tempo na Linha, cujo tamanho depende da granularidade). A visualização vai para a URL (é
+   * compartilhável); a granularidade não (é uma lente sobre o mesmo dado, não outra tela).
+   */
+  const [view, setView] = useGraficoNaUrl()
+  const [granularidade, setGranularidade] = useState<Granularidade>(GRANULARIDADE_PADRAO)
+
+  const grupo = useMemo(
+    () => grupoDeIrmaos({ view, granularidade, dataset, selecionadoId }),
+    [view, granularidade, dataset, selecionadoId],
+  )
+
+  /** Clicar na mesma estrela desfaz a seleção. */
+  const selecionar = (resolucaoId: string) =>
+    setSelecionadoId((atual) => (atual === resolucaoId ? null : resolucaoId))
 
   return (
     <PageContainer>
       <PageHeader
         title={`Olá, ${user?.username ?? 'aluno'}`}
-        subtitle="Aqui está o resumo do seu portfólio."
+        subtitle="Aqui está a carta do seu portfólio."
         actions={
           <>
-            <Link to="/app/snippets" className={buttonClasses({ variant: 'secondary' })}>
-              <Braces size={15} />
+            <Link to="/app/snippets" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+              <Braces size={14} strokeWidth={2} aria-hidden />
               Novo snippet
             </Link>
-            <Link to="/app/desafios" className={buttonClasses({ variant: 'primary' })}>
-              <Plus size={16} />
+            <Link to="/app/desafios" className={buttonClasses({ size: 'sm' })}>
+              <Plus size={14} strokeWidth={2} aria-hidden />
               Novo desafio
             </Link>
           </>
         }
       />
 
-      {/* Totais (agregados reais do backend). */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* ── 3 stats ─────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-3">
         <StatCard
+          rotulo="Desafios"
           icon={Target}
-          label="Desafios"
           query={resumoQuery}
-          select={(r) => r.totalDesafios}
-          caption={captionDesafios}
+          valor={(r) => <Valor>{r.totalDesafios}</Valor>}
+          legenda={(r) =>
+            `${pluralPt(r.desafiosPublicos, 'público', 'públicos')} · ${pluralPt(
+              r.totalDesafios - r.desafiosPublicos,
+              'privado',
+              'privados',
+            )}`
+          }
         />
+
         <StatCard
+          rotulo="Resoluções"
           icon={Code2}
-          label="Resoluções"
           query={resumoQuery}
-          select={(r) => r.totalResolucoes}
-          caption={captionResolucoes}
+          valor={(r) => <Valor>{r.totalResolucoes}</Valor>}
+          legenda={(r) => {
+            const calculando = r.totalResolucoes - r.resolucoesAnalisadas
+            return (
+              <>
+                {pluralPt(r.resolucoesAnalisadas, 'analisada', 'analisadas')}
+                {calculando > 0 && (
+                  <>
+                    {' · '}
+                    <span className="text-ink">{calculando} calculando</span>
+                  </>
+                )}
+              </>
+            )
+          }}
         />
+
         <StatCard
-          icon={Braces}
-          label="Snippets"
+          rotulo="Autonomia média"
+          icon={Gauge}
           query={resumoQuery}
-          select={(r) => r.totalSnippets}
-          caption={captionSnippets}
+          info={
+            <InfoButton {...DASH_INFO.autonomia} ariaLabel="O que é a Autonomia IA média?" />
+          }
+          valor={(r) =>
+            r.mediaAutonomia == null ? (
+              <ValorAusente />
+            ) : (
+              <div className="flex items-baseline gap-[3px]">
+                <Valor>{decimal(r.mediaAutonomia)}</Valor>
+                <span className="font-mono text-[15px] text-soft">/5</span>
+              </div>
+            )
+          }
+          legenda={(r) =>
+            r.mediaAutonomia == null
+              ? 'sem resoluções ainda'
+              : TENDENCIA_LABEL[tendencia(r.evolucao.map((p) => p.mediaAutonomia))]
+          }
         />
       </div>
 
-      {/* Evolução (variável central da pesquisa) + resumo de autonomia/complexidade. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.62fr_1fr]">
-        <EvolucaoCard />
-        <div className="flex flex-col gap-4">
-          <AutonomiaCard query={resumoQuery} />
-          <ComplexidadeTipicaCard query={resumoQuery} />
+      {/* ── Herói: painel de gráficos (Carta · Linha · Matriz) + coluna lateral ── */}
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.62fr_1fr]">
+        <PainelDeGraficos
+          dataset={dataset}
+          carregando={cartaQuery.isPending}
+          erro={cartaQuery.isError ? apiErrorMessage(cartaQuery.error) : null}
+          onTentarNovamente={() => void cartaQuery.refetch()}
+          selecionadoId={selecionadoId}
+          onSelecionar={selecionar}
+          view={view}
+          onViewChange={setView}
+          granularidade={granularidade}
+          onGranularidadeChange={setGranularidade}
+        />
+
+        <div className="flex min-w-0 flex-col gap-3.5">
+          {/*
+           * `grupo` + `onSelecionar`: os três gráficos colapsam num único alvo as resoluções que
+           * caem juntas (mesma célula, na Carta e na Matriz; mesmo período, na Linha) e o clique
+           * abre só UMA delas — é este painel que devolve as irmãs ao alcance do usuário, com o
+           * navegador "‹ 2 de 3 ›". O grupo depende do gráfico que está na tela: por isso vem de
+           * `grupoDeIrmaos(...)`, e não de um agrupamento fixo.
+           */}
+          <PainelEstrelaSelecionada
+            ponto={selecionado}
+            grupo={grupo}
+            onSelecionar={selecionar}
+          />
+          <ComplexidadeTipicaCard
+            dataset={dataset}
+            carregando={cartaQuery.isPending}
+            erro={cartaQuery.isError}
+            onTentarNovamente={() => void cartaQuery.refetch()}
+          />
+          <DistribuicaoCard
+            dataset={dataset}
+            carregando={cartaQuery.isPending}
+            erro={cartaQuery.isError}
+            onTentarNovamente={() => void cartaQuery.refetch()}
+            className="flex-1"
+          />
         </div>
       </div>
 
-      {/* Atividade recente (resoluções) + distribuição de complexidade. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.62fr_1fr]">
-        <AtividadeRecenteCard query={resumoQuery} />
-        <DistribuicaoCard query={resumoQuery} />
-      </div>
+      {/* ── Atividade recente ───────────────────────────────────────────────── */}
+      <AtividadeRecenteCard query={resumoQuery} />
     </PageContainer>
   )
 }

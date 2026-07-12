@@ -30,9 +30,15 @@ import { MeuPerfilPage } from '@/pages/aluno/MeuPerfilPage'
 export function App() {
   return (
     <Routes>
-      {/* Público (topnav) */}
+      {/* Público (nav pública) */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
+        {/*
+         * Explorar é servida por DUAS rotas com o MESMO componente (00-INDICE §6-A, Lacuna 1):
+         * aqui, pública (destino do CTA "Ver um portfólio" da landing); e em /app/explorar,
+         * dentro do shell autenticado. Os portfólios listados já são públicos.
+         */}
+        <Route path="/explorar" element={<ExplorarPage />} />
         <Route path="/u/:usuarioId" element={<PortfolioAutorPage />} />
         <Route path="/u/:usuarioId/desafios/:desafioId" element={<DesafioPublicoPage />} />
         <Route
@@ -51,7 +57,7 @@ export function App() {
       <Route path="/recuperar-senha" element={<EsqueciSenhaPage />} />
       <Route path="/definir-senha" element={<DefinirNovaSenhaPage />} />
 
-      {/* App autenticado (sidebar + topbar) */}
+      {/* App autenticado (sidebar 236px + topbar 60px) */}
       <Route element={<RequireAuth />}>
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />

@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.projeto.codeinsights.application.knowledge.dto.PontoCartaDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResultadoMetricaDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO;
 import com.projeto.codeinsights.application.knowledge.dto.ResumoDashboardDTO.EvolucaoMensalDTO;
 import com.projeto.codeinsights.application.knowledge.usecase.ListarMetricasDaResolucaoUseCase;
+import com.projeto.codeinsights.application.knowledge.usecase.ObterCartaCelesteUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.ObterEvolucaoUseCase;
 import com.projeto.codeinsights.application.knowledge.usecase.ObterResumoDashboardUseCase;
 import com.projeto.codeinsights.domain.knowledge.enums.GranularidadeTempo;
@@ -26,6 +28,7 @@ public class MetricaController {
 
     private final ListarMetricasDaResolucaoUseCase listarMetricasDaResolucaoUseCase;
     private final ObterResumoDashboardUseCase obterResumoDashboardUseCase;
+    private final ObterCartaCelesteUseCase obterCartaCelesteUseCase;
     private final ObterEvolucaoUseCase obterEvolucaoUseCase;
 
     @GetMapping("/api/resolucoes/{resolucaoId}/metricas")
@@ -38,6 +41,11 @@ public class MetricaController {
     @GetMapping("/api/metricas/resumo")
     public ResponseEntity<ResumoDashboardDTO> resumo(@CurrentUserId UUID autorId) {
         return ResponseEntity.ok(obterResumoDashboardUseCase.execute(autorId));
+    }
+
+    @GetMapping("/api/metricas/carta")
+    public ResponseEntity<List<PontoCartaDTO>> carta(@CurrentUserId UUID autorId) {
+        return ResponseEntity.ok(obterCartaCelesteUseCase.execute(autorId));
     }
 
     @GetMapping("/api/metricas/evolucao")

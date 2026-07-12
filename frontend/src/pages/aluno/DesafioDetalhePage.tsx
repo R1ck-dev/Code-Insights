@@ -1,14 +1,33 @@
-import { useState, type FormEvent } from 'react'
+/*
+ * M · Detalhe do desafio (04 §5) — sistema ÓRBITA.
+ *
+ * Cabeçalho com ações (Editar · Visibilidade · Remover) · Enunciado + Detalhes ·
+ * lista paginada de resoluções (<ResolucaoLinha>, com o estado "calculando") ·
+ * snippets do desafio · diálogo de edição + 2 confirmações.
+ *
+ * Decisões que a tela carrega:
+ *  - Editar o DESAFIO existe (o enunciado não é dado de medição). Editar RESOLUÇÃO não
+ *    existe (00-INDICE §4.1): a linha de resolução leva ao detalhe, e a evolução se faz
+ *    submetendo uma NOVA resolução ao mesmo desafio.
+ *  - Métrica só existe para Java (§4.4). O slot de métrica da linha resolve os 3 estados
+ *    (Big-O · calculando · sem métrica) — a incerteza (≈ ESTIMADO) nunca é escondida.
+ *  - O `k` do colormap vem do próprio `ResolucaoResumoDTO` (`tempoOrdem`): é aqui que o aluno
+ *    compara suas tentativas lado a lado, então o chip de Big-O tem de estar na LISTA, não só
+ *    no detalhe. Nenhuma consulta extra — o backend traz a métrica na mesma página.
+ */
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ExternalLink, FileCode2, Globe, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ExternalLink, FileCode2, Globe, Lock, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageContainer } from '@/components/page/PageContainer'
 import { Breadcrumb } from '@/components/page/Breadcrumb'
 import { QueryBoundary } from '@/components/page/states'
 import { Card } from '@/components/ui/card'
 import { Button, buttonClasses } from '@/components/ui/button'
 import { Chip } from '@/components/ui/badge'
-import { Input, Textarea } from '@/components/ui/input'
-import { FormField } from '@/components/ui/form-field'
+import { Input } from '@/components/ui/input'
+import { Combobox } from '@/components/ui/combobox'
+import { EnunciadoField } from '@/components/domain/EnunciadoField'
+import { PLATAFORMAS } from '@/domain/plataformas'
 import {
   Dialog,
   DialogBody,
@@ -20,20 +39,23 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/components/ui/toaster'
-import { AutonomyMeter } from '@/components/AutonomyMeter'
+import { StatusChip } from '@/components/domain/badges'
+import { ResolucaoLinha } from '@/components/domain/ResolucaoLinha'
 import { SnippetsDoDesafioSection } from '@/components/snippets/SnippetsDoDesafioSection'
-import { AnalysisStatus, LanguageBadge, VisibilityBadge } from '@/components/domain/badges'
-import { LINGUAGEM_META } from '@/domain/enums'
 import { apiErrorMessage } from '@/lib/api'
-import { formatDate } from '@/lib/utils'
+import { formatDayMonth, pluralPt } from '@/lib/utils'
 import {
   useAlterarVisibilidadeDesafio,
   useAtualizarDesafio,
   useDesafioDetalhe,
   useRemoverDesafio,
 } from '@/features/desafios/hooks'
-import { useResolucoesDoDesafio } from '@/features/resolucoes/hooks'
+import {
+  useAlterarVisibilidadeResolucao,
+  useResolucoesDoDesafio,
+} from '@/features/resolucoes/hooks'
 import type { DesafioDetalheDTO, ResolucaoResumoDTO } from '@/types/api'
 
 export function DesafioDetalhePage() {
@@ -83,89 +105,145 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
 
   return (
     <>
-      <Breadcrumb items={[{ label: 'Desafios', to: '/app/desafios' }, { label: desafio.titulo }]} />
+      <Breadcrumb items={[{ label: 'desafios', to: '/app/desafios' }, { label: desafio.titulo }]} />
 
-      {/* Cabeçalho */}
-      <div className="flex flex-wrap items-start justify-between gap-5">
-        <div className="flex min-w-0 flex-col gap-3">
+      {/* ---------------------------------------------------------- cabeçalho */}
+      <header className="flex flex-wrap items-start justify-between gap-5">
+        <div className="flex min-w-0 flex-col gap-[11px]">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-[25px] font-bold tracking-tight text-heading">{desafio.titulo}</h1>
-            <VisibilityBadge visibilidade={desafio.visibilidade} />
+            <h1 className="text-[25px] font-semibold leading-tight tracking-[-.02em] text-ink">
+              {desafio.titulo}
+            </h1>
+            <StatusChip status={isPublico ? 'publico' : 'privado'} />
           </div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            {desafio.plataformaOrigem && <Chip>{desafio.plataformaOrigem}</Chip>}
-            {desafio.identificadorExterno && <Chip mono>#{desafio.identificadorExterno}</Chip>}
+
+          <div className="flex flex-wrap items-center gap-[9px]">
+            {desafio.plataformaOrigem && (
+              <Chip className="py-[3px] text-[11px]">{desafio.plataformaOrigem}</Chip>
+            )}
+            {desafio.identificadorExterno && (
+              <Chip className="tabular py-[3px] text-[11px]">#{desafio.identificadorExterno}</Chip>
+            )}
             {desafio.urlExterna && (
               <a
                 href={desafio.urlExterna}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-brand-strong hover:underline"
+                className="ci-foco-botao inline-flex items-center gap-1.5 rounded-ci font-mono text-[11px] text-steel transition-colors hover:text-steel-hover"
               >
-                Abrir link
-                <ExternalLink size={12} />
+                abrir link
+                <ExternalLink size={12} strokeWidth={2} aria-hidden />
+                <span className="sr-only">(abre em nova aba)</span>
               </a>
             )}
-            <span className="font-mono text-[11.5px] text-subtle">
-              criado {formatDate(desafio.criadoEm)} · atualizado {formatDate(desafio.atualizadoEm)}
+            <span className="tabular font-mono text-[11px] text-soft">
+              criado {formatDayMonth(desafio.criadoEm)} · atualizado{' '}
+              {formatDayMonth(desafio.atualizadoEm)}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          <Button variant="secondary" size="sm" onClick={() => setEditarAberto(true)}>
-            <Pencil size={15} />
+        <div className="flex flex-wrap gap-[9px]">
+          <Button variant="secondary" size="sm" icon={Pencil} onClick={() => setEditarAberto(true)}>
             Editar
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => setVisibilidadeAberta(true)}>
-            <Globe size={15} />
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={isPublico ? Lock : Globe}
+            onClick={() => setVisibilidadeAberta(true)}
+          >
             Visibilidade
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => setRemoverAberto(true)}>
-            <Trash2 size={15} />
+          <Button
+            variant="destructive"
+            size="sm"
+            icon={Trash2}
+            onClick={() => setRemoverAberto(true)}
+          >
             Remover
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* Enunciado + Detalhes */}
-      <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[1.5fr_1fr]">
-        <Card className="flex flex-col gap-3 p-5">
-          <span className="text-sm font-semibold text-heading">Enunciado</span>
+      {/* ------------------------------------------------- enunciado + detalhes */}
+      <div className="grid grid-cols-1 items-start gap-[18px] lg:grid-cols-[1.5fr_1fr]">
+        <Card className="flex flex-col gap-[13px] p-5">
+          <h2 className="text-[14px] font-semibold text-ink">Enunciado</h2>
           {desafio.enunciado ? (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{desafio.enunciado}</p>
+            /*
+             * ROLA POR DENTRO (o usuário viu: enunciado longo ficava cortado). Um enunciado de
+             * juiz online tem facilmente 2–3 mil caracteres; deixá-lo crescer sem limite empurra
+             * a lista de RESOLUÇÕES — que é o conteúdo que a pesquisa mede — para fora da tela, e
+             * desalinha a coluna de Detalhes ao lado.
+             *
+             * `tabIndex={0}` não é enfeite: uma região que rola precisa ser alcançável pelo
+             * teclado, senão quem não usa mouse não consegue ler o fim do texto (WCAG 2.1.1).
+             * `break-words` porque enunciado colado traz URLs e identificadores longos, que sem
+             * isso estouram a largura do cartão.
+             */
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label="Enunciado do desafio"
+              className="ci-foco-input max-h-[380px] overflow-y-auto pr-1"
+            >
+              <p className="whitespace-pre-wrap break-words text-[14px] leading-[1.65] text-body">
+                {desafio.enunciado}
+              </p>
+            </div>
           ) : (
-            <p className="text-sm text-muted">Sem enunciado.</p>
+            <p className="text-[13px] leading-[1.55] text-soft">
+              Sem enunciado. Você pode adicionar um em <span className="text-mid">Editar</span>.
+            </p>
           )}
         </Card>
 
         <Card className="flex flex-col gap-3 p-[18px]">
-          <span className="text-[13px] font-semibold text-muted">Detalhes</span>
-          <DetalheLinha rotulo="Plataforma" valor={desafio.plataformaOrigem ?? '—'} />
-          <DetalheLinha
-            rotulo="Identificador"
-            valor={desafio.identificadorExterno ? `#${desafio.identificadorExterno}` : '—'}
-            mono
-          />
-          <DetalheLinha rotulo="Resoluções" valor={String(desafio.qtdResolucoes)} mono />
-          <div className="flex items-center justify-between">
-            <span className="text-[12.5px] text-muted">Visibilidade</span>
-            <VisibilityBadge visibilidade={desafio.visibilidade} />
-          </div>
+          <h2 className="font-mono text-[11px] uppercase tracking-[.08em] text-mid">Detalhes</h2>
+
+          <DetalheLinha rotulo="plataforma">
+            {desafio.plataformaOrigem ? (
+              <span className="text-[12.5px] text-ink">{desafio.plataformaOrigem}</span>
+            ) : (
+              <Vazio />
+            )}
+          </DetalheLinha>
+
+          <DetalheLinha rotulo="identificador">
+            {desafio.identificadorExterno ? (
+              <span className="tabular font-mono text-[12px] text-ink">
+                #{desafio.identificadorExterno}
+              </span>
+            ) : (
+              <Vazio />
+            )}
+          </DetalheLinha>
+
+          <DetalheLinha rotulo="resoluções">
+            <span className="tabular font-mono text-[12px] text-ink">{desafio.qtdResolucoes}</span>
+          </DetalheLinha>
+
+          <DetalheLinha rotulo="visibilidade">
+            <StatusChip status={isPublico ? 'publico' : 'privado'} />
+          </DetalheLinha>
         </Card>
       </div>
 
-      {/* Resoluções */}
-      <section className="flex flex-col gap-3.5">
+      {/* ------------------------------------------------------------ resoluções */}
+      <section className="flex flex-col gap-[13px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <h3 className="text-base font-semibold text-heading">Resoluções</h3>
-            <span className="rounded-md border border-border bg-surface px-2 py-0.5 font-mono text-[12px] text-subtle tabular-nums">
+            <h2 className="text-[16px] font-semibold text-ink">Resoluções</h2>
+            <span className="tabular rounded-ci border border-line bg-panel px-2 py-0.5 font-mono text-[12px] text-soft">
               {desafio.qtdResolucoes}
             </span>
           </div>
-          <Link to={`/app/desafios/${id}/submeter`} className={buttonClasses({ size: 'sm' })}>
-            <Plus size={15} />
+          <Link
+            to={`/app/desafios/${id}/submeter`}
+            className={buttonClasses({ size: 'sm' })}
+          >
+            <Plus size={14} strokeWidth={2} aria-hidden />
             Submeter resolução
           </Link>
         </div>
@@ -173,13 +251,13 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
         <ListaResolucoes desafioId={id} />
       </section>
 
-      {/* Snippets vinculados a este desafio */}
+      {/* --------------------------------------------- snippets deste desafio */}
       <SnippetsDoDesafioSection desafioId={id} />
 
-      {/* Diálogos */}
+      {/* -------------------------------------------------------------- diálogos */}
       {editarAberto && (
         <Dialog open={editarAberto} onOpenChange={setEditarAberto}>
-          <DialogContent>
+          <DialogContent width={560}>
             <EditarDesafioForm desafio={desafio} onClose={() => setEditarAberto(false)} />
           </DialogContent>
         </Dialog>
@@ -188,11 +266,11 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
       <ConfirmDialog
         open={visibilidadeAberta}
         onOpenChange={setVisibilidadeAberta}
-        icon={Globe}
+        icon={isPublico ? Lock : Globe}
         title={isPublico ? 'Tornar privado?' : 'Tornar público?'}
         description={
           isPublico
-            ? 'Este desafio deixará de ser visível para outras pessoas.'
+            ? 'Este desafio deixará de aparecer no seu portfólio público.'
             : 'Qualquer pessoa poderá ver este desafio e suas resoluções públicas.'
         }
         confirmLabel={isPublico ? 'Tornar privado' : 'Tornar público'}
@@ -206,7 +284,7 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
         icon={Trash2}
         destructive
         title="Remover desafio?"
-        description="Esta ação não pode ser desfeita. As resoluções também serão removidas."
+        description="Esta ação não pode ser desfeita. As resoluções deste desafio também serão removidas."
         confirmLabel="Remover"
         onConfirm={confirmarRemocao}
         loading={remover.isPending}
@@ -215,46 +293,63 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
   )
 }
 
-function DetalheLinha({ rotulo, valor, mono }: { rotulo: string; valor: string; mono?: boolean }) {
+/** Linha chave→valor do card Detalhes: chave mono `soft`, valor à direita. */
+function DetalheLinha({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-[12.5px] text-muted">{rotulo}</span>
-      <span className={mono ? 'font-mono text-[12px] text-fg tabular-nums' : 'text-[12.5px] text-fg'}>
-        {valor}
-      </span>
+      <span className="font-mono text-[12px] text-soft">{rotulo}</span>
+      {children}
     </div>
   )
 }
+
+/** Ausência de dado — nunca um zero fingindo ser dado. */
+function Vazio() {
+  return <span className="font-mono text-[12px] text-soft">—</span>
+}
+
+// --------------------------------------------------------------- resoluções
 
 function ListaResolucoes({ desafioId }: { desafioId: string }) {
   const [pagina, setPagina] = useState(0)
   const query = useResolucoesDoDesafio(desafioId, pagina)
 
   return (
-    <QueryBoundary query={query}>
+    <QueryBoundary query={query} loading={<ListaEsqueleto />}>
       {(lista) =>
         lista.itens.length === 0 ? (
           <EmptyState
             icon={FileCode2}
-            title="Nenhuma resolução ainda"
-            description="Submeta sua primeira resolução e acompanhe as métricas de complexidade e autonomia."
+            title="Nenhuma resolução ainda."
+            description="Submeta a primeira resolução: a análise estática mede a complexidade e a autonomia autodeclarada entra na sua carta."
             action={
-              <Link to={`/app/desafios/${desafioId}/submeter`} className={buttonClasses({ size: 'sm' })}>
-                <Plus size={15} />
+              <Link
+                to={`/app/desafios/${desafioId}/submeter`}
+                className={buttonClasses({ size: 'sm' })}
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden />
                 Submeter resolução
               </Link>
             }
           />
         ) : (
           <div className="flex flex-col gap-4">
-            <Card className="divide-y divide-border-subtle overflow-hidden">
+            <Card className="overflow-hidden">
+              <h3 className="sr-only">
+                {pluralPt(lista.totalItens, 'resolução', 'resoluções')} deste desafio
+              </h3>
+              {/* `tempoOrdem` vem da própria lista: `0..7` → chip ≈ Big-O · `-1` → `?` (o motor
+                  não classificou) · `null` → sem métrica. Nunca tratar `0` como vazio: é O(1). */}
               {lista.itens.map((r) => (
-                <ResolucaoLinha key={r.id} resolucao={r} />
+                <LinhaComVisibilidade key={r.id} resolucao={r} />
               ))}
             </Card>
-            {lista.totalPaginas > 1 && (
-              <Pagination page={lista.paginaAtual} totalPages={lista.totalPaginas} onChange={setPagina} />
-            )}
+
+            <Pagination
+              page={lista.paginaAtual}
+              totalPages={lista.totalPaginas}
+              onChange={setPagina}
+            />
           </div>
         )
       }
@@ -262,29 +357,65 @@ function ListaResolucoes({ desafioId }: { desafioId: string }) {
   )
 }
 
-function ResolucaoLinha({ resolucao }: { resolucao: ResolucaoResumoDTO }) {
+/**
+ * Uma linha da lista + a mutação de visibilidade dela — alternar público/privado sem entrar na
+ * resolução (era preciso abrir uma por uma). Componente por item porque
+ * `useAlterarVisibilidadeResolucao` é um hook POR ID: no `.map` ele quebraria as regras dos hooks.
+ */
+function LinhaComVisibilidade({ resolucao }: { resolucao: ResolucaoResumoDTO }) {
+  const alterar = useAlterarVisibilidadeResolucao(resolucao.id)
+
   return (
-    <Link
+    <ResolucaoLinha
       to={`/app/resolucoes/${resolucao.id}`}
-      className="flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-surface-2"
-    >
-      <LanguageBadge linguagem={resolucao.linguagem} />
-      <span className="min-w-0 flex-1 truncate text-[13.5px] text-fg">
-        {LINGUAGEM_META[resolucao.linguagem].label}
-      </span>
-      <AutonomyMeter value={resolucao.indiceAutonomiaIA} size="sm" className="shrink-0" />
-      <AnalysisStatus analisada={resolucao.analisada} className="shrink-0" />
-      <span className="hidden shrink-0 sm:inline-flex">
-        <VisibilityBadge visibilidade={resolucao.visibilidade} />
-      </span>
-      <span className="w-[66px] shrink-0 text-right font-mono text-[11.5px] text-subtle">
-        {formatDate(resolucao.submetidaEm)}
-      </span>
-    </Link>
+      linguagem={resolucao.linguagem}
+      autonomia={resolucao.indiceAutonomiaIA}
+      analisada={resolucao.analisada}
+      tempoOrdem={resolucao.tempoOrdem}
+      confiancaTempo={resolucao.confiancaTempo}
+      submetidaEm={resolucao.submetidaEm}
+      visibilidade={resolucao.visibilidade}
+      alterandoVisibilidade={alterar.isPending}
+      onAlternarVisibilidade={async (publico) => {
+        try {
+          await alterar.mutateAsync(publico)
+          toast.success(publico ? 'Resolução agora é pública.' : 'Resolução agora é privada.')
+        } catch (err) {
+          toast.error(apiErrorMessage(err, 'Não foi possível alterar a visibilidade.'))
+        }
+      }}
+    />
   )
 }
 
-function EditarDesafioForm({ desafio, onClose }: { desafio: DesafioDetalheDTO; onClose: () => void }) {
+/** Esqueleto da lista: mesma moldura, 3 linhas pulsando (04 §5.6). */
+function ListaEsqueleto() {
+  return (
+    <Card className="overflow-hidden" role="status" aria-busy aria-label="Carregando resoluções">
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3.5 border-t border-line-soft px-4 py-[13px] first:border-t-0"
+        >
+          <Skeleton className="h-[26px] w-[74px]" />
+          <Skeleton className="h-[13px] flex-1" />
+          <Skeleton className="h-[13px] w-[90px]" />
+          <Skeleton className="h-[13px] w-[56px]" />
+        </div>
+      ))}
+    </Card>
+  )
+}
+
+// ------------------------------------------------------------------ diálogo
+
+function EditarDesafioForm({
+  desafio,
+  onClose,
+}: {
+  desafio: DesafioDetalheDTO
+  onClose: () => void
+}) {
   const atualizar = useAtualizarDesafio(desafio.id)
   const [titulo, setTitulo] = useState(desafio.titulo)
   const [enunciado, setEnunciado] = useState(desafio.enunciado ?? '')
@@ -311,63 +442,77 @@ function EditarDesafioForm({ desafio, onClose }: { desafio: DesafioDetalheDTO; o
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col">
-      <DialogHeader>
+    <form onSubmit={onSubmit} className="flex min-h-0 flex-col">
+      <DialogHeader icon={Pencil}>
         <DialogTitle>Editar desafio</DialogTitle>
       </DialogHeader>
+
       <DialogBody>
-        <FormField label="Título" htmlFor="editar-titulo" required>
+        <Input
+          id="editar-titulo"
+          label="Título"
+          required
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          maxLength={255}
+        />
+
+        {/* Mesmo campo do "Novo desafio": colar do juiz online limpa a matemática que o
+            KaTeX/MathJax duplica na área de transferência. */}
+        <EnunciadoField
+          id="editar-enunciado"
+          label="Enunciado"
+          minHeight={76}
+          maxLength={5000}
+          value={enunciado}
+          onChange={setEnunciado}
+          placeholder="Cole o enunciado do juiz online…"
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Combobox
+            id="editar-plataforma"
+            label="Plataforma"
+            value={plataforma}
+            onChange={setPlataforma}
+            opcoes={PLATAFORMAS}
+            maxLength={100}
+            placeholder="Ex.: beecrowd"
+          />
           <Input
-            id="editar-titulo"
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            maxLength={255}
-            required
+            id="editar-identificador"
+            label="Identificador"
+            mono
+            value={identificador}
+            onChange={(e) => setIdentificador(e.target.value)}
+            maxLength={100}
+            placeholder="1"
           />
-        </FormField>
-        <FormField label="Enunciado" htmlFor="editar-enunciado">
-          <Textarea
-            id="editar-enunciado"
-            value={enunciado}
-            onChange={(e) => setEnunciado(e.target.value)}
-            placeholder="Descreva o problema…"
-          />
-        </FormField>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Plataforma" htmlFor="editar-plataforma">
-            <Input
-              id="editar-plataforma"
-              value={plataforma}
-              onChange={(e) => setPlataforma(e.target.value)}
-              maxLength={100}
-              placeholder="LeetCode"
-            />
-          </FormField>
-          <FormField label="Identificador" htmlFor="editar-identificador">
-            <Input
-              id="editar-identificador"
-              value={identificador}
-              onChange={(e) => setIdentificador(e.target.value)}
-              maxLength={100}
-              className="font-mono"
-              placeholder="1"
-            />
-          </FormField>
         </div>
-        <FormField label="URL externa" htmlFor="editar-url">
-          <Input
-            id="editar-url"
-            type="url"
-            value={urlExterna}
-            onChange={(e) => setUrlExterna(e.target.value)}
-            maxLength={500}
-            className="font-mono text-[12.5px]"
-            placeholder="https://…"
-          />
-        </FormField>
+
+        <Input
+          id="editar-url"
+          label="URL externa"
+          type="url"
+          mono
+          value={urlExterna}
+          onChange={(e) => setUrlExterna(e.target.value)}
+          maxLength={500}
+          placeholder="https://…"
+        />
+
+        <div className="flex items-start gap-[9px] rounded-ci border border-line bg-recess p-3">
+          <FileCode2 size={14} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-steel" />
+          <p className="text-[12px] leading-[1.45] text-mid">
+            O enunciado não é dado de medição — pode ser corrigido à vontade. As{' '}
+            <span className="font-semibold text-ink">resoluções</span> já submetidas continuam
+            imutáveis.
+          </p>
+        </div>
       </DialogBody>
+
       <DialogFooter>
-        <Button type="button" variant="secondary" onClick={onClose} disabled={atualizar.isPending}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={atualizar.isPending}>
           Cancelar
         </Button>
         <Button type="submit" loading={atualizar.isPending} disabled={!titulo.trim()}>

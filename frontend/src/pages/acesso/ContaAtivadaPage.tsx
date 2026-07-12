@@ -1,11 +1,73 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { buttonClasses } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { useAtivarConta } from '@/features/identity/hooks'
 import { emitirContaAtivada } from '@/lib/activationSignal'
+import { cn } from '@/lib/utils'
+
+/*
+ * G · Conta ativada (spec 03 §G) — ÓRBITA.
+ *
+ * Um único cartão de 380px, centralizado, escolhido pelo resultado da ativação do token
+ * (o protótipo desenha os dois estados lado a lado só para exibição).
+ * Estados: verificando (tile neutro + spinner) · sucesso (verde) · link inválido (erro).
+ */
+
+/** Tile de ícone 52×52 do cartão — neutro, sucesso ou erro. */
+function TileIcone({
+  icon: Icon,
+  tom,
+  size,
+}: {
+  icon: LucideIcon
+  tom: 'sucesso' | 'erro'
+  size: number
+}) {
+  return (
+    <span
+      className={cn(
+        'flex h-[52px] w-[52px] items-center justify-center rounded-ci border',
+        tom === 'sucesso'
+          ? 'border-sucesso-line bg-sucesso-bg'
+          : 'border-erro-tile-line bg-erro-tile-bg',
+      )}
+    >
+      <Icon
+        size={size}
+        strokeWidth={2}
+        aria-hidden
+        className={tom === 'sucesso' ? 'text-sucesso-ink' : 'text-erro-texto'}
+      />
+    </span>
+  )
+}
+
+/** Cartão base dos três estados: panel + hairline + raio 3px + sombra flutuante. */
+function CartaoResultado({ children }: { children: ReactNode }) {
+  return (
+    <div
+      aria-live="polite"
+      className="flex w-full max-w-[380px] flex-col items-center gap-[14px] rounded-ci border border-line bg-panel p-[28px] text-center shadow-float"
+    >
+      {children}
+    </div>
+  )
+}
+
+function Titulo({ children }: { children: ReactNode }) {
+  return <h1 className="text-[18px] font-semibold text-ink">{children}</h1>
+}
+
+function Corpo({ children }: { children: ReactNode }) {
+  return <p className="text-[13px] leading-[1.5] text-mid">{children}</p>
+}
+
+const ACAO = 'mt-0.5 h-[42px]'
 
 export function ContaAtivadaPage() {
   const [params] = useSearchParams()
@@ -20,47 +82,56 @@ export function ContaAtivadaPage() {
   }, [isSuccess])
 
   return (
-    <AuthLayout>
-      <div className="flex w-[440px] max-w-full flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-8 text-center shadow-[0_24px_60px_-30px_rgba(0,0,0,.85)]">
-        {loading ? (
-          <>
-            <Spinner size={28} color="var(--brand)" />
-            <span className="text-sm text-muted">Ativando sua conta…</span>
-          </>
-        ) : isSuccess ? (
-          <>
-            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] bg-success/[.13]">
-              <CheckCircle2 size={26} className="text-success" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <h1 className="text-[18px] font-bold text-heading">Conta ativada!</h1>
-              <p className="text-[13px] leading-relaxed text-muted">
-                Tudo certo. Você já pode entrar no CodeInsights.
-              </p>
-            </div>
-            <Link to="/entrar" className={buttonClasses({ className: 'mt-1 w-full' })}>
-              Ir para o login
-            </Link>
-          </>
-        ) : (
-          <>
-            <div className="flex h-[52px] w-[52px] items-center justify-center rounded-[15px] bg-danger/[.12]">
-              <AlertTriangle size={25} className="text-danger" />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <h1 className="text-[18px] font-bold text-heading">Link inválido ou expirado</h1>
-              <p className="text-[13px] leading-relaxed text-muted">
-                {token
-                  ? 'Este link de ativação não é mais válido. Solicite um novo.'
-                  : 'Nenhum token de ativação foi informado.'}
-              </p>
-            </div>
-            <Link to="/criar-conta" className={buttonClasses({ variant: 'secondary', className: 'mt-1 w-full' })}>
-              Criar nova conta
-            </Link>
-          </>
-        )}
-      </div>
+    <AuthLayout card={false}>
+      {loading ? (
+        <CartaoResultado>
+          <span className="flex h-[52px] w-[52px] items-center justify-center rounded-ci border border-line-strong bg-elevated">
+            <Spinner size={22} label="Ativando sua conta" />
+          </span>
+          <div className="flex flex-col gap-2">
+            <Titulo>Ativando sua conta…</Titulo>
+            <Corpo>Validando o link de ativação.</Corpo>
+          </div>
+        </CartaoResultado>
+      ) : isSuccess ? (
+        <CartaoResultado>
+          <TileIcone icon={CheckCircle2} tom="sucesso" size={26} />
+          <div className="flex flex-col gap-2">
+            <Titulo>Conta ativada!</Titulo>
+            <Corpo>Tudo certo. Você já pode entrar no CodeInsights.</Corpo>
+          </div>
+          <Link
+            to="/entrar"
+            className={buttonClasses({ font: 'sans', size: 'lg', fullWidth: true, className: ACAO })}
+          >
+            Ir para o login
+          </Link>
+        </CartaoResultado>
+      ) : (
+        <CartaoResultado>
+          <TileIcone icon={AlertTriangle} tom="erro" size={25} />
+          <div className="flex flex-col gap-2">
+            <Titulo>Link inválido ou expirado</Titulo>
+            <Corpo>
+              {token
+                ? 'Este link de ativação não é mais válido. Solicite um novo.'
+                : 'Nenhum token de ativação foi informado.'}
+            </Corpo>
+          </div>
+          <Link
+            to="/criar-conta"
+            className={buttonClasses({
+              variant: 'secondary',
+              font: 'sans',
+              size: 'lg',
+              fullWidth: true,
+              className: ACAO,
+            })}
+          >
+            Criar nova conta
+          </Link>
+        </CartaoResultado>
+      )}
     </AuthLayout>
   )
 }

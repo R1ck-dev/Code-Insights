@@ -38,6 +38,16 @@ public class ResultadoMetricaRepositoryAdapter implements ResultadoMetricaReposi
     }
 
     @Override
+    public List<ResultadoMetrica> listarPorResolucoesETipo(List<UUID> resolucaoIds, TipoMetrica tipo) {
+        if (resolucaoIds == null || resolucaoIds.isEmpty()) {
+            return List.of();
+        }
+        return springDataResultadoMetricaRepository.findByResolucaoIdInAndTipo(resolucaoIds, tipo).stream()
+                .map(resultadoMetricaMapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<ContagemMetrica> contarPorRotulo(UUID autorId, TipoMetrica tipo) {
         return springDataResultadoMetricaRepository.contarPorRotulo(autorId, tipo).stream()
                 .map(r -> new ContagemMetrica(

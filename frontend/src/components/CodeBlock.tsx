@@ -138,47 +138,74 @@ function tokenize(code: string, lang: CodeLang): Token[] {
   return out
 }
 
+/**
+ * Paleta de sintaxe fria dessaturada (Órbita).
+ * Regra 6 do sistema: o código NUNCA compete com o colormap de complexidade — ele é o único
+ * acento cromático da interface. Nada de índigo/roxo/saturado aqui.
+ */
 const COLORS = {
+  // Órbita escuro (protótipo: theme="field")
   dark: {
     ws: 'inherit',
-    ident: '#D7DAE3',
-    keyword: '#8B85FF',
-    type: '#5AC8C0',
-    function: '#6FB2FF',
-    string: '#8FCE9B',
-    number: '#E0A66B',
-    comment: '#5F6575',
-    annotation: '#D6A94A',
-    punct: '#8A90A0',
-    operator: '#A9B0C0',
+    ident: '#D4DBE8',
+    keyword: '#8FA6C9',
+    type: '#D3AE6A',
+    function: '#C7D2E6',
+    string: '#8FC79E',
+    number: '#E0A57C',
+    comment: '#5A6779',
+    annotation: '#C9AE6A',
+    punct: '#7C8AA3',
+    operator: '#A6B2C6',
   } as Record<string, string>,
+  // Órbita claro (protótipo: theme="fieldlight")
   light: {
     ws: 'inherit',
-    ident: '#1F2430',
-    keyword: '#5B4FD8',
-    type: '#0E7A75',
-    function: '#2563C9',
-    string: '#1F8A4C',
-    number: '#B5701E',
-    comment: '#8A8F9C',
-    annotation: '#9A6B12',
-    punct: '#6B7180',
-    operator: '#4A4F5E',
+    ident: '#1F2A3D',
+    keyword: '#3A63B0',
+    type: '#8A5A16',
+    function: '#1F2A3D',
+    string: '#3E7A4A',
+    number: '#9A5A1E',
+    comment: '#8A94A8',
+    annotation: '#8A5A16',
+    punct: '#55617A',
+    operator: '#55617A',
   } as Record<string, string>,
 }
 
+/*
+ * Cromo do card (fundo, cabeçalho, hairline, rótulos, gutter) = TOKENS DO SISTEMA.
+ *
+ * ⚠ A exceção de hex do CodeBlock é a PALETA DE SINTAXE (`COLORS`, acima) — e só ela. Antes,
+ * este objeto trazia 6 hex por tema; no claro os 6 batiam com os tokens, mas no escuro 5 dos 6
+ * eram "quase" — neutros que não existem em lugar nenhum da tabela §2. Resultado: hairline e
+ * painel do CodeBlock não alinhavam com nenhum outro cartão da tela, justamente no modo padrão
+ * do produto. O cromo agora vem de `var(--…)`, e muda junto com o resto do sistema.
+ */
 const PANEL = {
-  dark: { bg: '#0E0F14', header: '#14151B', border: '#24262F', hd: '#9B9FAD', hdSoft: '#666B7A', gutter: '#3A3D48' },
-  light: { bg: '#FBFBFD', header: '#F3F4F7', border: '#E7E8EC', hd: '#565B69', hdSoft: '#868C99', gutter: '#B9BDC8' },
-}
+  bg: 'var(--panel-chart)',
+  header: 'var(--elevated)',
+  border: 'var(--line)',
+  hd: 'var(--mid)',
+  hdSoft: 'var(--soft)',
+  gutter: 'var(--grid)',
+} as const
 
-const LANG_LABEL: Record<CodeLang, [string, string]> = {
+/** Verde de sucesso do sistema — nunca #2FB863 (verde fora do colormap). */
+const COPIADO = { dark: '#4FB477', light: '#3E9E63' }
+
+/** Rótulo default + cor do ponto de linguagem (§2.4 do índice). Reusado pelo CodeEditor. */
+export const LANG_LABEL: Record<CodeLang, [string, string]> = {
   java: ['Java', '#E76F00'],
   python: ['Python', '#4B8BBE'],
   cpp: ['C++', '#4C93D6'],
   javascript: ['JavaScript', '#E9C500'],
   c: ['C', '#659AD2'],
 }
+
+/** Fallback (linguagem desconhecida em runtime): rótulo neutro + steel. */
+const LANG_FALLBACK: [string, string] = ['Código', '#8FA6C9']
 
 interface CodeBlockProps {
   code: string
@@ -204,8 +231,8 @@ export function CodeBlock({
   const { theme } = useTheme()
   const [copied, setCopied] = useState(false)
   const COL = COLORS[theme]
-  const P = PANEL[theme]
-  const [langName, langColor] = LANG_LABEL[lang]
+  const P = PANEL // cromo por token: não depende do tema em JS (o CSS resolve)
+  const [langName, langColor] = LANG_LABEL[lang] ?? LANG_FALLBACK
 
   const toks = tokenize(code, lang)
   const rows: Token[][] = [[]]
@@ -229,7 +256,7 @@ export function CodeBlock({
 
   return (
     <div
-      className={cn('overflow-hidden rounded-[10px] border', className)}
+      className={cn('overflow-hidden rounded-ci border', className)}
       style={{ background: P.bg, borderColor: P.border }}
     >
       <div
@@ -237,7 +264,11 @@ export function CodeBlock({
         style={{ background: P.header, borderColor: P.border }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span className="h-[9px] w-[9px] shrink-0 rounded-full" style={{ background: langColor }} />
+          <span
+            aria-hidden
+            className="h-[9px] w-[9px] shrink-0 rounded-full"
+            style={{ background: langColor }}
+          />
           <span className="truncate font-mono text-[12px] font-medium" style={{ color: P.hd }}>
             {label ?? langName}
           </span>
@@ -246,15 +277,15 @@ export function CodeBlock({
           <button
             type="button"
             onClick={copy}
-            className="cursor-pointer rounded-md px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-brand-strong/10"
-            style={{ color: copied ? '#2FB863' : P.hdSoft }}
+            className="ci-foco-botao cursor-pointer rounded-ci px-[7px] py-1 font-mono text-[11.5px] font-medium transition-colors hover:bg-[rgba(127,127,127,0.16)]"
+            style={{ color: copied ? COPIADO[theme] : P.hdSoft }}
           >
             {copied ? 'Copiado' : 'Copiar'}
           </button>
         )}
       </div>
       <div className="overflow-auto py-3.5 pl-1 pr-4" style={{ maxHeight }}>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, lineHeight: 1.7 }}>
+        <div className="font-mono" style={{ fontSize: 13, lineHeight: 1.7 }}>
           {rows.map((ln, li) => (
             <div key={li} className="flex" style={{ minHeight: '1.7em' }}>
               {lines ? (

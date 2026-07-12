@@ -1,14 +1,19 @@
 import { useState, type FormEvent } from 'react'
-import { Mail } from 'lucide-react'
+import { AlertTriangle, Check, Mail } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { FormField } from '@/components/ui/form-field'
 import { useEsqueciSenha } from '@/features/identity/hooks'
 import { apiErrorMessage } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
-/** Solicita o link de redefinição. Mensagem sempre neutra (não revela se o e-mail existe). */
+/*
+ * H · Esqueci a senha (spec 03 §H) — cartão 424px sobre o céu.
+ *
+ * A nota de recuo é PERMANENTE e NEUTRA por design: nunca revela se o e-mail existe
+ * (proteção contra enumeração de usuários). Ao enviar, ela só muda de tom — a copy é a mesma.
+ */
 export function EsqueciSenhaPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -27,49 +32,74 @@ export function EsqueciSenhaPage() {
   }
 
   return (
-    <AuthLayout>
-      <form
-        onSubmit={onSubmit}
-        className="flex w-[424px] max-w-full flex-col gap-[18px] rounded-2xl border border-border bg-surface p-8 shadow-[0_30px_70px_-30px_rgba(0,0,0,.85)]"
-      >
-        <div className="flex flex-col gap-1.5">
-          <h1 className="text-[21px] font-bold tracking-tight text-heading">Recuperar senha</h1>
-          <span className="text-[13.5px] leading-relaxed text-muted">
+    <AuthLayout width={424}>
+      <form onSubmit={onSubmit} className="flex flex-col gap-[16px]">
+        <div className="flex flex-col gap-[6px]">
+          <h1 className="font-sans text-[21px] leading-tight font-semibold tracking-[-.02em] text-ink">
+            Recuperar senha
+          </h1>
+          <p className="font-sans text-[13px] leading-[1.5] text-mid">
             Informe seu e-mail e enviaremos um link para redefinir a senha.
-          </span>
+          </p>
         </div>
 
-        <FormField label="E-mail" htmlFor="email">
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </FormField>
+        <Input
+          id="email"
+          label="E-mail"
+          type="email"
+          mono
+          size="lg"
+          autoComplete="email"
+          placeholder="ana@exemplo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
 
         {error && (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-[12.5px] text-danger">
-            {error}
+          <div
+            role="alert"
+            className="flex items-start gap-[9px] rounded-ci border border-erro-line bg-erro-bg px-[13px] py-[10px] font-sans text-[12.5px] leading-[1.5] text-erro-texto"
+          >
+            <AlertTriangle size={14} strokeWidth={2} aria-hidden className="mt-[2px] shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
-        <Button type="submit" size="lg" loading={esqueci.isPending} className="w-full">
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          font="sans"
+          fullWidth
+          loading={esqueci.isPending}
+        >
           Enviar link
         </Button>
 
-        {sent && (
-          <div className="flex gap-2.5 rounded-lg border border-border bg-input px-3 py-3">
-            <Mail size={15} className="mt-0.5 shrink-0 text-brand-strong" />
-            <span className="text-[12px] leading-relaxed text-subtle">
-              Se o e-mail estiver cadastrado, você receberá um link em instantes.
-            </span>
-          </div>
-        )}
+        {/* Nota neutra — a MESMA copy antes e depois do envio (spec 03 §H.4). */}
+        <div
+          role="status"
+          className={cn(
+            'flex items-start gap-[9px] rounded-ci border px-[13px] py-[12px]',
+            sent ? 'border-sucesso-line bg-sucesso-bg' : 'border-line bg-recess',
+          )}
+        >
+          {sent ? (
+            <Check size={15} strokeWidth={2} aria-hidden className="mt-[1px] shrink-0 text-sucesso" />
+          ) : (
+            <Mail size={15} strokeWidth={2} aria-hidden className="mt-[1px] shrink-0 text-steel" />
+          )}
+          <span className="font-sans text-[12px] leading-[1.5] text-soft">
+            {sent && <span className="font-semibold text-sucesso-ink">Pedido enviado. </span>}
+            Se o e-mail estiver cadastrado, você receberá um link em instantes.
+          </span>
+        </div>
 
-        <Link to="/entrar" className="text-center text-[13px] font-semibold text-brand-strong hover:underline">
+        <Link
+          to="/entrar"
+          className="ci-foco-botao mx-auto rounded-ci px-2 py-1 text-center font-sans text-[12.5px] font-medium text-steel hover:text-steel-hover"
+        >
           Voltar ao login
         </Link>
       </form>

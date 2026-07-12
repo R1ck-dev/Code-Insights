@@ -17,6 +17,11 @@ public interface SpringDataResultadoMetricaRepository extends JpaRepository<Resu
 
     List<ResultadoMetricaJpaEntity> findByResolucaoId(UUID resolucaoId);
 
+    // Lote: as metricas de um tipo para varias resolucoes de uma vez (uma consulta, sem N+1).
+    // Ha no maximo 1 resultado por (resolucao, tipo) — UNIQUE(resolucao_id, tipo) —, entao o
+    // retorno tem no maximo uma linha por resolucao e pode virar mapa direto.
+    List<ResultadoMetricaJpaEntity> findByResolucaoIdInAndTipo(List<UUID> resolucaoIds, TipoMetrica tipo);
+
     /**
      * Bulk delete imediato: executa o DELETE na hora, antes dos INSERTs da reanalise.
      * Um delete derivado apenas enfileiraria as remocoes, e o Hibernate emite INSERTs
