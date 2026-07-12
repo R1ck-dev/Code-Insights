@@ -17,7 +17,7 @@ import {
   prettyBigO,
   TIPO_METRICA_META,
 } from '@/domain/enums'
-import { METRICA_EXPLICACAO } from '@/domain/metricas-explicacao'
+import { METRICA_EXPLICACAO, notaDaMetrica, secaoDoMotor } from '@/domain/metricas-explicacao'
 import { useResolucaoDetalhe } from '@/features/resolucoes/hooks'
 import { useDesafioDetalhe } from '@/features/desafios/hooks'
 import { useMetricasDaResolucao } from '@/features/metricas/hooks'
@@ -196,10 +196,17 @@ export function ResolucaoPublicaPage() {
                   k={meta.ehClasseBigO && m ? m.valor : null}
                   calculando={calculando}
                   barra={meta.ehClasseBigO}
-                  nota={!calculando && m?.detalhe ? m.detalhe : undefined}
+                  /* A leitura do número, em português — o rastro técnico do motor (`detalhe`) vai
+                     inteiro para o `?`, como na tela do aluno. As duas telas mostram o MESMO
+                     retrato, e têm de falar a mesma língua. */
+                  nota={!calculando && m ? notaDaMetrica(tipo, m) : undefined}
                   info={
                     <InfoButton
                       {...METRICA_EXPLICACAO[tipo]}
+                      secoes={[
+                        ...METRICA_EXPLICACAO[tipo].secoes,
+                        ...secaoDoMotor(calculando ? null : m?.detalhe),
+                      ]}
                       ariaLabel={`O que é ${meta.nome.toLowerCase()}?`}
                     />
                   }
@@ -233,9 +240,9 @@ export function ResolucaoPublicaPage() {
             {/* Vocabulário do sistema: "análise estática", não "heurística" (§5, divergência 8) —
                 é a mesma frase da tela D, e as duas telas mostram o mesmo retrato. */}
             <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-              <span className="text-ink">MEDIDO</span> = contagem direta no AST ·{' '}
-              <span className="text-mid">≈ ESTIMADO</span> = inferido por análise estática, pode
-              divergir do pior caso real.
+              <span className="text-ink">MEDIDO</span> = contado direto no código ·{' '}
+              <span className="text-mid">≈ ESTIMADO</span> = deduzido da estrutura do código, sem
+              executá-lo: é uma boa aproximação, não uma garantia.
             </p>
           </div>
         )}

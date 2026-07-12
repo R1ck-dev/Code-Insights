@@ -152,18 +152,35 @@ export function Matriz({
   }
 
   /**
-   * Seleção só com contagem EXATAMENTE 1: aí a célula é uma resolução e clicar tem um
-   * significado único. Com 2+ não há o que selecionar sem escolher por conta própria —
-   * e escolher pelo usuário seria inventar dado. (A célula continua com hover e tooltip.)
+   * QUALQUER célula com resolução é clicável — inclusive as agrupadas (correção pedida pelo
+   * usuário; antes, só contagem === 1 abria).
+   *
+   * O argumento antigo era "com 2+ não há o que selecionar sem escolher pelo usuário". Só que o
+   * efeito prático foi pior do que o problema: a célula com 3 resoluções — justamente a mais
+   * densa, a que o aluno mais quer abrir — não tinha porta nenhuma. O dado existia e era
+   * inalcançável pelo gráfico.
+   *
+   * A saída é a MESMA da Carta (que agrupa pelo mesmo critério — a Matriz é a Carta binada):
+   * clicar abre a MAIS ANTIGA do grupo, e as irmãs saem pelas setas "‹ 2 de 3 ›" do painel
+   * lateral. Não é escolher em silêncio: o tooltip diz o que o clique faz antes de ele acontecer.
+   *
+   * ⚠ `dataset.pontos` está em ordem cronológica ASC (contrato de `montarDataset`) e
+   * `pontosPorCelula` preserva essa ordem — logo `[0]` é a mais antiga.
    */
   function idSelecionavel(k: ClasseK, autonomia: NivelAutonomia, contagem: number): string | null {
-    if (contagem !== 1 || !onSelecionar) return null
+    if (contagem < 1 || !onSelecionar) return null
     return pontosPorCelula.get(`${autonomia}:${k}`)?.[0]?.resolucaoId ?? null
   }
 
   return (
-    <div className={cn('flex flex-col gap-2.5', className)}>
-      <div className="relative">
+    <div className={cn('flex h-full flex-col gap-2.5', className)}>
+      {/*
+       * ⚠ A grade CRESCE com o cartão (correção do "espaço estranho em cima e embaixo"). A Matriz
+       * é CSS Grid, não SVG: ela não tem razão de aspecto a preservar, então pode simplesmente
+       * ocupar a altura que sobra em vez de deixá-la como ar. As linhas nunca encolhem abaixo de
+       * `ALTURA_CELULA` (o piso do protótipo) — `minmax(ALTURA_CELULA, 1fr)`.
+       */}
+      <div className="relative flex-1">
         {/* ── A grade ───────────────────────────────────────────────────── */}
         <div
           ref={gradeRef}
@@ -173,8 +190,12 @@ export function Matriz({
             'resolução plotada',
             'resoluções plotadas',
           )}.`}
-          className={cn('relative grid', vazio && 'pointer-events-none opacity-40')}
-          style={{ gridTemplateColumns: COLUNAS, gap: GAP }}
+          className={cn('relative grid h-full', vazio && 'pointer-events-none opacity-40')}
+          style={{
+            gridTemplateColumns: COLUNAS,
+            gridAutoRows: `minmax(${ALTURA_CELULA}px, 1fr)`,
+            gap: GAP,
+          }}
           onMouseLeave={() => setHover(null)}
         >
           {linhas.map((linha) => {
@@ -185,8 +206,7 @@ export function Matriz({
               <div key={linha.k} role="row" style={{ display: 'contents' }}>
                 <span
                   role="rowheader"
-                  className="flex items-center justify-end pr-[7px] font-mono text-[10px] text-mid"
-                  style={{ height: ALTURA_CELULA }}
+                  className="flex h-full items-center justify-end pr-[7px] font-mono text-[10px] text-mid"
                 >
                   {linha.curto}
                 </span>
@@ -209,7 +229,9 @@ export function Matriz({
                    * sobre o fundo do cartão — a rampa fica estável em qualquer contagem.
                    */
                   const estilo: CSSProperties = {
-                    height: ALTURA_CELULA,
+                    // A altura vem da LINHA da grade (`gridAutoRows`), não daqui: assim a célula
+                    // acompanha o cartão em vez de fixar 30px e deixar o resto como ar.
+                    height: '100%',
                     backgroundColor: 'var(--graf-grade)',
                     backgroundImage:
                       temDado && !carregando
@@ -235,7 +257,12 @@ export function Matriz({
                         // `data-realce` em vez de box-shadow inline: um style inline venceria
                         // o anel de `:focus-visible` e a célula focada ficaria sem foco visível.
                         data-realce={realce || undefined}
-                        aria-label={rotuloCelula(celula.contagem, celula.autonomia, linha.k)}
+                        aria-label={rotuloCelula(
+                          celula.contagem,
+                          celula.autonomia,
+                          linha.k,
+                          !!idParaSelecionar,
+                        )}
                         aria-pressed={idParaSelecionar ? estaSelecionada : undefined}
                         disabled={carregando}
                         className={cn(
@@ -299,6 +326,12 @@ export function Matriz({
                 {rotuloCanonico(hover.k)}
               </span>
             </span>
+            {/* Célula agrupada: o clique escolhe uma das N — e diz qual, antes de escolher. */}
+            {hover.contagem > 1 && onSelecionar && (
+              <span className="font-mono text-[9.5px] text-soft">
+                clique para abrir a mais antiga
+              </span>
+            )}
           </div>
         )}
 
@@ -371,6 +404,14 @@ function contagemPorExtenso(contagem: number): string {
 }
 
 /** Texto único do tooltip e do `aria-label`: o que se lê é o que o leitor de tela ouve. */
-function rotuloCelula(contagem: number, autonomia: NivelAutonomia, k: ClasseK): string {
-  return `${contagemPorExtenso(contagem)} · autonomia ${autonomia} · ${rotuloCanonico(k)}`
+function rotuloCelula(
+  contagem: number,
+  autonomia: NivelAutonomia,
+  k: ClasseK,
+  clicavel: boolean,
+): string {
+  const base = `${contagemPorExtenso(contagem)} · autonomia ${autonomia} · ${rotuloCanonico(k)}`
+  if (!clicavel) return base
+  // O que o clique faz, dito antes de acontecer: com 2+ ele escolhe uma das resoluções da célula.
+  return contagem > 1 ? `${base}. Abrir a mais antiga.` : `${base}. Abrir.`
 }

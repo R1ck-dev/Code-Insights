@@ -10,6 +10,14 @@
  *   const dataset = useMemo(() => montarDataset(carta.data ?? []), [carta.data])
  *   const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
  *
+ *   // As duas LENTES do painel vivem na página: o painel lateral também precisa delas.
+ *   const [view, setView] = useGraficoNaUrl()
+ *   const [granularidade, setGranularidade] = useState(GRANULARIDADE_PADRAO)
+ *   const grupo = useMemo(
+ *     () => grupoDeIrmaos({ view, granularidade, dataset, selecionadoId }),
+ *     [view, granularidade, dataset, selecionadoId],
+ *   )
+ *
  *   <div className="grid gap-3.5 lg:grid-cols-[1.62fr_1fr]">
  *     <PainelDeGraficos
  *       dataset={dataset}
@@ -18,17 +26,21 @@
  *       onTentarNovamente={() => void carta.refetch()}
  *       selecionadoId={selecionadoId}
  *       onSelecionar={setSelecionadoId}
+ *       view={view} onViewChange={setView}
+ *       granularidade={granularidade} onGranularidadeChange={setGranularidade}
  *     />
  *     <PainelEstrelaSelecionada
  *       ponto={pontoPorId(dataset, selecionadoId)}
- *       pontos={dataset.pontos}          // ← habilita o navegador "‹ 2 de 3 ›" do cluster
+ *       grupo={grupo}                    // ← habilita o navegador "‹ 2 de 3 ›"
  *       onSelecionar={setSelecionadoId}  // ← trocar de irmã = trocar a seleção da página
  *     />
  *   </div>
  *
- * ⚠ `pontos` + `onSelecionar` no painel lateral NÃO são decoração: a Carta colapsa as resoluções
- * que caem na mesma célula (mesma autonomia × mesma classe) num único marcador e o clique abre a
- * MAIS ANTIGA. Sem esses dois props, as irmãs ficam sem porta de entrada.
+ * ⚠ `grupo` + `onSelecionar` no painel lateral NÃO são decoração: os três gráficos COLAPSAM
+ * resoluções num único alvo (a Carta e a Matriz, por célula autonomia × classe; a Linha, por
+ * período) e o clique abre só UMA delas. Sem esses dois props, as irmãs ficam sem porta de
+ * entrada — e `grupo` tem de vir de `grupoDeIrmaos(...)`, que é quem sabe QUAL gráfico está na
+ * tela: um agrupamento fixo faria a seta levar a uma resolução que não está no ponto clicado.
  *
  * ⚠ `./escalas` NÃO é reexportado aqui: ele exporta a interface `Matriz` (a grade de dados),
  * que colidiria com o componente `Matriz`. Quem precisa de geometria importa
@@ -67,15 +79,23 @@ export { Matriz, type MatrizProps } from './Matriz'
 export {
   AUTONOMIA_MAX,
   AUTONOMIA_MIN,
+  GRANULARIDADE_PADRAO,
+  GRANULARIDADES,
+  ROTULO_GRANULARIDADE,
   TOTAL_AUTONOMIA,
   type Constelacao,
   type DatasetCarta,
   type DescartesDataset,
+  type Granularidade,
   type NivelAutonomia,
   type PontoBase,
   type PontoPlotavel,
   type PropsGrafico,
 } from './tipos'
+// Quem são as IRMÃS da resolução selecionada — e o critério muda com o gráfico na tela (célula,
+// na Carta e na Matriz; período, na Linha). Sem isto, o painel lateral navega pelo agrupamento
+// errado. Ver o cabeçalho de `./irmaos`.
+export { grupoDeIrmaos, type ContextoDoGrupo, type GrupoDeIrmaos } from './irmaos'
 export {
   DATASET_VAZIO,
   MIN_PONTOS_CONSTELACAO,

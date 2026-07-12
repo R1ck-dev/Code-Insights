@@ -43,12 +43,8 @@ import { Carta } from './Carta'
 import { LINHA_JANELA_MESES, Linha } from './Linha'
 import { Matriz } from './Matriz'
 import { rotuloRodape } from './dataset'
-import {
-  SeletorDeGrafico,
-  type TipoGrafico,
-  useGraficoNaUrl,
-} from './SeletorDeGrafico'
-import type { DatasetCarta } from './tipos'
+import { SeletorDeGrafico, type TipoGrafico } from './SeletorDeGrafico'
+import type { DatasetCarta, Granularidade } from './tipos'
 
 // ════════════════════════════════════════════════════════════════════════════
 // COMO LER CADA GRÁFICO (conteúdo do `?`)
@@ -174,8 +170,19 @@ export interface PainelDeGraficosProps {
   /** Seleção — vive na página, porque o `PainelEstrelaSelecionada` ao lado também a lê. */
   selecionadoId?: string | null
   onSelecionar?: (resolucaoId: string) => void
-  /** Nome do query param da visualização. Só mude se houver dois painéis na mesma tela. */
-  paramUrl?: string
+  /**
+   * As duas LENTES do painel — controladas pela página (`useGraficoNaUrl` + um `useState`).
+   *
+   * ⚠ Elas subiram de nível porque o painel deixou de ser o único a depender delas: o
+   * `PainelEstrelaSelecionada`, que fica ao lado, navega entre as resoluções do MESMO alvo que o
+   * gráfico agrupou — e "o mesmo alvo" é a célula na Carta/Matriz e o BUCKET DO TEMPO na Linha.
+   * Sem saber a visualização e a granularidade, ele navegava pelo agrupamento errado (o bug das
+   * setas aparecendo na Linha com as irmãs da Carta).
+   */
+  view: TipoGrafico
+  onViewChange: (proxima: TipoGrafico) => void
+  granularidade: Granularidade
+  onGranularidadeChange: (proxima: Granularidade) => void
   className?: string
 }
 
@@ -186,10 +193,12 @@ export function PainelDeGraficos({
   onTentarNovamente,
   selecionadoId,
   onSelecionar,
-  paramUrl,
+  view,
+  onViewChange,
+  granularidade,
+  onGranularidadeChange,
   className,
 }: PainelDeGraficosProps) {
-  const [view, setView] = useGraficoNaUrl(paramUrl)
   const { theme } = useTheme()
   const baseId = useId()
   const meta = META[view]
@@ -220,23 +229,39 @@ export function PainelDeGraficos({
           </span>
         </div>
 
-        <SeletorDeGrafico value={view} onChange={setView} baseId={baseId} />
+        <SeletorDeGrafico value={view} onChange={onViewChange} baseId={baseId} />
       </header>
 
-      {/* ── O gráfico (ou o erro) ───────────────────────────────────────────── */}
+      {/* ── O gráfico (ou o erro) ─────────────────────────────────────────────
+           ⚠ SEM `justify-center` (correção — o usuário viu "um espaçamento que não parece muito
+           natural em cima e embaixo do gráfico"). Este painel ESTICA até a altura da coluna de
+           cards ao lado, e centralizar repartia toda a sobra em duas faixas de ar, uma acima e
+           outra abaixo do desenho — o gráfico ficava boiando no meio de um cartão vazio. Agora o
+           conteúdo ancora no topo (`justify-start`, o padrão) e a sobra vira uma única folga no
+           rodapé, onde ela lê como respiro do cartão e não como buraco.
+
+           A outra metade da correção está DENTRO dos gráficos: a Linha reservava y ∈ [0, 60] do
+           seu viewBox para nada (26% da altura, ~130px de ar em cima da série). Ver `VB` em
+           Linha.tsx. */}
       <div
         id={`${baseId}-painel`}
         role="tabpanel"
         aria-labelledby={`${baseId}-tab-${view}`}
         tabIndex={-1}
-        className="flex flex-1 flex-col justify-center p-4"
+        className="flex flex-1 flex-col p-4"
       >
         {erro ? (
           <ErrorState message={erro} onRetry={onTentarNovamente} />
         ) : (
           <>
             {view === 'carta' && <Carta {...props} />}
-            {view === 'linha' && <Linha {...props} />}
+            {view === 'linha' && (
+              <Linha
+                {...props}
+                granularidade={granularidade}
+                onGranularidadeChange={onGranularidadeChange}
+              />
+            )}
             {view === 'matriz' && <Matriz {...props} />}
           </>
         )}

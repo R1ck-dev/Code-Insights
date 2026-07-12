@@ -24,7 +24,10 @@ import { QueryBoundary } from '@/components/page/states'
 import { Card } from '@/components/ui/card'
 import { Button, buttonClasses } from '@/components/ui/button'
 import { Chip } from '@/components/ui/badge'
-import { Input, Textarea } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
+import { Combobox } from '@/components/ui/combobox'
+import { EnunciadoField } from '@/components/domain/EnunciadoField'
+import { PLATAFORMAS } from '@/domain/plataformas'
 import {
   Dialog,
   DialogBody,
@@ -49,8 +52,11 @@ import {
   useDesafioDetalhe,
   useRemoverDesafio,
 } from '@/features/desafios/hooks'
-import { useResolucoesDoDesafio } from '@/features/resolucoes/hooks'
-import type { DesafioDetalheDTO } from '@/types/api'
+import {
+  useAlterarVisibilidadeResolucao,
+  useResolucoesDoDesafio,
+} from '@/features/resolucoes/hooks'
+import type { DesafioDetalheDTO, ResolucaoResumoDTO } from '@/types/api'
 
 export function DesafioDetalhePage() {
   const { desafioId } = useParams<{ desafioId: string }>()
@@ -165,9 +171,27 @@ function DesafioDetalheConteudo({ desafio }: { desafio: DesafioDetalheDTO }) {
         <Card className="flex flex-col gap-[13px] p-5">
           <h2 className="text-[14px] font-semibold text-ink">Enunciado</h2>
           {desafio.enunciado ? (
-            <p className="whitespace-pre-wrap text-[14px] leading-[1.65] text-body">
-              {desafio.enunciado}
-            </p>
+            /*
+             * ROLA POR DENTRO (o usuário viu: enunciado longo ficava cortado). Um enunciado de
+             * juiz online tem facilmente 2–3 mil caracteres; deixá-lo crescer sem limite empurra
+             * a lista de RESOLUÇÕES — que é o conteúdo que a pesquisa mede — para fora da tela, e
+             * desalinha a coluna de Detalhes ao lado.
+             *
+             * `tabIndex={0}` não é enfeite: uma região que rola precisa ser alcançável pelo
+             * teclado, senão quem não usa mouse não consegue ler o fim do texto (WCAG 2.1.1).
+             * `break-words` porque enunciado colado traz URLs e identificadores longos, que sem
+             * isso estouram a largura do cartão.
+             */
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label="Enunciado do desafio"
+              className="ci-foco-input max-h-[380px] overflow-y-auto pr-1"
+            >
+              <p className="whitespace-pre-wrap break-words text-[14px] leading-[1.65] text-body">
+                {desafio.enunciado}
+              </p>
+            </div>
           ) : (
             <p className="text-[13px] leading-[1.55] text-soft">
               Sem enunciado. Você pode adicionar um em <span className="text-mid">Editar</span>.
@@ -317,16 +341,7 @@ function ListaResolucoes({ desafioId }: { desafioId: string }) {
               {/* `tempoOrdem` vem da própria lista: `0..7` → chip ≈ Big-O · `-1` → `?` (o motor
                   não classificou) · `null` → sem métrica. Nunca tratar `0` como vazio: é O(1). */}
               {lista.itens.map((r) => (
-                <ResolucaoLinha
-                  key={r.id}
-                  to={`/app/resolucoes/${r.id}`}
-                  linguagem={r.linguagem}
-                  autonomia={r.indiceAutonomiaIA}
-                  analisada={r.analisada}
-                  tempoOrdem={r.tempoOrdem}
-                  confiancaTempo={r.confiancaTempo}
-                  submetidaEm={r.submetidaEm}
-                />
+                <LinhaComVisibilidade key={r.id} resolucao={r} />
               ))}
             </Card>
 
@@ -339,6 +354,37 @@ function ListaResolucoes({ desafioId }: { desafioId: string }) {
         )
       }
     </QueryBoundary>
+  )
+}
+
+/**
+ * Uma linha da lista + a mutação de visibilidade dela — alternar público/privado sem entrar na
+ * resolução (era preciso abrir uma por uma). Componente por item porque
+ * `useAlterarVisibilidadeResolucao` é um hook POR ID: no `.map` ele quebraria as regras dos hooks.
+ */
+function LinhaComVisibilidade({ resolucao }: { resolucao: ResolucaoResumoDTO }) {
+  const alterar = useAlterarVisibilidadeResolucao(resolucao.id)
+
+  return (
+    <ResolucaoLinha
+      to={`/app/resolucoes/${resolucao.id}`}
+      linguagem={resolucao.linguagem}
+      autonomia={resolucao.indiceAutonomiaIA}
+      analisada={resolucao.analisada}
+      tempoOrdem={resolucao.tempoOrdem}
+      confiancaTempo={resolucao.confiancaTempo}
+      submetidaEm={resolucao.submetidaEm}
+      visibilidade={resolucao.visibilidade}
+      alterandoVisibilidade={alterar.isPending}
+      onAlternarVisibilidade={async (publico) => {
+        try {
+          await alterar.mutateAsync(publico)
+          toast.success(publico ? 'Resolução agora é pública.' : 'Resolução agora é privada.')
+        } catch (err) {
+          toast.error(apiErrorMessage(err, 'Não foi possível alterar a visibilidade.'))
+        }
+      }}
+    />
   )
 }
 
@@ -411,23 +457,27 @@ function EditarDesafioForm({
           maxLength={255}
         />
 
-        <Textarea
+        {/* Mesmo campo do "Novo desafio": colar do juiz online limpa a matemática que o
+            KaTeX/MathJax duplica na área de transferência. */}
+        <EnunciadoField
           id="editar-enunciado"
           label="Enunciado"
           minHeight={76}
+          maxLength={5000}
           value={enunciado}
-          onChange={(e) => setEnunciado(e.target.value)}
-          placeholder="Dado um array e um alvo, retorne os índices…"
+          onChange={setEnunciado}
+          placeholder="Cole o enunciado do juiz online…"
         />
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
+          <Combobox
             id="editar-plataforma"
             label="Plataforma"
             value={plataforma}
-            onChange={(e) => setPlataforma(e.target.value)}
+            onChange={setPlataforma}
+            opcoes={PLATAFORMAS}
             maxLength={100}
-            placeholder="LeetCode"
+            placeholder="Ex.: beecrowd"
           />
           <Input
             id="editar-identificador"

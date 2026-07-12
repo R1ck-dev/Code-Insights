@@ -15,7 +15,10 @@ import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
 import { QueryBoundary } from '@/components/page/states'
 import { Button } from '@/components/ui/button'
-import { Input, Textarea } from '@/components/ui/input'
+import { Input } from '@/components/ui/input'
+import { Combobox } from '@/components/ui/combobox'
+import { EnunciadoField } from '@/components/domain/EnunciadoField'
+import { PLATAFORMAS } from '@/domain/plataformas'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -36,7 +39,11 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from '@/components/ui/toaster'
 import { DesafioCard } from '@/components/domain/DesafioCard'
-import { useCriarDesafio, useMeusDesafios } from '@/features/desafios/hooks'
+import {
+  useAlterarVisibilidadeDesafio,
+  useCriarDesafio,
+  useMeusDesafios,
+} from '@/features/desafios/hooks'
 import { apiErrorMessage } from '@/lib/api'
 import { pluralPt } from '@/lib/utils'
 import type { DesafioResumoDTO, Visibilidade } from '@/types/api'
@@ -58,6 +65,37 @@ const VISIBILIDADES: { value: FiltroVisibilidade; label: string }[] = [
   { value: 'PUBLICO', label: 'Público' },
   { value: 'PRIVADO', label: 'Privado' },
 ]
+
+/**
+ * O card + a mutação de visibilidade dele.
+ *
+ * É um componente (e não um `onClick` solto no `.map`) porque `useAlterarVisibilidadeDesafio` é um
+ * hook POR ID: chamá-lo dentro do laço quebraria as regras dos hooks (a lista muda de tamanho a
+ * cada página e filtro). Um componente por item resolve isso e ainda dá a cada card o seu próprio
+ * estado de "em voo" — dois cliques em cards diferentes não se atrapalham.
+ */
+function CardComVisibilidade({ desafio }: { desafio: DesafioResumoDTO }) {
+  const alterar = useAlterarVisibilidadeDesafio(desafio.id)
+
+  return (
+    <DesafioCard
+      to={`/app/desafios/${desafio.id}`}
+      titulo={desafio.titulo}
+      plataforma={desafio.plataformaOrigem}
+      visibilidade={desafio.visibilidade}
+      criadoEm={desafio.criadoEm}
+      alterandoVisibilidade={alterar.isPending}
+      onAlternarVisibilidade={async (publico) => {
+        try {
+          await alterar.mutateAsync(publico)
+          toast.success(publico ? 'Desafio agora é público.' : 'Desafio agora é privado.')
+        } catch (err) {
+          toast.error(apiErrorMessage(err, 'Não foi possível alterar a visibilidade.'))
+        }
+      }}
+    />
+  )
+}
 
 export function DesafiosPage() {
   const [pagina, setPagina] = useState(0)
@@ -238,14 +276,7 @@ export function DesafiosPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {visiveis.map((desafio) => (
-                    <DesafioCard
-                      key={desafio.id}
-                      to={`/app/desafios/${desafio.id}`}
-                      titulo={desafio.titulo}
-                      plataforma={desafio.plataformaOrigem}
-                      visibilidade={desafio.visibilidade}
-                      criadoEm={desafio.criadoEm}
-                    />
+                    <CardComVisibilidade key={desafio.id} desafio={desafio} />
                   ))}
                 </div>
               )}
@@ -276,24 +307,30 @@ export function DesafiosPage() {
                 error={tituloInvalido ? 'Informe um título.' : null}
               />
 
-              <Textarea
+              {/* Colar do juiz online é O fluxo: o campo limpa a matemática duplicada que o
+                  KaTeX/MathJax deixa na área de transferência. Ver `EnunciadoField`. */}
+              <EnunciadoField
                 id="desafio-enunciado"
                 label="Enunciado"
                 minHeight={76}
                 maxLength={5000}
-                placeholder="Dado um array e um alvo, retorne os índices…"
+                placeholder="Cole o enunciado do juiz online…"
                 value={enunciado}
-                onChange={(e) => setEnunciado(e.target.value)}
+                onChange={setEnunciado}
               />
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Input
+                {/* Sugere os juízes conhecidos (filtrados pela digitação) sem PROIBIR o resto: o
+                    campo é texto livre, e um desafio da lista da disciplina também tem casa. Ver
+                    `@/domain/plataformas`. */}
+                <Combobox
                   id="desafio-plataforma"
                   label="Plataforma"
                   maxLength={100}
-                  placeholder="Ex.: LeetCode"
+                  placeholder="Ex.: beecrowd"
+                  opcoes={PLATAFORMAS}
                   value={plataformaNova}
-                  onChange={(e) => setPlataformaNova(e.target.value)}
+                  onChange={setPlataformaNova}
                 />
 
                 <Input

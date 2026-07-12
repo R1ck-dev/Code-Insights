@@ -214,34 +214,90 @@ export function StatusChip({ status, compact, className }: StatusChipProps) {
 
   if (status === 'publico') {
     return (
-      <span
-        className={cn(
-          CHIP,
-          'gap-[7px] border-sucesso-line bg-sucesso-bg px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.06em] text-sucesso-ink',
-          className,
-        )}
-      >
-        <span
-          aria-hidden
-          className="shrink-0 rounded-full bg-sucesso"
-          style={{ width: 6, height: 6 }}
-        />
+      <span className={cn(CHIP, CHIP_VISIBILIDADE, CHIP_PUBLICO, className)}>
+        <PontoPublico />
         Público
       </span>
     )
   }
 
   return (
-    <span
-      className={cn(
-        CHIP,
-        'gap-[7px] border-line-strong bg-recess px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.06em] text-mid',
-        className,
-      )}
-    >
+    <span className={cn(CHIP, CHIP_VISIBILIDADE, CHIP_PRIVADO, className)}>
       <Lock size={11} strokeWidth={2} aria-hidden />
       Privado
     </span>
+  )
+}
+
+// -------------------------------------------------- visibilidade que ALTERNA
+
+/** A pele do chip de visibilidade — a MESMA no estático e no clicável: é o mesmo objeto. */
+const CHIP_VISIBILIDADE = 'gap-[7px] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[.06em]'
+const CHIP_PUBLICO = 'border-sucesso-line bg-sucesso-bg text-sucesso-ink'
+const CHIP_PRIVADO = 'border-line-strong bg-recess text-mid'
+
+function PontoPublico() {
+  return (
+    <span
+      aria-hidden
+      className="shrink-0 rounded-full bg-sucesso"
+      style={{ width: 6, height: 6 }}
+    />
+  )
+}
+
+export interface VisibilidadeToggleProps {
+  publico: boolean
+  /** Recebe o valor NOVO (`true` = tornar público). */
+  onAlternar: (publico: boolean) => void
+  /** A mutação está em voo: o chip vira spinner e para de aceitar clique (nada de duplo envio). */
+  pendente?: boolean
+  className?: string
+}
+
+/**
+ * O chip de visibilidade como BOTÃO — alternar público/privado sem sair da lista.
+ *
+ * ⚠ Ele vive DENTRO de cards e linhas que são links (o card inteiro abre o desafio). Um `<button>`
+ * dentro de um `<a>` é HTML inválido — e, pior, o clique subiria para o link e navegaria em vez de
+ * alternar. Por isso os hospedeiros (`DesafioCard`, `ResolucaoLinha`) tiveram de trocar o "link que
+ * embrulha tudo" por um link ESTICADO (uma camada absoluta cobrindo o card), e este chip fica por
+ * cima dela (`relative z-10`). O `stopPropagation` aqui é o cinto de segurança do mesmo problema.
+ *
+ * Sem diálogo de confirmação, de propósito: a ação é reversível com um clique e o resultado é
+ * visível no próprio chip. Pedir confirmação para algo assim é atrito sem risco.
+ */
+export function VisibilidadeToggle({
+  publico,
+  onAlternar,
+  pendente,
+  className,
+}: VisibilidadeToggleProps) {
+  return (
+    <button
+      type="button"
+      disabled={pendente}
+      aria-label={publico ? 'Tornar privado' : 'Tornar público'}
+      title={publico ? 'Público — clique para tornar privado' : 'Privado — clique para tornar público'}
+      onClick={(evento) => {
+        evento.preventDefault()
+        evento.stopPropagation()
+        onAlternar(!publico)
+      }}
+      className={cn(
+        CHIP,
+        CHIP_VISIBILIDADE,
+        publico ? CHIP_PUBLICO : CHIP_PRIVADO,
+        'ci-foco-botao relative z-10 cursor-pointer transition-colors',
+        // O afeto de "isto clica" é a borda, não a cor: a cor aqui já SIGNIFICA (verde = público).
+        publico ? 'hover:border-sucesso' : 'hover:border-ink hover:text-ink',
+        pendente && 'cursor-wait opacity-70',
+        className,
+      )}
+    >
+      {pendente ? <SpinnerChip /> : publico ? <PontoPublico /> : <Lock size={11} strokeWidth={2} aria-hidden />}
+      {publico ? 'Público' : 'Privado'}
+    </button>
   )
 }
 

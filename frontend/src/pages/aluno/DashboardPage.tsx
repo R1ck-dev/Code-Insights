@@ -36,11 +36,15 @@ import { AtividadeLinha } from '@/components/domain/AtividadeLinha'
 import { ConfidenceChip } from '@/components/domain/badges'
 import {
   type DatasetCarta,
+  GRANULARIDADE_PADRAO,
+  type Granularidade,
   PainelDeGraficos,
   PainelEstrelaSelecionada,
+  grupoDeIrmaos,
   linhasEspectro,
   montarDataset,
   pontoPorId,
+  useGraficoNaUrl,
 } from '@/components/charts'
 import { useAuth } from '@/auth/useAuth'
 import { useCartaCeleste, useResumoDashboard } from '@/features/metricas/hooks'
@@ -514,6 +518,21 @@ export function DashboardPage() {
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
   const selecionado = pontoPorId(dataset, selecionadoId)
 
+  /*
+   * As duas LENTES do painel de gráficos moram AQUI, e não dentro dele: o `PainelEstrelaSelecionada`
+   * ao lado precisa das duas para saber quem são as IRMÃS da resolução selecionada — os gráficos
+   * agrupam por critérios diferentes (célula autonomia × classe na Carta e na Matriz; bucket do
+   * tempo na Linha, cujo tamanho depende da granularidade). A visualização vai para a URL (é
+   * compartilhável); a granularidade não (é uma lente sobre o mesmo dado, não outra tela).
+   */
+  const [view, setView] = useGraficoNaUrl()
+  const [granularidade, setGranularidade] = useState<Granularidade>(GRANULARIDADE_PADRAO)
+
+  const grupo = useMemo(
+    () => grupoDeIrmaos({ view, granularidade, dataset, selecionadoId }),
+    [view, granularidade, dataset, selecionadoId],
+  )
+
   /** Clicar na mesma estrela desfaz a seleção. */
   const selecionar = (resolucaoId: string) =>
     setSelecionadoId((atual) => (atual === resolucaoId ? null : resolucaoId))
@@ -608,17 +627,23 @@ export function DashboardPage() {
           onTentarNovamente={() => void cartaQuery.refetch()}
           selecionadoId={selecionadoId}
           onSelecionar={selecionar}
+          view={view}
+          onViewChange={setView}
+          granularidade={granularidade}
+          onGranularidadeChange={setGranularidade}
         />
 
         <div className="flex min-w-0 flex-col gap-3.5">
           {/*
-           * `pontos` + `onSelecionar`: a Carta colapsa num único marcador as resoluções que caem
-           * na MESMA célula (mesma autonomia × mesma classe) e o clique abre a mais antiga — é
-           * este painel que devolve as irmãs ao alcance do usuário, com o navegador "‹ 2 de 3 ›".
+           * `grupo` + `onSelecionar`: os três gráficos colapsam num único alvo as resoluções que
+           * caem juntas (mesma célula, na Carta e na Matriz; mesmo período, na Linha) e o clique
+           * abre só UMA delas — é este painel que devolve as irmãs ao alcance do usuário, com o
+           * navegador "‹ 2 de 3 ›". O grupo depende do gráfico que está na tela: por isso vem de
+           * `grupoDeIrmaos(...)`, e não de um agrupamento fixo.
            */}
           <PainelEstrelaSelecionada
             ponto={selecionado}
-            pontos={dataset.pontos}
+            grupo={grupo}
             onSelecionar={selecionar}
           />
           <ComplexidadeTipicaCard

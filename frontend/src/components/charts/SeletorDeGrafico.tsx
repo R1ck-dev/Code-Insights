@@ -25,6 +25,7 @@
  */
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { RotuloEstavel } from '@/components/ui/rotulo-estavel'
 import { cn } from '@/lib/utils'
 
 export type TipoGrafico = 'carta' | 'linha' | 'matriz'
@@ -173,7 +174,10 @@ export function SeletorDeGrafico({ value, onChange, baseId, className }: Seletor
                 : 'border-line-strong bg-transparent text-mid hover:border-ink hover:text-ink',
             )}
           >
-            {grafico.rotulo}
+            {/* Largura reservada para o NEGRITO do ativo: sem isso a pílula ativa engorda e
+                empurra as vizinhas a cada troca (o mesmo bug que o usuário viu no seletor de
+                granularidade da Linha). Ver `RotuloEstavel`. */}
+            <RotuloEstavel>{grafico.rotulo}</RotuloEstavel>
           </button>
         )
       })}

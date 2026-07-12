@@ -40,7 +40,7 @@ import {
   TIPO_METRICA_META,
   prettyBigO,
 } from '@/domain/enums'
-import { METRICA_EXPLICACAO } from '@/domain/metricas-explicacao'
+import { METRICA_EXPLICACAO, notaDaMetrica, secaoDoMotor } from '@/domain/metricas-explicacao'
 import type {
   LinguagemProgramacao,
   NivelConfianca,
@@ -240,10 +240,17 @@ export function ResolucaoDetalhePage() {
                         barra={meta.ehClasseBigO}
                         calculando={estado === 'calculando'}
                         erro={estado === 'erro'}
-                        nota={notaDoTile(estado, meta.ehClasseBigO, m)}
+                        nota={notaDoTile(estado, meta.ehClasseBigO, tipo, m)}
                         info={
                           <InfoButton
                             {...METRICA_EXPLICACAO[tipo]}
+                            /* O rastro do motor (`detalhe`) saiu do rodapé do card e entrou AQUI,
+                               íntegro: ele é a prova de como o número saiu, não a leitura do
+                               aluno. Ver `secaoDoMotor` em domain/metricas-explicacao.ts. */
+                            secoes={[
+                              ...METRICA_EXPLICACAO[tipo].secoes,
+                              ...secaoDoMotor(estado === 'pronta' ? m?.detalhe : null),
+                            ]}
                             ariaLabel={`O que é ${meta.nome.toLowerCase()}?`}
                           />
                         }
@@ -383,13 +390,19 @@ function valorDoTile(tipo: TipoMetrica, m: ResultadoMetricaDTO): string {
 }
 
 /**
- * Rodapé do tile. Em `pronta`, o raciocínio do motor (`detalhe`) — e, nas
- * métricas Big-O, a confiança do próprio motor no valor que estimou (eixo
- * distinto do selo ≈ ESTIMADO). Sem métrica → o rótulo `sem métrica` (regra 7).
+ * Rodapé do tile. Em `pronta`, o que o número QUER DIZER (`notaDaMetrica`) — e, nas métricas
+ * Big-O, a confiança do próprio motor no valor que estimou (eixo distinto do selo ≈ ESTIMADO).
+ * Sem métrica → o rótulo `sem métrica` (regra 7).
+ *
+ * ⚠ O `detalhe` do motor NÃO mora mais aqui (decisão desta rodada). Ele era o rastro auditável da
+ * análise — "2 ponto(s) de decisao em 1 metodo(s)/construtor(es) (M = decisoes + P)" — impresso no
+ * lugar da leitura do aluno. Continua íntegro, e agora dentro do `?` do próprio tile
+ * (`secaoDoMotor`): nada sumiu, só foi para onde é lido de propósito.
  */
 function notaDoTile(
   estado: EstadoFaixa,
   ehClasseBigO: boolean,
+  tipo: TipoMetrica,
   m: ResultadoMetricaDTO | undefined,
 ) {
   if (estado === 'sem-metrica' || estado === 'vazio') return ROTULO_SEM_METRICA
@@ -397,7 +410,7 @@ function notaDoTile(
 
   return (
     <>
-      {m.detalhe}
+      {notaDaMetrica(tipo, m)}
       {ehClasseBigO && (
         <span className="mt-1 block text-mid">
           confiança do motor: {NIVEL_CONFIANCA_LABEL[m.confianca]}
@@ -542,10 +555,13 @@ function NotaDeMetodo({
   return (
     <div className={caixa}>
       <BookOpen size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-steel" />
+      {/* Mesma distinção de sempre (regra 3), dita sem jargão: "AST" e "análise estática" são o
+          COMO, e o como já está no `?` de cada métrica. Aqui vale o que muda a leitura: um número
+          foi contado, o outro foi deduzido. */}
       <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-        <span className="text-ink">MEDIDO</span> = contagem direta no AST ·{' '}
-        <span className="text-mid">≈ ESTIMADO</span> = inferido por análise estática, pode
-        divergir do pior caso real.
+        <span className="text-ink">MEDIDO</span> = contado direto no seu código ·{' '}
+        <span className="text-mid">≈ ESTIMADO</span> = deduzido da estrutura do código, sem
+        executá-lo: é uma boa aproximação, não uma garantia.
       </p>
     </div>
   )

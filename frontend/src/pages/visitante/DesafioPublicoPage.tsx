@@ -167,9 +167,19 @@ export function DesafioPublicoPage() {
         <Card className="flex flex-col gap-3.5 p-5">
           <h2 className="text-[14px] font-semibold text-ink">Enunciado</h2>
           {desafio.enunciado ? (
-            <p className="text-[14px] leading-[1.65] break-words whitespace-pre-wrap text-body">
-              {desafio.enunciado}
-            </p>
+            /* Mesma regra da tela do dono: enunciado longo rola POR DENTRO do cartão, em vez de
+               empurrar a lista de resoluções para fora da tela. Região focável — quem lê por
+               teclado também precisa chegar ao fim do texto. */
+            <div
+              tabIndex={0}
+              role="region"
+              aria-label="Enunciado do desafio"
+              className="ci-foco-input max-h-[380px] overflow-y-auto pr-1"
+            >
+              <p className="text-[14px] leading-[1.65] break-words whitespace-pre-wrap text-body">
+                {desafio.enunciado}
+              </p>
+            </div>
           ) : (
             <p className="text-[13px] text-soft">Sem enunciado.</p>
           )}

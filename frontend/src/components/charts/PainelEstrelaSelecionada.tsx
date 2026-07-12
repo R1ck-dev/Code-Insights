@@ -11,14 +11,19 @@
  *   4 — autonomia é NEUTRA: `AutonomyMeter`, nunca colormap.
  *   6 — "sem métrica" é um estado de primeira classe: `—` em `soft`, jamais um valor inventado.
  *
- * ── NAVEGADOR DE CLUSTER (rodada de correção) ───────────────────────────────────────────────
- * A Carta é DISCRETA (5 autonomias × 8 classes = 40 células) e o jitter morreu: N resoluções na
- * mesma célula agora colapsam num único marcador, e o clique abre a MAIS ANTIGA. Sem um caminho
- * de volta, as outras N−1 ficariam inalcançáveis pelo gráfico — o dado existiria e não teria
- * porta. Este painel é a porta: quando a resolução selecionada divide a célula com outras, ele
- * mostra "‹ 2 de 3 ›" e diz POR QUE elas dividem o ponto.
+ * ── NAVEGADOR DE GRUPO (rodada de correção) ─────────────────────────────────────────────────
+ * Os três gráficos AGRUPAM resoluções num único alvo, e o clique abre UMA delas. Sem um caminho
+ * de volta, as outras ficariam inalcançáveis pelo gráfico — o dado existiria e não teria porta.
+ * Este painel é a porta: quando a resolução selecionada divide o alvo com outras, ele mostra
+ * "‹ 2 de 3 ›" e diz POR QUE elas dividem o ponto.
+ *
+ * ⚠ O CRITÉRIO DO GRUPO NÃO É DAQUI (bug que o usuário viu). Ele era fixo — "mesma célula da
+ * carta" — e as setas apareciam mesmo com a LINHA na tela, oferecendo navegar por autonomia ×
+ * classe enquanto o gráfico agrupava por PERÍODO: a seta levava a uma resolução que não estava
+ * no ponto clicado. Agora o grupo chega PRONTO, calculado por `grupoDeIrmaos(...)` a partir da
+ * visualização ativa (célula, na Carta e na Matriz; bucket do tempo, na Linha). Este componente
+ * não sabe — nem deve saber — qual gráfico está na tela: ele só renderiza o grupo que recebeu.
  */
-import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
@@ -29,30 +34,32 @@ import {
   PREFIXO_ESTIMADO,
   ROTULO_DESCONHECIDO,
   TIPO_METRICA_META,
-  comPrefixoEstimado,
   corDaClasse,
   rotuloCanonico,
   rotuloConfiancaMotor,
   tintaDaClasse,
 } from '@/domain/enums'
 import { useTheme } from '@/theme/ThemeProvider'
-import { cn, pluralPt } from '@/lib/utils'
-import { dataCompleta, irmaosDoCluster } from './escalas'
+import { cn } from '@/lib/utils'
+import { dataCompleta } from './escalas'
+import type { GrupoDeIrmaos } from './irmaos'
 import type { PontoPlotavel } from './tipos'
 
 export interface PainelEstrelaSelecionadaProps {
   /** `null` → estado de repouso ("clique numa estrela"), com a mesma altura: nada pula. */
   ponto: PontoPlotavel | null | undefined
   /**
-   * TODOS os pontos plotáveis (`dataset.pontos`) — a base para descobrir os IRMÃOS de célula da
-   * resolução selecionada (`irmaosDoCluster`). Opcional: sem ele o painel funciona como sempre,
-   * só não oferece a navegação do cluster. (A Carta continua colapsando o cluster de qualquer
-   * jeito; passar `pontos` é o que devolve as irmãs ao alcance do usuário.)
+   * O grupo em que a selecionada está DENTRO do gráfico que está na tela — monte-o com
+   * `grupoDeIrmaos({ view, granularidade, dataset, selecionadoId })` (`./irmaos`). Omitir é
+   * legítimo: o painel funciona como sempre, só não oferece a navegação entre as irmãs.
+   *
+   * ⚠ O critério de agrupamento MUDA com o gráfico (célula na Carta/Matriz, período na Linha).
+   * Por isso ele não pode ser recalculado aqui: quem sabe o que está desenhado é a página.
    */
-  pontos?: PontoPlotavel[]
+  grupo?: GrupoDeIrmaos | null
   /**
-   * Trocar de irmão é trocar a SELEÇÃO da página (o mesmo callback dos gráficos): a Carta realça
-   * o mesmo cluster — ele não se move, é a célula — e este painel troca de conteúdo.
+   * Trocar de irmã é trocar a SELEÇÃO da página (o mesmo callback dos gráficos): o gráfico realça
+   * o mesmo alvo — ele não se move, é o agrupamento — e este painel troca de conteúdo.
    */
   onSelecionar?: (resolucaoId: string) => void
   /**
@@ -74,7 +81,7 @@ function hrefPadrao(ponto: PontoPlotavel): string {
 
 export function PainelEstrelaSelecionada({
   ponto,
-  pontos,
+  grupo,
   onSelecionar,
   hrefResolucao = hrefPadrao,
   className,
@@ -82,17 +89,11 @@ export function PainelEstrelaSelecionada({
   const { theme } = useTheme()
 
   /*
-   * As resoluções que dividem a CÉLULA (mesma autonomia × mesma classe) com a selecionada —
-   * inclusive ela —, em ordem cronológica. Resolução sozinha devolve `[ela]`: o caso comum
-   * (`length < 2`) não ganha navegador nenhum e o painel fica exatamente como era.
-   * `resolucaoId` (primitivo) na dependência, não o objeto: o ponto é remontado a cada
-   * `montarDataset` e a identidade dele não é estável.
+   * As resoluções que dividem o alvo com a selecionada — inclusive ela —, em ordem cronológica.
+   * Resolução sozinha no alvo devolve `[ela]`: o caso comum (`length < 2`) não ganha navegador
+   * nenhum e o painel fica exatamente como era.
    */
-  const idSelecionado = ponto?.resolucaoId
-  const irmaos = useMemo(
-    () => (pontos && idSelecionado ? irmaosDoCluster(pontos, idSelecionado) : []),
-    [pontos, idSelecionado],
-  )
+  const irmaos = grupo?.irmaos ?? []
 
   if (!ponto) {
     return (
@@ -166,13 +167,11 @@ export function PainelEstrelaSelecionada({
         </span>
       </div>
 
-      {/* ── Navegador do cluster (só quando a célula é compartilhada) ────────── */}
-      {irmaos.length > 1 && indice >= 0 ? (
-        <NavegadorDoCluster
-          irmaos={irmaos}
+      {/* ── Navegador do grupo (só quando o alvo do gráfico é compartilhado) ─── */}
+      {grupo && irmaos.length > 1 && indice >= 0 ? (
+        <NavegadorDoGrupo
+          grupo={grupo}
           indice={indice}
-          autonomia={ponto.autonomia}
-          k={ponto.k}
           onIr={podeNavegar ? irPara : undefined}
         />
       ) : null}
@@ -244,14 +243,16 @@ export function PainelEstrelaSelecionada({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// NAVEGADOR DO CLUSTER — "‹ 2 de 3 ›"
+// NAVEGADOR DO GRUPO — "‹ 2 de 3 ›"
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * As setas só existem quando a resolução DIVIDE a célula com outras. Aparecer do nada, sem
- * explicação, seria pior do que não existir: por isso a faixa DIZ o motivo antes de oferecer a
- * navegação — "3 resoluções com autonomia 2 e ≈ O(n²)". É a leitura literal da coordenada, e é
- * a razão pela qual a Carta desenhou UM marcador onde há três resoluções.
+ * As setas só existem quando a resolução DIVIDE o alvo do gráfico com outras. Aparecer do nada,
+ * sem explicação, seria pior do que não existir: por isso a faixa DIZ o motivo antes de oferecer
+ * a navegação — "3 resoluções com autonomia 2 e ≈ O(n²)" na Carta/Matriz, "2 resoluções em
+ * mai/2026" na Linha. É a leitura literal do que o gráfico juntou, e é a razão pela qual ele
+ * desenhou UM alvo onde há três resoluções. O texto vem de `grupoDeIrmaos` (`./irmaos`), que é
+ * quem sabe qual gráfico está na tela.
  *
  * ── PONTAS: parar, não circular ─────────────────────────────────────────────────────────────
  * A lista de irmãs é CRONOLÓGICA (a mais antiga primeiro) — e tempo não dá a volta. Circular
@@ -267,40 +268,32 @@ export function PainelEstrelaSelecionada({
  * focável, é anunciada como indisponível, e o clique/tecla simplesmente não faz nada
  * (o `onIr` já valida os limites). Visualmente é idêntica à seta desabilitada do sistema.
  */
-function NavegadorDoCluster({
-  irmaos,
+function NavegadorDoGrupo({
+  grupo,
   indice,
-  autonomia,
-  k,
   onIr,
 }: {
-  irmaos: PontoPlotavel[]
+  grupo: GrupoDeIrmaos
   indice: number
-  autonomia: number
-  k: number
   onIr?: (delta: -1 | 1) => void
 }) {
-  const total = irmaos.length
+  const total = grupo.irmaos.length
   const noComeco = indice <= 0
   const noFim = indice >= total - 1
 
   return (
     <div className="flex flex-col gap-2 rounded-ci border border-line bg-panel px-2.5 py-2">
-      <span className={CABECALHO}>Mesma posição na carta</span>
+      <span className={CABECALHO}>{grupo.titulo}</span>
 
       {/*
        * O PORQUÊ, em uma linha. Neutro de propósito: a classe já aparece em cor na tinta da sua
        * própria linha de métrica, logo abaixo — repetir o colormap aqui só ruído acrescentaria.
-       * `≈` porque a classe é ESTIMADA (regra 3): a incerteza não some por ser texto pequeno.
        */}
-      <p className="tabular font-mono text-[10.5px] leading-[1.45] text-soft">
-        {pluralPt(total, 'resolução', 'resoluções')} com autonomia {autonomia} e{' '}
-        {comPrefixoEstimado(rotuloCanonico(k), CONFIANCA_BIG_O)}
-      </p>
+      <p className="tabular font-mono text-[10.5px] leading-[1.45] text-soft">{grupo.motivo}</p>
 
       <div
         role="group"
-        aria-label="Resoluções nesta posição da carta"
+        aria-label={`Resoluções agrupadas: ${grupo.motivo}`}
         className="flex items-center gap-1.5"
       >
         <SetaIrma
@@ -339,8 +332,8 @@ function SetaIrma({
       aria-disabled={inerte}
       aria-label={
         anterior
-          ? 'Resolução anterior desta posição da carta'
-          : 'Próxima resolução desta posição da carta'
+          ? 'Resolução anterior deste agrupamento'
+          : 'Próxima resolução deste agrupamento'
       }
       className={cn(
         'ci-foco-botao flex h-[22px] w-[22px] items-center justify-center rounded-ci border transition-colors',

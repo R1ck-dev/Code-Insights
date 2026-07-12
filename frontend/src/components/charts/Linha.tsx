@@ -31,6 +31,7 @@
 import { useMemo, useState } from 'react'
 import { Folder } from 'lucide-react'
 import { EmptyState } from '@/components/ui/empty-state'
+import { RotuloEstavel } from '@/components/ui/rotulo-estavel'
 import { cn, pluralPt } from '@/lib/utils'
 import {
   type ClasseK,
@@ -67,7 +68,6 @@ import {
 } from './escalas'
 import {
   type Granularidade,
-  GRANULARIDADE_PADRAO,
   GRANULARIDADES,
   type PropsGrafico,
   ROTULO_GRANULARIDADE,
@@ -94,8 +94,15 @@ export const LINHA_JANELA_MESES = MAX_BUCKETS_POR_GRANULARIDADE.MENSAL
  *   • direita  +30 → barra de colormap (x 394–401) + ticks de classe (x 405);
  *   • inferior +12 → segunda linha de rótulo do eixo X para o ANO (qualquer das três janelas
  *     pode atravessar o Ano-Novo; sem isso "jan" ou "03.01" seriam ambíguos).
+ *
+ * ⚠ `y0` NÃO É ZERO (correção — o usuário viu). A banda de dados começa em y=60 (`LINHA_Y_TOPO`,
+ * herdado do protótipo), e nada é desenhado acima dela: a faixa y ∈ [0, 60] era ar puro — 26% da
+ * altura do gráfico —, e como o SVG escala com a largura do cartão, esse ar virava ~130px de vazio
+ * acima da linha. Recorto pelo `min-y` do viewBox em vez de mexer nas escalas: as fórmulas de
+ * `escalas.ts` (compartilhadas e testadas) ficam intactas, e o que sobra em cima é a folga real
+ * de que as marcas precisam (a coluna de hover começa em y=48; a guia vertical, em y=56).
  */
-const VB = { largura: 430, altura: 232 } as const
+const VB = { y0: 44, largura: 430, altura: 188 } as const
 
 const GRADE_X0 = 32
 const GRADE_X1 = 390
@@ -187,8 +194,17 @@ const ORDEM_SELETOR: readonly Granularidade[] = [...GRANULARIDADES].reverse()
 export interface PropsLinha extends PropsGrafico {
   /** Esqueleto pulsante no lugar das séries (a grade e os dois eixos continuam). */
   carregando?: boolean
-  /** Granularidade inicial do eixo do tempo. Padrão: `MENSAL`. Depois disso, quem manda é o usuário. */
-  granularidadeInicial?: Granularidade
+  /**
+   * Granularidade do eixo do tempo — CONTROLADA (era estado local).
+   *
+   * ⚠ Ela subiu de nível porque deixou de ser assunto só da Linha: o painel "estrela selecionada"
+   * agora navega entre as resoluções DO PERÍODO clicado, e período depende da granularidade. Com
+   * o estado preso aqui dentro, o painel ao lado navegaria por um agrupamento que não é o que
+   * está desenhado. Continua sendo uma LENTE (não vai para a URL) — só que uma lente que dois
+   * componentes precisam enxergar.
+   */
+  granularidade: Granularidade
+  onGranularidadeChange: (proxima: Granularidade) => void
   className?: string
 }
 
@@ -214,10 +230,10 @@ export function Linha({
   onSelecionar,
   tema,
   carregando = false,
-  granularidadeInicial = GRANULARIDADE_PADRAO,
+  granularidade,
+  onGranularidadeChange,
   className,
 }: PropsLinha) {
-  const [granularidade, setGranularidade] = useState<Granularidade>(granularidadeInicial)
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
   /*
@@ -321,7 +337,7 @@ export function Linha({
     // O índice do bucket muda de significado ao reagregar: um hover pendurado apontaria para
     // outro período. A SELEÇÃO (resolucaoId) sobrevive — ela é de uma resolução, não de um bucket.
     setHoverIdx(null)
-    setGranularidade(proxima)
+    onGranularidadeChange(proxima)
   }
 
   function selecionar(b: BucketTempo) {
@@ -350,7 +366,7 @@ export function Linha({
          * para o leitor de tela. Um gráfico interativo é um grupo.
          */}
         <svg
-          viewBox={`0 0 ${VB.largura} ${VB.altura}`}
+          viewBox={`0 ${VB.y0} ${VB.largura} ${VB.altura}`}
           width="100%"
           className="block"
           role="group"
@@ -606,15 +622,17 @@ export function Linha({
           </div>
         )}
       </div>
-
-      {/* ── rodapé: texto DERIVADO DOS DADOS, nunca fixo (Lacuna L) ─────────────────── */}
-      <p className="font-mono text-[10px] text-soft tabular">
-        {carregando
-          ? 'calculando a evolução…'
-          : temSerie
-            ? `${tendencia.texto} · ${periodos(janela.length, granularidade)}`
-            : `${ESCALA[granularidade].passo} · esquerda = autonomia (1–5) · direita = complexidade típica`}
-      </p>
+      {/*
+       * ⚠ NÃO EXISTE MAIS RODAPÉ (decisão do usuário). Ele dizia "autonomia sobe · complexidade
+       * típica cai · 6 meses" — uma leitura que o próprio gráfico já entrega pela forma das duas
+       * linhas, logo acima, e que o painel repete no rodapé honesto ("17 de 18 resoluções
+       * plotadas"). Era uma terceira linha de texto mono num cartão que já tem legenda, seletor e
+       * rodapé: ruído, não informação.
+       *
+       * A tendência NÃO morreu — ela continua sendo calculada (`tendenciaDaLinha`) e vai inteira
+       * para o `aria-label` do SVG, que é o único lugar onde ela é insubstituível: quem não vê o
+       * gráfico não tem como ler a forma das linhas.
+       */}
     </div>
   )
 }
@@ -633,6 +651,13 @@ export function Linha({
  * ⚠ `role="group"` + `aria-pressed`, não `tablist`/`tab`: não há painéis a alternar — são três
  * estados do MESMO gráfico. Três `<button>` de verdade, cada um na sua parada de tabulação, com
  * o anel de foco do sistema (`.ci-foco-botao`).
+ *
+ * ⚠ BUG CORRIGIDO ("os botões trocam de lugar quando clico em semanal/diário"): o botão ativo
+ * ganha `font-semibold`, e negrito é MAIS LARGO que regular. Como os três dividem a mesma fileira,
+ * engordar um empurrava os outros — a cada clique a fileira inteira se rearranjava sob o cursor.
+ * A correção não é tirar o negrito (ele é o sinal de "este está ativo"): é RESERVAR a largura do
+ * negrito o tempo todo, com `RotuloEstavel` — um gêmeo invisível em negrito define a largura, e o
+ * rótulo real é pintado por cima. A caixa nunca muda de tamanho; só a tinta muda.
  */
 function SeletorDeGranularidade({
   value,
@@ -662,7 +687,7 @@ function SeletorDeGranularidade({
                 : 'bg-transparent text-soft hover:text-ink',
             )}
           >
-            {ROTULO_GRANULARIDADE[g]}
+            <RotuloEstavel>{ROTULO_GRANULARIDADE[g]}</RotuloEstavel>
           </button>
         )
       })}
@@ -718,6 +743,13 @@ function TracosDaSerie({
  * Legenda (spec 02 §5.1). A série neutra (autonomia), a série da complexidade, a CONFIANÇA
  * (regra 3) e — só quando existe um vão na tela — o significado do TRACEJADO.
  *
+ * ⚠ ENXUTA (correção — o usuário viu). Ao trocar para semanal/diário aparecem vãos (quase todo
+ * bucket entre duas resoluções está vazio nessas escalas), e o item do tracejado ENTRAVA com uma
+ * frase inteira: a legenda quebrava em duas linhas e o cabeçalho do gráfico virava um parágrafo.
+ * Cada item agora é um RÓTULO, não uma explicação — a explicação inteira já vive no `?` do painel
+ * ("Traço sólido × traço tracejado", "Medido × ≈ estimado"), que é onde ela pode ser lida com
+ * calma. A legenda diz o que a marca É; o `?` diz o que ela SIGNIFICA.
+ *
  * ⚠ O texto é "sem medição", não "sem resolução": na série de autonomia o vão é mesmo um período
  * sem resolução, mas na de complexidade ele também aparece em período COM resolução e sem métrica
  * (ex.: Python). "Sem resolução" seria falso ali — e o item da legenda é o contrato do traço.
@@ -725,16 +757,18 @@ function TracosDaSerie({
 function Legenda({ tema, temVao }: { tema: Tema; temVao: boolean }) {
   const corExemplo = corDaClasse(3, tema)
   return (
-    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 py-0.5 font-mono text-[10px] text-mid">
+    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1 py-0.5 font-mono text-[10px] text-mid">
       <span className="flex items-center gap-1.5">
         <span className="h-[2.4px] w-3.5 rounded-ci-sm bg-ink" aria-hidden="true" />
         autonomia
       </span>
+      {/* A complexidade e a sua natureza (≈ estimada, marcador VAZADO — regra 3) num item só: são
+          a mesma série, e o anel vazado é justamente a marca dela no gráfico. */}
       <span className="flex items-center gap-1.5">
-        <svg width={14} height={8} aria-hidden="true" className="overflow-visible">
+        <svg width={22} height={8} aria-hidden="true" className="overflow-visible">
           <line
             x1={0}
-            x2={14}
+            x2={22}
             y1={4}
             y2={4}
             className="stroke-mid"
@@ -742,16 +776,9 @@ function Legenda({ tema, temVao }: { tema: Tema; temVao: boolean }) {
             strokeLinecap="round"
             opacity={CLS_OPACIDADE}
           />
+          <circle cx={11} cy={4} r={3.2} fill="var(--panel-chart)" stroke={corExemplo} strokeWidth={1.6} />
         </svg>
-        complexidade típica
-      </span>
-      {/* Só o marcador VAZADO aparece nesta série: a classe de tempo é sempre ≈ estimada
-          (o disco cheio é reservado a métrica MEDIDA — regra 3). */}
-      <span className="flex items-center gap-1.5 text-soft">
-        <svg width={10} height={8} aria-hidden="true">
-          <circle cx={5} cy={4} r={3.2} fill="none" stroke={corExemplo} strokeWidth={1.6} />
-        </svg>
-        ≈ estimado (análise estática)
+        complexidade típica (≈ estimada)
       </span>
       {temVao && (
         <span className="flex items-center gap-1.5 text-soft">
@@ -767,7 +794,7 @@ function Legenda({ tema, temVao }: { tema: Tema; temVao: boolean }) {
               strokeLinecap="butt"
             />
           </svg>
-          tracejado = período sem medição (a linha só liga; não é dado)
+          sem medição
         </span>
       )}
     </div>
@@ -874,8 +901,20 @@ function Tooltip({
                 : { boxShadow: `inset 0 0 0 1.5px ${corDaClasse(k, tema)}` }
             }
           />
+          {/*
+           * ⚠ SEM "classe média 2,0" (correção — o usuário perguntou o que era, e a pergunta é a
+           * resposta). Aquele número era a média CRUA das ordens do colormap (0..7) — escala
+           * interna do desenho, não uma grandeza do domínio: ninguém escreve código "2,0". O
+           * rótulo ao lado (≈ O(n)) JÁ É essa média, arredondada para uma classe que existe de
+           * verdade; mostrar os dois era exibir a mesma coisa duas vezes, uma delas em jargão.
+           * O `?` do painel explica o arredondamento.
+           */}
           {comPrefixoEstimado(rotuloCanonico(k), CONFIANCA_BIG_O)}
-          <span className="text-soft">· classe média {numeroPt(bucket.mediaClasse, 1)}</span>
+          {bucket.comMetrica.length > 1 && (
+            <span className="text-soft">
+              · média de {pluralPt(bucket.comMetrica.length, 'resolução', 'resoluções')}
+            </span>
+          )}
         </span>
       ) : (
         !semResolucao && (
@@ -884,7 +923,9 @@ function Tooltip({
       )}
 
       {clicavel && bucket.comMetrica.length > 1 && (
-        <span className="font-mono text-[9px] text-soft">clique → a mais recente do período</span>
+        <span className="font-mono text-[9px] text-soft">
+          clique → abre o período (navegue pelas {bucket.comMetrica.length} ao lado)
+        </span>
       )}
     </div>
   )
@@ -900,14 +941,18 @@ type Tema = PropsGrafico['tema']
  * Variante da `posicaoCallout` (spec 02 §2.9 + Lacuna F) calibrada para a Linha: aqui os pontos
  * vivem numa banda alta (y ∈ [60, 200]), então o limiar de "estourar por cima" da spec (y < 18.6%
  * do viewBox) nunca dispararia e o tooltip sairia do cartão na autonomia 5. Limiares locais:
- * perto da direita, o tooltip inverte para a esquerda; no terço superior, cresce para BAIXO.
+ * perto da direita, o tooltip inverte para a esquerda; no topo da banda, cresce para BAIXO.
+ *
+ * ⚠ O `y` do dado é COORDENADA DO viewBox, que começa em `VB.y0` (o topo morto foi recortado) —
+ * a porcentagem tem de descontar essa origem, senão o tooltip desce ~24% da altura do gráfico.
  */
 function posicaoTooltip(x: number, y: number) {
   const inverterX = x > VB.largura * 0.62
-  const abaixo = y < VB.altura * 0.42 // ≈ y < 97 → o topo da banda de dados
+  const relY = (y - VB.y0) / VB.altura
+  const abaixo = relY < 0.28 // o topo da banda de dados: aí o tooltip cresce para baixo
   return {
     left: `${((x / VB.largura) * 100).toFixed(2)}%`,
-    top: `${((y / VB.altura) * 100).toFixed(2)}%`,
+    top: `${(relY * 100).toFixed(2)}%`,
     transform: `translate(${inverterX ? 'calc(-100% - 10px)' : '10px'}, ${abaixo ? '10px' : 'calc(-100% - 10px)'})`,
   }
 }

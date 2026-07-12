@@ -23,7 +23,7 @@
  */
 import { Link } from 'react-router-dom'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
-import { BigOChip, LangChip, StatusChip } from '@/components/domain/badges'
+import { BigOChip, LangChip, StatusChip, VisibilidadeToggle } from '@/components/domain/badges'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   CONFIANCA_BIG_O,
@@ -32,7 +32,7 @@ import {
   rotuloConfiancaMotor,
 } from '@/domain/enums'
 import { cn, formatDate, formatDayMonth } from '@/lib/utils'
-import type { LinguagemProgramacao, NivelConfianca } from '@/types/api'
+import type { LinguagemProgramacao, NivelConfianca, Visibilidade } from '@/types/api'
 
 /** Texto canônico do estado "sem métrica" (mono 10.5px `soft`). */
 export function SemMetrica({ className }: { className?: string }) {
@@ -140,6 +140,15 @@ export interface ResolucaoLinhaProps {
   variant?: 'lista' | 'cartao'
   /** `curta` = `dd/mm` (tela M) · `longa` = `dd/mm/aaaa` (tela K). */
   dataFormato?: 'curta' | 'longa'
+  /**
+   * Chip de visibilidade da RESOLUÇÃO. Passe junto com `onAlternarVisibilidade` para que ele
+   * alterne ali mesmo — hoje trocar público/privado obriga a entrar na tela da resolução, uma por
+   * uma. Sem os dois, a linha fica exatamente como era (a tela pública não mostra o chip: lá tudo
+   * já é público, e não é seu).
+   */
+  visibilidade?: Visibilidade | null
+  onAlternarVisibilidade?: (publico: boolean) => void
+  alterandoVisibilidade?: boolean
   className?: string
 }
 
@@ -155,22 +164,36 @@ export function ResolucaoLinha({
   rotulo,
   variant = 'lista',
   dataFormato = 'curta',
+  visibilidade,
+  onAlternarVisibilidade,
+  alterandoVisibilidade,
   className,
 }: ResolucaoLinhaProps) {
   const cartao = variant === 'cartao'
   const data = dataFormato === 'longa' ? formatDate(submetidaEm) : formatDayMonth(submetidaEm)
 
+  /*
+   * ⚠ A linha DEIXOU de ser um `<a>` por fora, pelo mesmo motivo do `DesafioCard`: para hospedar
+   * o chip que alterna a visibilidade. `<button>` dentro de `<a>` é HTML inválido, e o clique
+   * navegaria em vez de alternar. Agora o link é uma camada esticada sobre a linha; o chip fica
+   * por cima dela. Clicar em qualquer outro ponto continua abrindo a resolução.
+   */
   return (
-    <Link
-      to={to}
+    <div
       className={cn(
-        'group flex items-center gap-3.5 px-4 py-[13px] transition-colors',
+        'group relative flex items-center gap-3.5 px-4 py-[13px] transition-colors',
         cartao
           ? 'rounded-ci border border-line bg-panel hover:border-line-strong'
           : 'border-t border-line-soft first:border-t-0 hover:bg-elevated',
         className,
       )}
     >
+      <Link
+        to={to}
+        aria-label={`Abrir ${rotulo || 'resolução'}`}
+        className={cn('ci-foco-botao absolute inset-0 z-0', cartao && 'rounded-ci')}
+      />
+
       <LangChip lang={linguagem} className="text-[11px]" />
 
       <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink">
@@ -190,12 +213,20 @@ export function ResolucaoLinha({
 
       {analisada && <StatusChip status="analisada" className="hidden lg:inline-flex" />}
 
+      {visibilidade && onAlternarVisibilidade && (
+        <VisibilidadeToggle
+          publico={visibilidade === 'PUBLICO'}
+          onAlternar={onAlternarVisibilidade}
+          pendente={alterandoVisibilidade}
+        />
+      )}
+
       <time
         dateTime={submetidaEm}
         className="tabular shrink-0 text-right font-mono text-[11px] text-soft"
       >
         {data}
       </time>
-    </Link>
+    </div>
   )
 }

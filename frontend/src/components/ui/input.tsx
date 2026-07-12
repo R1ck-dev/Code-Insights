@@ -4,12 +4,16 @@ import { cn } from '@/lib/utils'
 import { Label } from './label'
 import { PasswordStrength, type NivelSenha } from './password-strength'
 
-/** Superfície do controle: recuo + hairline forte + raio 3px + anel de foco `ink`. */
-const controle =
+/**
+ * Superfície do controle: recuo + hairline forte + raio 3px + anel de foco `ink`.
+ * Exportado porque o `Combobox` (que não é um `input` nem um `Select`) tem de vestir EXATAMENTE
+ * a mesma pele — dois campos lado a lado com bordas diferentes seriam dois sistemas.
+ */
+export const controle =
   'ci-foco-input w-full rounded-ci border border-line-strong bg-recess text-ink placeholder:text-soft ' +
   'outline-none transition-[border-color,box-shadow] duration-100 disabled:opacity-60 disabled:cursor-not-allowed'
 
-const estados =
+export const estados =
   'aria-[invalid=true]:border-erro-estrutura data-[valido=true]:border-sucesso'
 
 /** Campos de DADO medem em mono; texto livre lê em Space Grotesk. */
@@ -30,7 +34,7 @@ interface CampoProps {
 }
 
 /** Rótulo + controle + hint/erro. Sem `label`/`hint`/`error`, devolve só o controle. */
-function Campo({
+export function Campo({
   id,
   label,
   hint,

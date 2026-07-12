@@ -1,16 +1,25 @@
 /*
  * Card de desafio — telas L (meus desafios), J (portfólio público) e Explorar.
  *
- * O card INTEIRO é um <Link> de verdade (não `role="button"` + onKeyDown): teclado,
- * leitor de tela, "abrir em nova aba" e o menu de contexto vêm de graça.
- * Nada de interativo aninhado aqui dentro — chips e datas são conteúdo, não controles.
+ * O card continua sendo UM alvo só: clicar em qualquer lugar abre o desafio, com teclado, leitor
+ * de tela, "abrir em nova aba" e menu de contexto — porque continua sendo um `<Link>` de verdade.
+ *
+ * ⚠ MUDOU A MONTAGEM (para o chip de visibilidade poder ALTERNAR — pedido do usuário: trocar
+ * público/privado sem entrar tela por tela). Antes o `<Link>` embrulhava o card inteiro, e ali um
+ * botão não cabe: `<button>` dentro de `<a>` é HTML inválido, o clique navegaria em vez de
+ * alternar e o leitor de tela anunciaria um link contendo um botão. Agora o link é uma CAMADA
+ * ESTICADA (`absolute inset-0`) sobre um `<article>`, e o chip fica por cima dela (`z-10`). O card
+ * inteiro segue clicável; o chip é a única ilha que não navega.
+ *
+ * Sem `onAlternarVisibilidade` (portfólio público, Explorar), o chip volta a ser um rótulo mudo —
+ * lá não há o que alternar: o desafio é de outra pessoa.
  *
  * Forma: panel + hairline 1px, raio 3px, hover eleva a borda para `line-strong`.
  * Sem sombra. Sem cor fora do colormap (o card não carrega métrica).
  */
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { StatusChip } from '@/components/domain/badges'
+import { StatusChip, VisibilidadeToggle } from '@/components/domain/badges'
 import { Chip } from '@/components/ui/badge'
 import { cn, formatDate, pluralPt } from '@/lib/utils'
 import type { Visibilidade } from '@/types/api'
@@ -31,6 +40,13 @@ export interface DesafioCardProps {
   criadoEm?: string | null
   /** Chevron de "entrar" no rodapé — o portfólio público (tela J) usa. */
   chevron?: boolean
+  /**
+   * Torna o chip de visibilidade um BOTÃO que alterna (só faz sentido nos MEUS desafios). Recebe
+   * o valor novo. Sem ele, o chip é um rótulo, como sempre foi.
+   */
+  onAlternarVisibilidade?: (publico: boolean) => void
+  /** A alternância está em voo: spinner no chip, clique bloqueado. */
+  alterandoVisibilidade?: boolean
   className?: string
 }
 
@@ -43,24 +59,43 @@ export function DesafioCard({
   qtdResolucoes,
   criadoEm,
   chevron = false,
+  onAlternarVisibilidade,
+  alterandoVisibilidade,
   className,
 }: DesafioCardProps) {
   const temMeta = Boolean(plataforma || identificador)
 
   return (
-    <Link
-      to={to}
+    <article
       className={cn(
-        'group flex h-full flex-col gap-3 rounded-ci border border-line bg-panel p-[17px]',
-        'transition-colors hover:border-line-strong',
+        'group relative flex h-full flex-col gap-3 rounded-ci border border-line bg-panel p-[17px]',
+        'transition-colors hover:border-line-strong focus-within:border-line-strong',
         className,
       )}
     >
+      {/*
+       * O LINK ESTICADO: cobre o card inteiro (por ser `absolute`, ele pinta ACIMA do texto, que é
+       * estático) e leva o anel de foco do sistema. É ele que faz "clicar em qualquer lugar abre o
+       * desafio" continuar valendo depois que o card deixou de ser um `<a>` por fora.
+       */}
+      <Link
+        to={to}
+        aria-label={`Abrir ${titulo}`}
+        className="ci-foco-botao absolute inset-0 z-0 rounded-ci"
+      />
+
       <div className="flex items-start justify-between gap-2.5">
         <h3 className="line-clamp-2 text-[15px] leading-snug font-semibold text-ink">{titulo}</h3>
-        {visibilidade && (
-          <StatusChip status={visibilidade === 'PUBLICO' ? 'publico' : 'privado'} />
-        )}
+        {visibilidade &&
+          (onAlternarVisibilidade ? (
+            <VisibilidadeToggle
+              publico={visibilidade === 'PUBLICO'}
+              onAlternar={onAlternarVisibilidade}
+              pendente={alterandoVisibilidade}
+            />
+          ) : (
+            <StatusChip status={visibilidade === 'PUBLICO' ? 'publico' : 'privado'} />
+          ))}
       </div>
 
       {temMeta && (
@@ -92,7 +127,7 @@ export function DesafioCard({
           )}
         </span>
       </div>
-    </Link>
+    </article>
   )
 }
 
