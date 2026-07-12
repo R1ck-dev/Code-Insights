@@ -1,10 +1,13 @@
 /*
- * PAINEL DE GRÁFICOS — a moldura que unifica as 4 visualizações (spec 02 §1 e §8).
+ * PAINEL DE GRÁFICOS — a moldura que unifica as 3 visualizações (spec 02 §1 e §8).
  *
- * ⚠ Eram 5. O ESPECTRO saiu (decisão do usuário, rodada de correção): ele plotava CLASSES, não
- * resoluções — nada a selecionar, nada que conversasse com o painel da estrela ao lado —, e o
- * dashboard já exibe a MESMA distribuição no card "Distribuição · Espectro". O histograma
- * continua vivo lá; o que saiu foi a duplicata dentro do seletor.
+ * ⚠ Eram 5. Duas saíram, por decisão do usuário:
+ * · ESPECTRO: plotava CLASSES, não resoluções — nada a selecionar, nada que conversasse com o
+ *   painel da estrela ao lado —, e o dashboard já exibe a MESMA distribuição no card
+ *   "Distribuição · Espectro". O histograma continua vivo lá; saiu a duplicata do seletor.
+ * · ESPIRAL (ex-Órbitas): REDUNDANTE com a Linha temporal — respondia à mesma pergunta
+ *   (autonomia × tempo, complexidade × tempo) por canais perceptuais mais fracos (tamanho e
+ *   ângulo, em vez de posição num eixo). Menos gráficos, cada um dizendo uma coisa.
  *
  * Cabeçalho (título + subtítulo que MUDA com o gráfico + `?` de "como ler") · seletor ·
  * o gráfico escolhido · RODAPÉ HONESTO.
@@ -39,7 +42,6 @@ import type { InfoSecao } from '@/domain/metricas-explicacao'
 import { Carta } from './Carta'
 import { LINHA_JANELA_MESES, Linha } from './Linha'
 import { Matriz } from './Matriz'
-import { Orbitas } from './Orbitas'
 import { rotuloRodape } from './dataset'
 import {
   SeletorDeGrafico,
@@ -100,35 +102,6 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       ...SECOES_COMUNS,
     ],
   },
-  /*
-   * A CHAVE continua `orbitas` (é o que já circula em `?view=` e nos imports); o gráfico é que
-   * foi redesenhado. Não é mais um conjunto de órbitas concêntricas de autonomia: é uma ESPIRAL
-   * DO TEMPO. O rótulo do seletor, o título do painel e este `?` passam a dizer isso — um `?`
-   * que explicasse a geometria antiga seria pior do que não ter `?`.
-   */
-  orbitas: {
-    titulo: 'Espiral do tempo',
-    subtitulo: 'raio = tempo (centro = mais antiga) · tamanho = autonomia · cor = complexidade',
-    ariaLabel: 'Como ler a espiral do tempo',
-    secoes: [
-      {
-        rotulo: 'Como ler',
-        texto:
-          'Leia de dentro para fora, como os anéis de um tronco. Cada ponto é uma resolução e a distância dele ao centro é QUANDO você a enviou: o centro é a mais antiga, a borda é a mais recente. A trilha que liga os pontos é a sua ordem cronológica — os anéis-guia levam a data de resoluções reais, nunca uma data interpolada.',
-      },
-      {
-        rotulo: 'Tamanho = autonomia · cor = complexidade',
-        texto:
-          'São duas codificações independentes, de propósito. O TAMANHO do ponto é o Índice de Autonomia IA (1 a 5): ponto maior, mais autônomo. A COR é a classe de complexidade de tempo (verde = mais eficiente, vermelho = mais custosa). A autonomia nunca é pintada com o colormap — ela é autodeclarada e não é uma medida de qualidade do código; misturar as duas escalas na mesma cor sugeriria uma relação que o gráfico existe justamente para você investigar.',
-      },
-      {
-        rotulo: 'A pergunta que ela responde',
-        texto:
-          'Conforme o tempo passa (para fora), os seus pontos ficam maiores e mais verdes? Ou seja: você vem ganhando autonomia e, ao mesmo tempo, escrevendo soluções menos custosas? É a hipótese central da pesquisa desenhada numa só figura — o gráfico mostra o que aconteceu no seu caso, ele não avalia a sua solução.',
-      },
-      ...SECOES_COMUNS,
-    ],
-  },
   linha: {
     titulo: 'Linha temporal',
     /*
@@ -142,7 +115,7 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       {
         rotulo: 'Como ler',
         texto:
-          'Dois sinais por mês: a autonomia média (linha clara e neutra — autonomia nunca usa o colormap) e a classe de complexidade média arredondada (linha colorida pela classe). As duas são lidas juntas: a hipótese da pesquisa é que autonomia crescente e complexidade decrescente andam juntas ao longo do tempo. O gráfico mostra o que aconteceu no seu caso — ele não avalia a sua solução.',
+          'Dois sinais por período (mês, semana ou dia, no seletor do gráfico): a autonomia média (linha clara e neutra, com marcadores cheios — autonomia nunca usa o colormap) e a classe de complexidade média arredondada (linha mais discreta, com marcadores vazados pintados pela classe). As duas são lidas juntas: a hipótese da pesquisa é que autonomia crescente e complexidade decrescente andam juntas ao longo do tempo. O gráfico mostra o que aconteceu no seu caso — ele não avalia a sua solução.',
       },
       {
         rotulo: 'Complexidade típica do mês',
@@ -150,9 +123,14 @@ const META: Record<TipoGrafico, MetaGrafico> = {
           'É a média das classes Big O de tempo das resoluções analisadas naquele mês, arredondada para uma classe real. Como toda classe Big O aqui, vem de análise estática da AST — é uma estimativa (marcador vazado, prefixo ≈), não uma medição, e só existe para Java. Difere da "complexidade típica" do card ao lado, que é a MEDIANA de todo o histórico: são estatísticas diferentes do mesmo dado, e podem apontar classes diferentes.',
       },
       {
+        rotulo: 'Traço sólido × traço tracejado',
+        texto:
+          'O traço é SÓLIDO entre dois períodos vizinhos que têm medição — aí a linha é dado. Quando dois períodos com dado estão separados por períodos SEM medição, eles são ligados assim mesmo, mas com traço TRACEJADO: ali não houve medição, e o tracejado é continuidade visual, não dado. Nenhum ponto é desenhado no vão e nenhum valor intermediário é inventado; o período vazio continua ocupando o seu lugar no eixo do tempo (o tempo não anda mais devagar porque você parou de enviar).',
+      },
+      {
         rotulo: 'Períodos vazios e períodos sem métrica',
         texto:
-          'Período SEM RESOLUÇÃO fica vago e as duas linhas se interrompem — interpolar por cima inventaria uma tendência que não aconteceu. Já o período com resoluções que não têm métrica (ex.: Python) NÃO é um período vazio: a linha de autonomia atravessa normalmente (a autonomia é autodeclarada e independe da linguagem) e só a linha de complexidade se interrompe.',
+          'São coisas diferentes. Período SEM RESOLUÇÃO deixa as duas séries sem ponto (elas o atravessam tracejadas). Já o período com resoluções que não têm métrica (ex.: Python) NÃO é um período vazio: a autonomia tem ponto ali e a sua linha segue sólida (a autonomia é autodeclarada e independe da linguagem); só a complexidade fica sem ponto e atravessa tracejada.',
       },
       {
         rotulo: 'A janela',
@@ -258,7 +236,6 @@ export function PainelDeGraficos({
         ) : (
           <>
             {view === 'carta' && <Carta {...props} />}
-            {view === 'orbitas' && <Orbitas {...props} />}
             {view === 'linha' && <Linha {...props} />}
             {view === 'matriz' && <Matriz {...props} />}
           </>

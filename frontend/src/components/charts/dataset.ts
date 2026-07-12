@@ -154,13 +154,13 @@ export function montarConstelacoes(pontosOrdenados: PontoPlotavel[]): Constelaca
 }
 
 /**
- * A resposta da API → o dataset dos 5 gráficos.
+ * A resposta da API → o dataset dos 3 gráficos (Carta · Linha · Matriz).
  *
- * Garantias do contrato (os 5 gráficos dependem delas):
+ * Garantias do contrato (os 3 gráficos dependem delas):
  *   1. `pontos` contém SÓ resoluções com classe de tempo válida (0..7).
- *   2. `pontos` e `todas` estão em ordem CRONOLÓGICA ASCENDENTE — a Espiral do tempo usa o
- *      índice do array como `i` do RAIO e do ângulo (`rᵢ` cresce com `i`: centro = mais antiga,
- *      borda = mais recente), sem reordenar nada.
+ *   2. `pontos` e `todas` estão em ordem CRONOLÓGICA ASCENDENTE — as constelações da Carta ligam
+ *      as resoluções do mesmo desafio nessa ordem, e os buckets da Linha a consomem direto, sem
+ *      reordenar nada.
  *   3. `todas` contém TUDO (inclusive o que não plota): a série de autonomia da Linha e a
  *      contagem mensal saem daqui. Autonomia é autodeclarada e independe da linguagem —
  *      um mês só com resoluções em Python NÃO é um mês "sem resolução".

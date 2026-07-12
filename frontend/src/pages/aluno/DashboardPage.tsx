@@ -5,14 +5,18 @@
  * complexidade típica · distribuição · atividade recente.
  *
  * O gráfico NÃO mora mais aqui: o SVG artesanal de "Evolução" foi substituído pelo
- * `PainelDeGraficos` (Carta · Espiral · Linha · Matriz), que traz o seletor, os estados de
- * cada visualização e o rodapé honesto ("N de M resoluções plotadas · X sem métrica"). A
+ * `PainelDeGraficos` (Carta · Linha · Matriz), que traz o seletor, os estados de cada
+ * visualização e o rodapé honesto ("N de M resoluções plotadas · X sem métrica"). A
  * página só busca o dado (`useCartaCeleste` + `montarDataset`) e é dona da seleção — que
  * também alimenta o `PainelEstrelaSelecionada` ao lado.
  *
- * ⚠ O histograma por classe continua aqui, no `DistribuicaoCard` (`linhasEspectro`), e agora é o
- * ÚNICO: a vista "Espectro" saiu do seletor do painel (era a mesma distribuição, duas vezes na
- * mesma tela — e a única das 5 que não plotava resoluções, logo não tinha o que selecionar).
+ * ⚠ Das 5 visualizações originais restaram 3:
+ * · "Espectro" saiu do seletor — era a mesma distribuição duas vezes na mesma tela, e a única
+ *   que não plotava resoluções (logo, não tinha o que selecionar). O histograma por classe
+ *   continua aqui, no `DistribuicaoCard` (`linhasEspectro`), e agora é o ÚNICO.
+ * · "Espiral" (ex-Órbitas) saiu — era redundante com a Linha temporal: mesma pergunta
+ *   (autonomia × tempo, complexidade × tempo) por canais perceptuais mais fracos (tamanho e
+ *   ângulo, em vez de posição num eixo). Menos gráficos, cada um dizendo uma coisa.
  */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -595,7 +599,7 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* ── Herói: painel dos 5 gráficos + coluna lateral ───────────────────── */}
+      {/* ── Herói: painel de gráficos (Carta · Linha · Matriz) + coluna lateral ── */}
       <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[1.62fr_1fr]">
         <PainelDeGraficos
           dataset={dataset}

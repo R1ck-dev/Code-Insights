@@ -1,12 +1,12 @@
 /*
- * MODELO DE DADOS PLOTÁVEL — o contrato dos 5 gráficos (Carta, Órbitas, Espectro,
- * Linha, Matriz). Todos leem do MESMO dataset (spec 02 §0.4): um ponto = uma resolução.
+ * MODELO DE DADOS PLOTÁVEL — o contrato dos 3 gráficos (Carta, Linha, Matriz). Todos leem do
+ * MESMO dataset (spec 02 §0.4): um ponto = uma resolução.
  *
  * `PontoPlotavel` é o `PontoCartaDTO` (types/api.ts) já RESOLVIDO para desenho:
  *   - `k` é uma classe real do colormap (0..7) — quem não tem classe de tempo não vira
  *     ponto (ver `dataset.ts`, regra de plotabilidade);
- *   - `submetidaEm` já é `Date` (a ordem cronológica é dado: ângulo das Órbitas,
- *     sequência das constelações, buckets da Linha).
+ *   - `submetidaEm` já é `Date` (a ordem cronológica é dado: sequência das constelações,
+ *     buckets da Linha).
  *
  * ⚠ MEDIDO × ≈ ESTIMADO é propriedade do TIPO da métrica, não do valor:
  *   Big-O de tempo/espaço é SEMPRE ≈ ESTIMADO (inferência estática, indecidível no caso
@@ -23,7 +23,7 @@ import type { ClasseK, Tema } from '@/domain/enums'
 /** Índice de Autonomia IA — autodeclarado, 1 (mais apoio de IA) a 5 (mais autônomo). */
 export type NivelAutonomia = 1 | 2 | 3 | 4 | 5
 
-/** Menor e maior nível da escala de autonomia (eixo X da Carta, raio das Órbitas). */
+/** Menor e maior nível da escala de autonomia (eixo X da Carta, eixo Y esquerdo da Linha). */
 export const AUTONOMIA_MIN = 1
 export const AUTONOMIA_MAX = 5
 /** 5 colunas: a escala de autonomia é discreta e completa. */
@@ -41,7 +41,7 @@ export interface PontoBase {
   desafioId: string
   desafioTitulo: string
   linguagem: LinguagemProgramacao
-  /** Eixo X da Carta · raio das Órbitas · colunas da Matriz. NEUTRA — nunca colormap. */
+  /** Eixo X da Carta · série neutra da Linha · colunas da Matriz. NEUTRA — nunca colormap. */
   autonomia: NivelAutonomia
   /** `false` = a análise assíncrona ainda não rodou (≠ "não tem métrica"). */
   analisada: boolean
@@ -81,7 +81,7 @@ export interface PontoPlotavel extends PontoBase {
 /**
  * A ORDEM CANÔNICA do portfólio: cronológica ASCENDENTE, empate resolvido pelo id (render
  * estável entre reloads). É o contrato de `dataset.pontos`/`dataset.todas`, da sequência das
- * constelações, dos irmãos de um cluster e do raio da Espiral. Uma função só, para que os três
+ * constelações, dos irmãos de um cluster e dos buckets da Linha. Uma função só, para que os três
  * módulos não desempatem de jeitos diferentes.
  */
 export function porTempoAsc(a: PontoBase, b: PontoBase): number {
@@ -175,7 +175,7 @@ export interface DescartesDataset {
  * do que a pesquisa exige.
  */
 export interface DatasetCarta {
-  /** Resoluções plotáveis, em ordem cronológica ASCENDENTE (contrato das Órbitas). */
+  /** Resoluções plotáveis, em ordem cronológica ASCENDENTE (contrato das constelações). */
   pontos: PontoPlotavel[]
   /**
    * TODAS as resoluções recebidas (plotáveis ou não), em ordem cronológica ascendente.

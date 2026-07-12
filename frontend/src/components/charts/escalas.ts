@@ -1,11 +1,16 @@
 /*
- * ESCALAS — a geometria compartilhada dos 5 gráficos.
+ * ESCALAS — a geometria compartilhada dos 3 gráficos (Carta · Linha · Matriz).
  *
  * Toda fórmula aqui foi CONFERIDA contra o markup do protótipo (spec 02 diz onde).
  * Cada bloco cita a origem: "protótipo, spec 02 §X". Onde o protótipo não definia nada,
  * a decisão está marcada como DECISÃO e diz de onde veio (§6-A da entrevista, ou minha).
  *
- * Nada aqui importa React. É matemática pura — testável, e os 5 gráficos consomem igual.
+ * ⚠ A geometria POLAR da Espiral (ex-Órbitas) foi REMOVIDA junto com o gráfico: ele era
+ * redundante com a Linha temporal — mesma pergunta (autonomia × tempo, complexidade × tempo),
+ * respondida por canais perceptuais mais fracos (tamanho e ângulo, em vez de posição num eixo).
+ * `linhasEspectro()` (§3) NÃO caiu: ela é a fonte do card "Distribuição · Espectro" do dashboard.
+ *
+ * Nada aqui importa React. É matemática pura — testável, e os 3 gráficos consomem igual.
  */
 import {
   type ClasseK,
@@ -38,12 +43,6 @@ export interface Ponto2D {
 /** Limita `v` ao intervalo [min, max]. */
 export function limitar(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v))
-}
-
-const GRAU = Math.PI / 180
-
-export function grausParaRad(graus: number): number {
-  return graus * GRAU
 }
 
 /** `[{x,y}, …]` → atributo `points` de `<polyline>`/`<polygon>`: "52,204.6 180,242.3". */
@@ -321,7 +320,7 @@ export const CARTA_TICK_Y_X = 36
 export const CARTA_TICK_X_Y = 298
 export const CARTA_TITULO_X = { x: 308, y: 316 } as const
 
-// ── Callout (compartilhado com as Órbitas) ──────────────────────────────────
+// ── Callout da Carta ────────────────────────────────────────────────────────
 
 export interface PosicaoCallout {
   left: string
@@ -351,204 +350,6 @@ export function posicaoCallout(
     top: `${arred((y / viewBox.altura) * 100)}%`,
     transform: `translate(${tx}, ${ty})`,
   }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// 2 · ESPIRAL DO TEMPO (ex-Órbitas) — RAIO = tempo · TAMANHO = autonomia · COR = classe
-// ════════════════════════════════════════════════════════════════════════════
-//
-// REDESENHO. As Órbitas antigas (raio = autonomia, ângulo = tempo, §6-A Lacuna 3) eram
-// ilegíveis no app: o ângulo não tem zero natural, um portfólio pequeno virava um triângulo
-// solto e nada dizia "o tempo passa nesta direção". MORRERAM `anguloPorTempo`, `aneisOrbita` e
-// `raioPorAutonomia` (que era DISTÂNCIA AO CENTRO — não confundir com o novo raio do MARCADOR).
-//
-// A leitura nova é a de um disco de árvore / vinil, de dentro para fora:
-//   · RAIO    = TEMPO. Centro = resolução mais ANTIGA · borda = mais RECENTE.
-//   · ÂNGULO  = a espiral de Arquimedes: uma trilha ÚNICA e contínua, na ordem cronológica.
-//   · TAMANHO = AUTONOMIA (1..5). ⚠ Regra 4: autonomia é NEUTRA — vira tamanho, JAMAIS cor.
-//   · COR     = classe de complexidade (colormap), como em todo o sistema.
-//
-// A pergunta da pesquisa fica respondida de bate-pronto: "conforme o tempo passa (para fora),
-// meus pontos ficam MAIORES (mais autônomo) e mais VERDES (menos custosos)?"
-
-/** Quadrado, como a órbita antiga — o painel não mudou de forma. */
-export const ESPIRAL_VIEWBOX = { largura: 300, altura: 300 } as const
-export const ESPIRAL_CENTRO: Ponto2D = { x: 150, y: 150 }
-
-/**
- * O raio mínimo é um BURACO deliberado no meio: a espiral de Arquimedes com r₀ = 0 amontoa as
- * primeiras resoluções num nó ilegível e não sobra lugar para o marcador de "início".
- */
-export const ESPIRAL_R_MIN = 26
-/** 128 + halo (~14) = 142 < 150: o marcador mais externo não vaza do viewBox. */
-export const ESPIRAL_R_MAX = 128
-
-/** 12h = o começo do tempo (mesma âncora da órbita antiga). */
-const ESPIRAL_THETA_0 = grausParaRad(-90)
-
-/** ~1,75 volta: dá a leitura de espiral sem virar rolo de fita. */
-export const ESPIRAL_VOLTAS_BASE = 1.75
-/**
- * Teto de voltas. Não é gosto: com `v` voltas, duas VOLTAS VIZINHAS ficam a
- * `(R_MAX − R_MIN) / v` px uma da outra — em 7 voltas isso dá 14,6px, ainda acima do
- * `ESPIRAL_ESPACO_MIN`. Passar disso faria a espiral colidir consigo mesma, que é pior do que
- * dois pontos consecutivos próximos (aí some a leitura radial inteira).
- */
-export const ESPIRAL_VOLTAS_MAX = 7
-/** Distância mínima entre marcadores CONSECUTIVOS (2 núcleos de 5,6 + folga). */
-export const ESPIRAL_ESPACO_MIN = 13
-/** Quantos anéis-guia de tempo desenhar por padrão. */
-export const ESPIRAL_ANEIS = 4
-
-/**
- * Quantas voltas a espiral dá, ao todo.
- *
- * DECISÃO: **1,75 volta fixa** (independe de `n`, como pedido) — MAS com um piso de segurança.
- * Com voltas fixas e `n` grande, dois pontos consecutivos ficam colados: a distância entre eles
- * é `√(Δr² + (r·Δθ)²)`, e ambos os termos encolhem com 1/n. O ponto mais apertado é sempre o
- * ANEL MAIS INTERNO (`r = R_MIN`), onde o arco é mais curto. Então: se em `R_MIN` os vizinhos
- * ficariam a menos de `ESPIRAL_ESPACO_MIN`, a espiral GANHA VOLTAS até separá-los (é preferível
- * mais voltas a pontos colados). Teto em `ESPIRAL_VOLTAS_MAX` (7) — daí em diante a densidade é
- * do dado, não da geometria, e o número no callout resolve.
- */
-export function voltasDaEspiral(n: number): number {
-  if (n <= 2) return ESPIRAL_VOLTAS_BASE
-  const dr = (ESPIRAL_R_MAX - ESPIRAL_R_MIN) / (n - 1)
-  const faltaAngular = ESPIRAL_ESPACO_MIN ** 2 - dr ** 2
-  if (faltaAngular <= 0) return ESPIRAL_VOLTAS_BASE // o passo radial já separa os vizinhos
-  const dThetaMin = Math.sqrt(faltaAngular) / ESPIRAL_R_MIN
-  const voltasMin = (dThetaMin * (n - 1)) / (2 * Math.PI)
-  return limitar(Math.max(ESPIRAL_VOLTAS_BASE, voltasMin), ESPIRAL_VOLTAS_BASE, ESPIRAL_VOLTAS_MAX)
-}
-
-/** Passo angular entre dois pontos consecutivos (radianos). */
-export function passoAngularDaEspiral(n: number): number {
-  if (n <= 1) return 0
-  return (voltasDaEspiral(n) * 2 * Math.PI) / (n - 1)
-}
-
-/**
- * DISTÂNCIA AO CENTRO do i-ésimo ponto — o EIXO DO TEMPO.
- * `i` é o índice na ordem cronológica ASC (o índice em `dataset.pontos`, já ordenado).
- * Linear no ÍNDICE, não na data: espaça as resoluções por ordem, não por calendário — senão um
- * hiato de férias empurraria metade do portfólio para a borda. Os anéis-guia carregam as datas.
- */
-export function raioDoTempo(i: number, n: number): number {
-  if (n <= 1) return 0
-  const t = limitar(i / (n - 1), 0, 1)
-  return ESPIRAL_R_MIN + (ESPIRAL_R_MAX - ESPIRAL_R_MIN) * t
-}
-
-/**
- * Posição do i-ésimo ponto na espiral: θᵢ = θ₀ + i·Δθ · rᵢ = R_MIN + (R_MAX−R_MIN)·i/(n−1).
- * `n === 1` → o CENTRO (uma resolução só não tem trajetória; ela é o começo e o fim).
- */
-export function posicaoEspiral(i: number, n: number): Ponto2D {
-  if (n <= 1) return { ...ESPIRAL_CENTRO }
-  const r = raioDoTempo(i, n)
-  const theta = ESPIRAL_THETA_0 + i * passoAngularDaEspiral(n)
-  return {
-    x: arred(ESPIRAL_CENTRO.x + r * Math.cos(theta)),
-    y: arred(ESPIRAL_CENTRO.y + r * Math.sin(theta)),
-  }
-}
-
-/** Vértices mínimos da trilha — abaixo disto a espiral vira polígono. */
-const ESPIRAL_AMOSTRAS_MIN = 120
-
-/**
- * A TRILHA do tempo, por baixo dos pontos: `d` de um `<path>` (`M … L … L …`).
- *
- * Amostrada FINO (ligar ponto-a-ponto com retas desenharia um polígono, não uma espiral).
- * Parametrizada em `t ∈ [0,1]`: `r(t)` linear e `θ(t) = θ₀ + 2π·voltas·t` — a MESMA curva de
- * `posicaoEspiral`.
- *
- * ⚠ A amostragem é feita POR INTERVALO entre pontos (`amostrasPorPasso` sub-passos de `i` a
- * `i+1`), e não numa grade fixa: assim `t = i/(n−1)` é SEMPRE um vértice e a trilha passa
- * exatamente pelo centro de cada marcador. Com grade fixa, a curva passava a alguns pixels de
- * alguns marcadores — visível como a linha "raspando" o ponto em vez de atravessá-lo.
- * `n <= 1` → `''` (sem trajetória, o componente não desenha nada).
- */
-export function caminhoDaEspiral(n: number, amostrasPorPasso = 8): string {
-  if (n <= 1) return ''
-  const passos = n - 1
-  const sub = Math.max(amostrasPorPasso, Math.ceil(ESPIRAL_AMOSTRAS_MIN / passos))
-  const total = passos * sub
-  const voltas = voltasDaEspiral(n)
-  const partes: string[] = []
-  for (let s = 0; s <= total; s++) {
-    const t = s / total
-    const r = ESPIRAL_R_MIN + (ESPIRAL_R_MAX - ESPIRAL_R_MIN) * t
-    const theta = ESPIRAL_THETA_0 + 2 * Math.PI * voltas * t
-    const x = arred(ESPIRAL_CENTRO.x + r * Math.cos(theta))
-    const y = arred(ESPIRAL_CENTRO.y + r * Math.sin(theta))
-    partes.push(`${s === 0 ? 'M' : 'L'}${x} ${y}`)
-  }
-  return partes.join(' ')
-}
-
-/**
- * RAIO DO MARCADOR (não é distância ao centro — aquele é `raioDoTempo`).
- * a=1 → 2.4 · a=5 → 5.6. Linear no raio, +0,8px por nível: 5 degraus distinguíveis sem que o
- * ponto mais autônomo engula o vizinho. ⚠ Regra 4: é assim que a autonomia entra no gráfico —
- * como TAMANHO. Nunca como cor de classe.
- */
-export function raioPorAutonomia_TAMANHO(a: number): number {
-  const nivel = limitar(Math.round(a), AUTONOMIA_MIN, AUTONOMIA_MAX)
-  return arred(2.4 + (nivel - AUTONOMIA_MIN) * 0.8)
-}
-
-/** Halo do marcador, na mesma razão da estrela da Carta (7 / 2.6 ≈ 2,69). */
-export function haloPorAutonomia_TAMANHO(a: number): number {
-  return arred(raioPorAutonomia_TAMANHO(a) * (CLUSTER_HALO_BASE / CLUSTER_NUCLEO_BASE))
-}
-
-export interface AnelTempo {
-  /** Índice da resolução que ancora o anel (na ordem cronológica). */
-  i: number
-  /** Distância ao centro = `raioDoTempo(i, n)`. */
-  r: number
-  data: Date
-  /** `dd.mm` (00-INDICE §2.5). */
-  rotulo: string
-  /** y do rótulo, logo dentro do topo do anel. */
-  rotuloY: number
-  /** O anel externo (a resolução mais recente) é o mais forte. */
-  externo: boolean
-}
-
-/**
- * Os anéis-guia do EIXO RADIAL = tempo. Sem eles o "raio = tempo" é invisível.
- *
- * Cada anel é ancorado numa RESOLUÇÃO REAL (índices espaçados por igual na ordem cronológica),
- * então o rótulo é a data EXATA daquele ponto — não uma data interpolada, que seria inventar
- * uma medição que não existe. Sempre inclui o primeiro (mais antigo) e o último (mais recente).
- * `n <= 1` → `[]`: com uma resolução só não há eixo do tempo a declarar.
- *
- * Recebe o MESMO array que a espiral plota (`dataset.pontos`), em ordem cronológica ASC.
- */
-export function aneisDeTempo(pontos: PontoBase[], quantidade = ESPIRAL_ANEIS): AnelTempo[] {
-  const n = pontos.length
-  if (n <= 1) return []
-
-  const q = limitar(Math.round(quantidade), 2, n)
-  const indices: number[] = []
-  for (let j = 0; j < q; j++) {
-    const i = Math.round((j * (n - 1)) / (q - 1))
-    if (!indices.includes(i)) indices.push(i)
-  }
-
-  return indices.map((i, ordem) => {
-    const r = raioDoTempo(i, n)
-    return {
-      i,
-      r: arred(r),
-      data: pontos[i].submetidaEm,
-      rotulo: dataCurta(pontos[i].submetidaEm),
-      rotuloY: arred(ESPIRAL_CENTRO.y - r + 3.5),
-      externo: ordem === indices.length - 1,
-    }
-  })
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -801,10 +602,12 @@ function rotulosDoBucket(inicio: Date, g: Granularidade): { rotulo: string; long
  *   1. A janela é o intervalo CONTÍNUO do primeiro ao último bucket COM ATIVIDADE. Bucket vazio
  *      NÃO some: ocupa o seu `x`. O tempo não anda mais devagar porque o aluno parou de enviar.
  *   2. Se o intervalo passar de `maxBuckets`, ficam os N MAIS RECENTES.
- *   3. Bucket sem resolução → `mediaAutonomia = null` → NÃO vira ponto, e a linha QUEBRA ali
- *      (`segmentosDaSerie`). Nada de interpolar: inventar uma medição é mentir.
+ *   3. Bucket sem resolução → `mediaAutonomia = null` → NÃO vira ponto. A linha ATRAVESSA o vão
+ *      com traço TRACEJADO (`trechosDaSerie`), que declara "aqui não houve medição": nenhum
+ *      marcador no vão, nenhum valor intermediário inventado. Interpolar (valor no meio) é
+ *      mentir; não ligar nada era o bug que emudecia o diário/semanal.
  *      Bucket com resolução mas sem métrica → só `mediaClasse` é `null`: a linha de complexidade
- *      quebra, a de autonomia atravessa.
+ *      atravessa tracejada, a de autonomia segue sólida (autonomia independe da linguagem).
  *
  * Recebe as resoluções em ordem cronológica ascendente (garantia de `montarDataset`).
  */
@@ -888,26 +691,76 @@ export function pontosDaSerie(janela: BucketTempo[], serie: SerieLinha): PontoSe
 }
 
 /**
- * A série quebrada em SEGMENTOS de buckets consecutivos com dado — uma `<polyline>` por
- * segmento. Uma polyline única "pularia" o buraco ligando dois buckets não adjacentes, o que
- * mentiria sobre o intervalo (spec 02, Lacuna M).
- * Segmento com 1 ponto é mantido (o gráfico desenha só o marcador).
+ * Um TRECHO desenhável da série: uma `<polyline>`.
+ *
+ * `continuo` é a única coisa que o gráfico precisa saber para escolher o traço:
+ *   • `true`  → os buckets são VIZINHOS e todos têm dado: medição contígua → traço SÓLIDO.
+ *   • `false` → é uma PONTE sobre um ou mais buckets sem dado → traço TRACEJADO.
  */
-export function segmentosDaSerie(janela: BucketTempo[], serie: SerieLinha): PontoSerie[][] {
+export interface TrechoSerie {
+  /** Chave estável de React. */
+  chave: string
+  /** ≥ 2 pontos, em ordem de bucket. Numa ponte são exatamente 2: as bordas do vão. */
+  pontos: PontoSerie[]
+  /** `false` = o trecho ATRAVESSA buckets sem dado (traço tracejado, sem marcador no meio). */
+  continuo: boolean
+}
+
+/**
+ * A série fatiada em trechos SÓLIDOS (buckets vizinhos, ambos com dado) e PONTES TRACEJADAS
+ * (dois buckets com dado separados por um ou mais buckets sem dado).
+ *
+ * ── POR QUE ISTO EXISTE (bug real) ─────────────────────────────────────────────────────
+ * A versão anterior (`segmentosDaSerie`) quebrava a série em todo bucket sem dado e parava por
+ * aí — "não interpolar", regra certa. Só que no MENSAL os meses costumam ser contíguos (havia
+ * segmentos de 2+ pontos, e a linha se formava), enquanto no SEMANAL e no DIÁRIO quase todo
+ * bucket entre duas resoluções está vazio: cada ponto virava um segmento de tamanho 1, e uma
+ * `polyline` de um ponto só NÃO DESENHA NADA. O gráfico ficava mudo — pontos soltos, sem linha.
+ *
+ * ── A HONESTIDADE, PRESERVADA E EXPLÍCITA ──────────────────────────────────────────────
+ * A ponte liga os dois buckets com dado ATRAVESSANDO o vão, mas o traço é TRACEJADO, e isso
+ * significa exatamente: "aqui não houve medição; a linha é continuidade visual, não dado".
+ *   · NENHUM marcador é desenhado em bucket sem dado (o marcador continua saindo de
+ *     `pontosDaSerie`, que só conhece bucket COM dado): nada de valor intermediário inventado.
+ *   · O bucket vazio CONTINUA ocupando o seu `x` no eixo (`buckets()`, invariante 1): o tempo
+ *     não anda mais devagar porque o aluno parou de enviar.
+ *   · O gráfico declara o código na legenda ("tracejado = período sem medição").
+ * Interpolar seria afirmar uma medição que não existe; NÃO ligar era esconder a série inteira.
+ * O tracejado diz as duas coisas: houve continuidade no tempo, não houve medição no meio.
+ *
+ * Vale para as DUAS séries e nas TRÊS granularidades — inclusive no mensal, que também pode ter
+ * um mês vazio no meio. ⚠ "Sem dado" quer dizer coisas diferentes em cada série, de propósito:
+ * na autonomia é bucket SEM RESOLUÇÃO; na complexidade é bucket sem nenhuma resolução
+ * CLASSIFICADA (um mês só de Python tem autonomia e não tem complexidade — §4.4).
+ */
+export function trechosDaSerie(janela: BucketTempo[], serie: SerieLinha): TrechoSerie[] {
   const pontos = pontosDaSerie(janela, serie)
-  const segmentos: PontoSerie[][] = []
-  let atual: PontoSerie[] = []
+  const trechos: TrechoSerie[] = []
+  let corrida: PontoSerie[] = []
+
+  // Corrida de 1 ponto não vira trecho: uma polyline de um ponto só não desenha nada, e o
+  // marcador daquele bucket já é desenhado pelo componente. Ele não fica órfão — as pontes
+  // tracejadas o ligam aos vizinhos com dado.
+  const fecharCorrida = () => {
+    if (corrida.length >= 2) {
+      trechos.push({ chave: `s-${corrida[0].bucket.chave}`, pontos: corrida, continuo: true })
+    }
+    corrida = []
+  }
 
   for (const p of pontos) {
-    const anterior = atual[atual.length - 1]
-    if (anterior && p.i !== anterior.i + 1) {
-      segmentos.push(atual)
-      atual = []
+    const anterior = corrida[corrida.length - 1]
+    if (!anterior || p.i === anterior.i + 1) {
+      corrida.push(p)
+      continue
     }
-    atual.push(p)
+    fecharCorrida()
+    trechos.push({ chave: `v-${anterior.bucket.chave}`, pontos: [anterior, p], continuo: false })
+    corrida = [p]
   }
-  if (atual.length > 0) segmentos.push(atual)
-  return segmentos
+  fecharCorrida()
+
+  return trechos
 }
 
 /** `true` quando há série para desenhar (≥ 2 buckets COM dado) — senão, estado vazio. */

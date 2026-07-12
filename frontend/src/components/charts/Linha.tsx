@@ -1,9 +1,19 @@
 /*
- * LINHA — evolução temporal (o 4º dos 5 gráficos do painel).
+ * LINHA — evolução temporal (a 2ª das 3 visualizações do painel).
  *
  * Duas séries, DUAS ESCALAS, um mesmo eixo de tempo:
  *   • AUTONOMIA média do bucket (1–5) → eixo Y ESQUERDO, neutro (regra 4: autonomia nunca é colormap).
  *   • COMPLEXIDADE típica do bucket (k médio, 0–7) → eixo Y DIREITO, que É a barra de colormap.
+ *
+ * O TRAÇO diz se houve medição: SÓLIDO entre buckets vizinhos com dado; TRACEJADO quando a linha
+ * atravessa buckets sem dado (ver `DASH_VAO` abaixo e `trechosDaSerie` em escalas.ts). O tracejado
+ * é continuidade visual, não dado — nenhum marcador no vão, nenhum valor interpolado. Sem isso, o
+ * semanal e o diário ficavam MUDOS: quase todo bucket entre duas resoluções está vazio, cada ponto
+ * virava um segmento de 1, e polyline de um ponto só não desenha nada.
+ *
+ * ⚠ Esta visualização absorveu a pergunta da antiga ESPIRAL (ex-Órbitas), removida por redundância:
+ * "autonomia e complexidade melhoram com o tempo?" se lê aqui por POSIÇÃO num eixo — canal
+ * perceptual mais forte do que o tamanho/ângulo que a espiral usava.
  *
  * O eixo do tempo tem TRÊS GRANULARIDADES (mensal · semanal · diário), trocáveis por um segmented
  * control no cabeçalho. Padrão: MENSAL — o portfólio de um aluno se move em meses, não em dias
@@ -36,6 +46,7 @@ import {
 import {
   type BucketTempo,
   type PontoSerie,
+  type TrechoSerie,
   buckets,
   LINHA_GRADE_Y,
   LINHA_LARGURA,
@@ -45,10 +56,11 @@ import {
   MAX_BUCKETS_POR_GRANULARIDADE,
   numeroPt,
   passoDeRotulos,
+  pontosDaSerie,
   pontosParaPolyline,
-  segmentosDaSerie,
   temSerieTemporal,
   tendenciaDaLinha,
+  trechosDaSerie,
   xDaLinha,
   yAutonomiaLinha,
   yClasseLinha,
@@ -122,6 +134,32 @@ const R_AUT = 2.4
 const R_AUT_ATIVO = 3.2
 const R_CLS = 3
 const R_CLS_ATIVO = 3.8
+
+// ── SÓLIDO × TRACEJADO: o traço diz se houve medição ────────────────────────
+//
+// REGRA (decisão do usuário): buckets VIZINHOS ambos com dado → traço SÓLIDO (medição contígua).
+// Dois buckets com dado separados por buckets SEM dado → são ligados assim mesmo, mas com traço
+// TRACEJADO. O tracejado NÃO é dado: significa "aqui não houve medição; a linha é continuidade
+// visual". Nenhum marcador é desenhado no vão (o marcador só existe onde há bucket com dado) e
+// nenhum valor intermediário é inventado; o bucket vazio continua ocupando o seu x no eixo.
+//
+// POR QUE (bug): a regra antiga — quebrar a série em todo bucket vazio e parar aí — deixava o
+// SEMANAL e o DIÁRIO MUDOS. Neles quase todo bucket entre duas resoluções está vazio, então cada
+// ponto virava um segmento de 1, e polyline de 1 ponto não desenha nada: pontos soltos, sem linha.
+//
+// ⚠ CONSEQUÊNCIA DE PROJETO: o tracejado deixou de ser a identidade da série de complexidade (era
+// pontilhada de nascença) e passou a ter UM significado só no gráfico inteiro — "sem medição". Um
+// mesmo tracejado com dois sentidos ("é a complexidade" / "não houve medição") seria ilegível. As
+// duas séries continuam distinguíveis pelo que sempre as distinguiu de fato: a autonomia é ink,
+// mais grossa, com marcador CHEIO; a complexidade é `mid`, mais discreta, com marcador VAZADO
+// pintado pelo colormap (regra 3: Big O é sempre ≈ estimado; regra 4: autonomia nunca é colormap).
+const DASH_VAO = '5 4'
+/** O vão é subordinado ao dado: mesma cor e espessura da série, bem mais apagado. */
+const OPACIDADE_VAO = 0.42
+
+const AUT_LARGURA = 2.2
+const CLS_LARGURA = 2
+const CLS_OPACIDADE = 0.85
 
 // ── Vocabulário do tempo ────────────────────────────────────────────────────
 
@@ -205,8 +243,26 @@ export function Linha({
     [janela],
   )
 
-  const segAut = useMemo(() => segmentosDaSerie(janela, 'autonomia'), [janela])
-  const segCls = useMemo(() => segmentosDaSerie(janela, 'classe'), [janela])
+  /*
+   * Trechos SÓLIDOS (buckets vizinhos com dado) + PONTES TRACEJADAS (sobre buckets sem dado).
+   * As duas séries têm bases diferentes, e é isso que o vão de cada uma quer dizer:
+   *   · autonomia   → vão = período SEM RESOLUÇÃO;
+   *   · complexidade → vão = período sem resolução CLASSIFICADA (inclui o mês só de Python:
+   *     ali a autonomia tem ponto e segue sólida — §4.4).
+   * Por isso a legenda diz "sem medição", e não "sem resolução": é o termo verdadeiro nas duas.
+   */
+  const trAut = useMemo(() => trechosDaSerie(janela, 'autonomia'), [janela])
+  const trCls = useMemo(() => trechosDaSerie(janela, 'classe'), [janela])
+  /** Existe algum vão na tela? Só então a legenda explica o tracejado (marca que não está lá não se explica). */
+  const temVao = useMemo(
+    () => [...trAut, ...trCls].some((t) => !t.continuo),
+    [trAut, trCls],
+  )
+  /** Último ponto COM dado da autonomia — a marca "onde você está agora". */
+  const ultimaAut = useMemo(() => {
+    const pontos = pontosDaSerie(janela, 'autonomia')
+    return pontos[pontos.length - 1] ?? null
+  }, [janela])
   const tendencia = useMemo(() => tendenciaDaLinha(janela), [janela])
 
   /*
@@ -283,7 +339,7 @@ export function Linha({
     <div className={cn('flex flex-col gap-2.5', className)}>
       {/* ── cabeçalho do gráfico: legenda (o que é) + granularidade (em que escala) ───── */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <Legenda tema={tema} />
+        <Legenda tema={tema} temVao={temVao && !carregando} />
         <SeletorDeGranularidade value={granularidade} onChange={trocarGranularidade} />
       </div>
 
@@ -417,39 +473,32 @@ export function Linha({
                 />
               )}
 
-              {/* ── série COMPLEXIDADE: linha NEUTRA tracejada, pontos no COLORMAP ────
-                   Um segmento por sequência contígua: o bucket sem classe QUEBRA a linha.
-                   Interpolar por cima do buraco inventaria uma medição que não existe. */}
-              {temSerie &&
-                segCls.map((seg) => (
-                  <polyline
-                    key={`cls-${seg[0].bucket.chave}`}
-                    points={pontosParaPolyline(seg)}
-                    fill="none"
-                    className="stroke-mid"
-                    strokeWidth={2}
-                    strokeDasharray="2 5"
-                    strokeLinecap="round"
-                    opacity={0.9}
-                  />
-                ))}
+              {/* ── série COMPLEXIDADE: traço NEUTRO e discreto, marcadores no COLORMAP ──
+                   Sólido entre buckets vizinhos COM classe; tracejado ao atravessar bucket sem
+                   classe (inclusive o que tem resolução, mas sem métrica — ex.: Python). */}
+              {temSerie && (
+                <TracosDaSerie
+                  trechos={trCls}
+                  prefixo="cls"
+                  cor="stroke-mid"
+                  largura={CLS_LARGURA}
+                  opacidade={CLS_OPACIDADE}
+                />
+              )}
 
-              {/* ── série AUTONOMIA: sólida, NEUTRA (regra 4) ─────────────────────────
-                   Ela ATRAVESSA os buckets que só têm resolução não-Java: autonomia é
-                   autodeclarada e independe da linguagem (§4.4). Só quebra no bucket em que
-                   NADA foi enviado. */}
-              {temSerie &&
-                segAut.map((seg) => (
-                  <polyline
-                    key={`aut-${seg[0].bucket.chave}`}
-                    points={pontosParaPolyline(seg)}
-                    fill="none"
-                    className="stroke-ink"
-                    strokeWidth={2.2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
+              {/* ── série AUTONOMIA: NEUTRA (regra 4) ────────────────────────────────
+                   Ela ATRAVESSA sólida os buckets que só têm resolução não-Java: autonomia é
+                   autodeclarada e independe da linguagem (§4.4). Só vira tracejado no bucket em
+                   que NADA foi enviado — ali, de fato, não houve medição de coisa alguma. */}
+              {temSerie && (
+                <TracosDaSerie
+                  trechos={trAut}
+                  prefixo="aut"
+                  cor="stroke-ink"
+                  largura={AUT_LARGURA}
+                  opacidade={1}
+                />
+              )}
 
               {/* ── marcas ─────────────────────────────────────────────────────────── */}
               {dados.map((d) => {
@@ -487,7 +536,7 @@ export function Linha({
               )}
 
               {/* "onde você está agora": halo no último bucket COM dado da série de autonomia */}
-              <Agora segmentos={segAut} />
+              <Agora ponto={ultimaAut} />
 
               {/* ── alvos de hover/clique: uma coluna por bucket ────────────────────── */}
               {dados.map((d) => {
@@ -622,10 +671,58 @@ function SeletorDeGranularidade({
 }
 
 /**
- * Legenda (spec 02 §5.1). Três itens, porque são três coisas a distinguir:
- * a série neutra (autonomia), a série cromática (complexidade) e — regra 3 — a CONFIANÇA.
+ * Uma série inteira: os trechos SÓLIDOS (medição contígua) e as PONTES TRACEJADAS (vão sem
+ * medição). Mesma cor e mesma espessura nos dois — é a MESMA série; o que muda é o traço, que
+ * carrega a única distinção que importa: houve, ou não houve, medição entre os dois pontos.
+ *
+ * A ponte é desenhada com opacidade reduzida porque ela é subordinada ao dado: ninguém pode
+ * confundir continuidade visual com medição. E ela nunca ganha marcador — o marcador sai de
+ * `dados`, que só conhece bucket COM dado.
  */
-function Legenda({ tema }: { tema: Tema }) {
+function TracosDaSerie({
+  trechos,
+  prefixo,
+  cor,
+  largura,
+  opacidade,
+}: {
+  trechos: TrechoSerie[]
+  prefixo: string
+  /** Classe utilitária de stroke (neutra: `stroke-ink` na autonomia, `stroke-mid` na complexidade). */
+  cor: string
+  largura: number
+  opacidade: number
+}) {
+  return (
+    <>
+      {trechos.map((t) => (
+        <polyline
+          key={`${prefixo}-${t.chave}`}
+          points={pontosParaPolyline(t.pontos)}
+          fill="none"
+          className={cor}
+          strokeWidth={largura}
+          strokeLinejoin="round"
+          // Traço cheio = ponta arredondada. No tracejado a ponta reta preserva o ritmo do dash
+          // (a redonda alonga cada risco e o padrão vira quase uma linha cheia).
+          strokeLinecap={t.continuo ? 'round' : 'butt'}
+          strokeDasharray={t.continuo ? undefined : DASH_VAO}
+          opacity={t.continuo ? opacidade : opacidade * OPACIDADE_VAO}
+        />
+      ))}
+    </>
+  )
+}
+
+/**
+ * Legenda (spec 02 §5.1). A série neutra (autonomia), a série da complexidade, a CONFIANÇA
+ * (regra 3) e — só quando existe um vão na tela — o significado do TRACEJADO.
+ *
+ * ⚠ O texto é "sem medição", não "sem resolução": na série de autonomia o vão é mesmo um período
+ * sem resolução, mas na de complexidade ele também aparece em período COM resolução e sem métrica
+ * (ex.: Python). "Sem resolução" seria falso ali — e o item da legenda é o contrato do traço.
+ */
+function Legenda({ tema, temVao }: { tema: Tema; temVao: boolean }) {
   const corExemplo = corDaClasse(3, tema)
   return (
     <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 py-0.5 font-mono text-[10px] text-mid">
@@ -641,9 +738,9 @@ function Legenda({ tema }: { tema: Tema }) {
             y1={4}
             y2={4}
             className="stroke-mid"
-            strokeWidth={2}
-            strokeDasharray="2 5"
+            strokeWidth={CLS_LARGURA}
             strokeLinecap="round"
+            opacity={CLS_OPACIDADE}
           />
         </svg>
         complexidade típica
@@ -656,19 +753,34 @@ function Legenda({ tema }: { tema: Tema }) {
         </svg>
         ≈ estimado (análise estática)
       </span>
+      {temVao && (
+        <span className="flex items-center gap-1.5 text-soft">
+          <svg width={16} height={8} aria-hidden="true" className="overflow-visible">
+            <line
+              x1={0}
+              x2={16}
+              y1={4}
+              y2={4}
+              className="stroke-mid"
+              strokeWidth={CLS_LARGURA}
+              strokeDasharray={DASH_VAO}
+              strokeLinecap="butt"
+            />
+          </svg>
+          tracejado = período sem medição (a linha só liga; não é dado)
+        </span>
+      )}
     </div>
   )
 }
 
 /** Halo no último bucket com dado da autonomia — "onde você está agora" (protótipo, §5.3). */
-function Agora({ segmentos }: { segmentos: PontoSerie[][] }) {
-  const ultimoSeg = segmentos[segmentos.length - 1]
-  const ultimo = ultimoSeg?.[ultimoSeg.length - 1]
-  if (!ultimo) return null
+function Agora({ ponto }: { ponto: PontoSerie | null }) {
+  if (!ponto) return null
   return (
     <circle
-      cx={ultimo.x}
-      cy={ultimo.y}
+      cx={ponto.x}
+      cy={ponto.y}
       r={6}
       fill="none"
       className="stroke-ink"

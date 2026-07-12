@@ -1,5 +1,5 @@
 /*
- * SELETOR DE GRÁFICO — as 4 visualizações do mesmo dataset (spec 02 §1).
+ * SELETOR DE GRÁFICO — as 3 visualizações do mesmo dataset (spec 02 §1).
  *
  * Não é um segmented control com trilho: é uma fileira de pílulas independentes
  * (ativa = sólida `ink`; inativas = contornadas). Escala do dashboard, não a do guia:
@@ -9,38 +9,34 @@
  * Semântica: `tablist` / `tab` com roving tabindex (setas, Home/End) — um seletor que só
  * responde ao mouse exclui quem navega por teclado.
  *
- * O estado vive na URL (`?view=carta|orbitas|linha|matriz`) via `useGraficoNaUrl`: a
- * visualização é compartilhável e sobrevive a um reload ou a um "voltar" do navegador.
+ * O estado vive na URL (`?view=carta|linha|matriz`) via `useGraficoNaUrl`: a visualização é
+ * compartilhável e sobrevive a um reload ou a um "voltar" do navegador.
  *
- * ⚠ O ESPECTRO SAIU (decisão do usuário, rodada de correção). Ele era a única das 5 vistas que
- * não plotava resoluções — plotava CLASSES —, não tinha o que selecionar, e o dashboard já
- * mostra a mesma distribuição no card "Distribuição · Espectro", ao lado do painel. Duas vezes
- * o mesmo histograma na mesma tela é ruído, não redundância útil. O histograma em si NÃO
- * morreu: `linhasEspectro()` (escalas.ts) continua sendo a fonte daquele card.
+ * ── DUAS VISTAS MORRERAM (decisões do usuário, rodadas de correção) ─────────────────────
+ * · ESPECTRO: era a única das 5 que não plotava resoluções — plotava CLASSES —, não tinha o que
+ *   selecionar, e o dashboard já mostra a MESMA distribuição no card "Distribuição · Espectro".
+ *   O histograma não morreu: `linhasEspectro()` (escalas.ts) continua sendo a fonte daquele card.
+ * · ESPIRAL (ex-Órbitas): era REDUNDANTE com a Linha temporal — respondia à mesma pergunta
+ *   (autonomia × tempo, complexidade × tempo) usando canais perceptuais mais fracos (TAMANHO no
+ *   lugar de POSIÇÃO, ângulo no lugar de eixo). Menos gráficos, cada um dizendo uma coisa.
+ *
+ * `?view=orbitas`, `?view=espiral` e `?view=espectro` (links salvos) caem na Carta — e o param
+ * inválido é apagado da URL pelo efeito em `useGraficoNaUrl`.
  */
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
-export type TipoGrafico = 'carta' | 'orbitas' | 'linha' | 'matriz'
+export type TipoGrafico = 'carta' | 'linha' | 'matriz'
 
 export interface ItemGrafico {
   chave: TipoGrafico
   rotulo: string
 }
 
-/**
- * Ordem canônica (spec 02 §1). Padrão: **Carta**.
- *
- * ⚠ A CHAVE `orbitas` fica — é o valor que já circula em `?view=` e em links salvos. O que muda
- * é só o RÓTULO: o gráfico foi redesenhado (raio = tempo, tamanho = autonomia, cor = classe) e
- * "Órbitas" descrevia a geometria antiga — anéis concêntricos de autonomia. Hoje ele é uma
- * espiral do tempo, e o próprio gráfico se apresenta assim no seu cabeçalho interno. Rótulo e
- * desenho voltam a dizer a mesma coisa; nome de arquivo/export não são texto de interface.
- */
+/** Ordem canônica (spec 02 §1). Padrão: **Carta**. */
 export const GRAFICOS: readonly ItemGrafico[] = [
   { chave: 'carta', rotulo: 'Carta' },
-  { chave: 'orbitas', rotulo: 'Espiral' },
   { chave: 'linha', rotulo: 'Linha' },
   { chave: 'matriz', rotulo: 'Matriz' },
 ]

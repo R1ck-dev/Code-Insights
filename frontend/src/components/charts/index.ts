@@ -53,12 +53,13 @@ export {
   type TipoGrafico,
 } from './SeletorDeGrafico'
 
-// As 4 visualizações.
-// ⚠ O `Espectro` foi REMOVIDO (o componente e o arquivo): ele plotava classes, não resoluções, e
-// duplicava o card "Distribuição · Espectro" do dashboard. `linhasEspectro()` (abaixo) continua
-// sendo a fonte daquele card — o histograma não morreu, a duplicata no seletor é que morreu.
+// As 3 visualizações. Duas foram REMOVIDAS (componente e arquivo):
+// ⚠ `Espectro` — plotava classes, não resoluções, e duplicava o card "Distribuição · Espectro" do
+//   dashboard. `linhasEspectro()` (abaixo) continua sendo a fonte daquele card: o histograma não
+//   morreu, a duplicata no seletor é que morreu.
+// ⚠ `Orbitas`/Espiral — redundante com a `Linha`: mesma pergunta (autonomia × tempo, complexidade
+//   × tempo) respondida por canais perceptuais mais fracos (tamanho e ângulo, não posição).
 export { Carta, type CartaProps } from './Carta'
-export { Orbitas, type PropsOrbitas } from './Orbitas'
 export { LINHA_JANELA_MESES, Linha, type PropsLinha } from './Linha'
 export { Matriz, type MatrizProps } from './Matriz'
 
