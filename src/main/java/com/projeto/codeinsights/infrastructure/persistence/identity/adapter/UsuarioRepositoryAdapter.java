@@ -69,8 +69,12 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
     public Pagina<Usuario> listarPublicos(UUID excluidoId, String filtroUsername, int pagina, int tamanho) {
         PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.by(Sort.Direction.ASC, "username"));
         String filtro = filtroUsername == null ? "" : filtroUsername.trim();
-        Page<UsuarioJpaEntity> page = springDataUsuarioRepository
-                .findByVisibilidadePerfilAndStatusAndIdNotAndUsernameContainingIgnoreCase(
+        // Visitante anonimo nao tem "proprio" a excluir: usar a consulta com IdNot e id nulo
+        // geraria "id <> null" (UNKNOWN em SQL) e devolveria a lista vazia.
+        Page<UsuarioJpaEntity> page = excluidoId == null
+                ? springDataUsuarioRepository.findByVisibilidadePerfilAndStatusAndUsernameContainingIgnoreCase(
+                        Visibilidade.PUBLICO, StatusConta.ATIVO, filtro, pageRequest)
+                : springDataUsuarioRepository.findByVisibilidadePerfilAndStatusAndIdNotAndUsernameContainingIgnoreCase(
                         Visibilidade.PUBLICO, StatusConta.ATIVO, excluidoId, filtro, pageRequest);
         List<Usuario> itens = page.getContent().stream().map(usuarioMapper::toDomain).toList();
         return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());

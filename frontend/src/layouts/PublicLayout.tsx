@@ -4,20 +4,27 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { buttonClasses } from '@/components/ui/button'
 import { useAuth } from '@/auth/useAuth'
 
-/** Chrome público (landing, portfólio): top nav com logo + acesso. */
+/*
+ * Chrome público (landing, portfólio, desafio/resolução pública, Explorar pública) — spec 03 §B.1.
+ *
+ * Nav 64px sticky sobre `bg`, hairline `line-soft` embaixo. Botões em IBM Plex Mono 13px
+ * (a nav pública é instrumento, não prosa). SEM starfield/nebulosa aqui: a atmosfera é
+ * responsabilidade da tela (o hero da landing acende a sua) — este layout é moldura de conteúdo.
+ */
 export function PublicLayout() {
   const { status } = useAuth()
-  const authed = status === 'authenticated'
+  const autenticado = status === 'authenticated'
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border-subtle bg-bg/85 px-5 backdrop-blur sm:px-8">
-        <Link to="/" aria-label="Início">
-          <Logo />
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line-soft bg-bg/85 px-5 backdrop-blur sm:px-8">
+        <Link to="/" aria-label="Início" className="ci-foco-botao rounded-ci">
+          <Logo size={26} />
         </Link>
-        <div className="flex items-center gap-2.5">
-          <ThemeToggle />
-          {authed ? (
+
+        <div className="flex items-center gap-[9px]">
+          <ThemeToggle size={38} />
+          {autenticado ? (
             <Link to="/app" className={buttonClasses({ size: 'sm' })}>
               Ir para o app
             </Link>
@@ -33,7 +40,8 @@ export function PublicLayout() {
           )}
         </div>
       </header>
-      <main className="flex-1">
+
+      <main className="min-w-0 flex-1">
         <Outlet />
       </main>
     </div>
