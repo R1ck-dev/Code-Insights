@@ -141,6 +141,16 @@ public class ResolucaoRepositoryAdapter implements ResolucaoRepository {
     }
 
     @Override
+    public List<UUID> listarTodosIds() {
+        return springDataResolucaoRepository.listarTodosIds();
+    }
+
+    @Override
+    public List<UUID> listarIdsPorAutor(UUID autorId) {
+        return springDataResolucaoRepository.listarIdsPorAutor(autorId);
+    }
+
+    @Override
     public void remover(UUID id) {
         springDataResolucaoRepository.deleteById(id);
     }

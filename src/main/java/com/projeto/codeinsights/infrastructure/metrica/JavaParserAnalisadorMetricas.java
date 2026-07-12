@@ -36,8 +36,13 @@ public class JavaParserAnalisadorMetricas implements AnalisadorMetricas {
     private final List<AnalisadorMetricaJava> analisadores;
 
     @Override
+    public boolean suporta(LinguagemProgramacao linguagem) {
+        return linguagem == LinguagemProgramacao.JAVA;
+    }
+
+    @Override
     public List<ResultadoMetrica> analisar(Resolucao resolucao) {
-        if (resolucao.getLinguagem() != LinguagemProgramacao.JAVA) {
+        if (!suporta(resolucao.getLinguagem())) {
             log.info("Linguagem {} ainda nao suportada para analise de metricas (resolucao {}).",
                     resolucao.getLinguagem(), resolucao.getId());
             return List.of();

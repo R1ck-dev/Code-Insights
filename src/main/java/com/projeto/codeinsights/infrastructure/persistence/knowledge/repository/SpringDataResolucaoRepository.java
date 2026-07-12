@@ -87,4 +87,13 @@ public interface SpringDataResolucaoRepository extends JpaRepository<ResolucaoJp
             @Param("tipoTempo") TipoMetrica tipoTempo,
             @Param("tipoEspaco") TipoMetrica tipoEspaco,
             @Param("tipoCiclomatica") TipoMetrica tipoCiclomatica);
+
+    // Reanalise do corpus: apenas os ids. Trazer o codigo-fonte de todas as resolucoes de uma vez
+    // nao escala; cada uma e recarregada e reprocessada na sua propria transacao. Ordem por data de
+    // submissao para a passada ser reproduzivel.
+    @Query("select r.id from ResolucaoJpaEntity r order by r.submetidaEm asc")
+    List<UUID> listarTodosIds();
+
+    @Query("select r.id from ResolucaoJpaEntity r where r.autor.id = :autorId order by r.submetidaEm asc")
+    List<UUID> listarIdsPorAutor(@Param("autorId") UUID autorId);
 }

@@ -40,5 +40,16 @@ public interface ResolucaoRepository {
     /** Todas as resolucoes do autor como pontos da carta celeste, com as tres metricas (nulas se nao analisada). */
     List<PontoCarta> listarPontosCartaPorAutor(UUID autorId);
 
+    /**
+     * Ids de TODAS as resolucoes, da mais antiga para a mais recente. Serve a reanalise do
+     * corpus: so os ids, porque carregar o codigo-fonte de todas as resolucoes de uma vez nao
+     * escala conforme a base cresce — cada uma e recarregada e reprocessada em sua propria
+     * transacao. A ordem estavel (data de submissao) torna a passada reproduzivel.
+     */
+    List<UUID> listarTodosIds();
+
+    /** Ids das resolucoes de um autor, da mais antiga para a mais recente (reanalise de um autor so). */
+    List<UUID> listarIdsPorAutor(UUID autorId);
+
     void remover(UUID id);
 }

@@ -28,6 +28,11 @@ app:
     base-url: ${APP_WEB_BASE_URL:http://localhost:5173}
   mail:
     from: ${APP_MAIL_FROM:no-reply@codeinsights.app}
+  # Reprocessa as metricas de TODAS as resolucoes com o motor atual durante o boot. Desligado por
+  # padrao: e uma reescrita em massa de dado de pesquisa e deve ser deliberada. O caminho normal e
+  # o endpoint administrativo POST /api/admin/metricas/reanalisar; esta flag existe para o caso de
+  # nao haver conta admin semeada (ADMIN_PASSWORD ausente).
+  reanalisar-na-inicializacao: ${REANALISAR_NA_INICIALIZACAO:false}
 
 admin:
   default:
