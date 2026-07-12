@@ -19,8 +19,16 @@
  *       selecionadoId={selecionadoId}
  *       onSelecionar={setSelecionadoId}
  *     />
- *     <PainelEstrelaSelecionada ponto={pontoPorId(dataset, selecionadoId)} />
+ *     <PainelEstrelaSelecionada
+ *       ponto={pontoPorId(dataset, selecionadoId)}
+ *       pontos={dataset.pontos}          // ← habilita o navegador "‹ 2 de 3 ›" do cluster
+ *       onSelecionar={setSelecionadoId}  // ← trocar de irmã = trocar a seleção da página
+ *     />
  *   </div>
+ *
+ * ⚠ `pontos` + `onSelecionar` no painel lateral NÃO são decoração: a Carta colapsa as resoluções
+ * que caem na mesma célula (mesma autonomia × mesma classe) num único marcador e o clique abre a
+ * MAIS ANTIGA. Sem esses dois props, as irmãs ficam sem porta de entrada.
  *
  * ⚠ `./escalas` NÃO é reexportado aqui: ele exporta a interface `Matriz` (a grade de dados),
  * que colidiria com o componente `Matriz`. Quem precisa de geometria importa
@@ -45,10 +53,12 @@ export {
   type TipoGrafico,
 } from './SeletorDeGrafico'
 
-// As 5 visualizações
+// As 4 visualizações.
+// ⚠ O `Espectro` foi REMOVIDO (o componente e o arquivo): ele plotava classes, não resoluções, e
+// duplicava o card "Distribuição · Espectro" do dashboard. `linhasEspectro()` (abaixo) continua
+// sendo a fonte daquele card — o histograma não morreu, a duplicata no seletor é que morreu.
 export { Carta, type CartaProps } from './Carta'
 export { Orbitas, type PropsOrbitas } from './Orbitas'
-export { Espectro, type EspectroProps } from './Espectro'
 export { LINHA_JANELA_MESES, Linha, type PropsLinha } from './Linha'
 export { Matriz, type MatrizProps } from './Matriz'
 

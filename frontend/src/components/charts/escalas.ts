@@ -16,9 +16,13 @@ import {
 import {
   AUTONOMIA_MAX,
   AUTONOMIA_MIN,
+  type ClusterCarta,
+  type Constelacao,
+  type Granularidade,
   type NivelAutonomia,
   type PontoBase,
   type PontoPlotavel,
+  porTempoAsc,
   TOTAL_AUTONOMIA,
 } from './tipos'
 
@@ -77,55 +81,6 @@ export const MESES_CURTOS = [
   'jul', 'ago', 'set', 'out', 'nov', 'dez',
 ] as const
 
-// ── Dedup / jitter de pontos coincidentes ───────────────────────────────────
-// Carta e Matriz têm domínio DISCRETO (5 autonomias × 8 classes = 40 posições). Duas
-// resoluções na mesma célula caem no MESMO pixel e uma esconde a outra — o que apagaria
-// dado. Solução: espalhar o grupo num anel minúsculo em torno da posição real.
-//
-// DECISÃO (minha; o protótipo não tem pontos coincidentes): anel de raio 5px (o núcleo
-// da estrela tem r=2.6 → dois núcleos a 5px de distância angular não se tocam), primeiro
-// ponto no topo (-90°) e o resto em sentido horário. Grupos com mais de 8 pontos abrem
-// anéis concêntricos (raio × 2, × 3…), 8 por anel.
-
-export const JITTER_RAIO = 5
-export const JITTER_POR_ANEL = 8
-
-export interface Deslocamento {
-  dx: number
-  dy: number
-}
-
-/**
- * Deslocamentos PARALELOS ao array de entrada (índice a índice). `chaves[i]` identifica a
- * posição lógica do ponto `i` (ex.: `` `${p.autonomia}:${p.k}` ``). Pontos sozinhos na sua
- * célula recebem `{dx:0, dy:0}` — a posição exata é preservada quando não há colisão.
- *
- *   const desl = deslocamentosCoincidentes(pontos.map((p) => `${p.autonomia}:${p.k}`))
- *   const cx = xDaAutonomia(p.autonomia) + desl[i].dx
- */
-export function deslocamentosCoincidentes(chaves: string[], raio = JITTER_RAIO): Deslocamento[] {
-  const grupos = new Map<string, number[]>()
-  chaves.forEach((chave, i) => {
-    const g = grupos.get(chave)
-    if (g) g.push(i)
-    else grupos.set(chave, [i])
-  })
-
-  const saida: Deslocamento[] = chaves.map(() => ({ dx: 0, dy: 0 }))
-  for (const indices of grupos.values()) {
-    if (indices.length < 2) continue
-    indices.forEach((idx, j) => {
-      const anel = Math.floor(j / JITTER_POR_ANEL) + 1
-      const naVolta = Math.min(indices.length - (anel - 1) * JITTER_POR_ANEL, JITTER_POR_ANEL)
-      const posicao = j % JITTER_POR_ANEL
-      const theta = grausParaRad(-90 + posicao * (360 / naVolta))
-      const r = raio * anel
-      saida[idx] = { dx: arred(r * Math.cos(theta)), dy: arred(r * Math.sin(theta)) }
-    })
-  }
-  return saida
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // 1 · CARTA (scatter) — autonomia × complexidade
 // ════════════════════════════════════════════════════════════════════════════
@@ -162,9 +117,166 @@ export function yDaClasse(k: number): number {
   return CARTA_PLOT.y1 - classe * CARTA_PASSO_Y
 }
 
-/** Posição exata (sem jitter) de um ponto na Carta. */
+/** Posição exata de um ponto na Carta. É TAMBÉM a posição do cluster dele — não há jitter. */
 export function posicaoNaCarta(p: PontoPlotavel): Ponto2D {
   return { x: xDaAutonomia(p.autonomia), y: yDaClasse(p.k) }
+}
+
+// ── CLUSTERS (substituem o jitter) ──────────────────────────────────────────
+// PROBLEMA (visto no app): a Carta é discreta (5 × 8 = 40 células). Várias resoluções na mesma
+// célula eram espalhadas num anel de 5px pelo antigo `deslocamentosCoincidentes` — marcadores
+// grudados, alvo de clique impossível e DOIS callouts abrindo ao mesmo tempo.
+//
+// DECISÃO: o jitter morreu. Cada célula ocupada vira UM marcador na posição EXATA, que cresce
+// com a quantidade e escreve o número no núcleo quando `total >= 2`. O clique abre a resolução
+// mais ANTIGA do grupo, e o painel navega entre as irmãs ("‹ 2 de 3 ›").
+
+/** A identidade da célula: autonomia × classe. */
+export function chaveDoCluster(p: { autonomia: number; k: number }): string {
+  return `${p.autonomia}:${p.k}`
+}
+
+export const CLUSTER_NUCLEO_BASE = 2.6
+export const CLUSTER_HALO_BASE = 7
+/** Acima disto o marcador PARA de crescer (a curva satura). */
+export const CLUSTER_SATURACAO = 8
+/** Ganho máximo de raio do núcleo: 2.6 (n=1) → 5.0 (n ≥ 8). */
+export const CLUSTER_NUCLEO_GANHO = 2.4
+/** A partir de 2 resoluções o número aparece no núcleo. */
+export const CLUSTER_ROTULO_MIN = 2
+
+/**
+ * Raio do marcador de um cluster. `total = 1` devolve EXATAMENTE a estrela de hoje
+ * (halo 7 · núcleo 2.6) — clusters não podem mudar a aparência de quem está sozinho.
+ *
+ * DECISÃO (curva): **logarítmica saturada** —
+ *   núcleo(total) = 2.6 + 2.4 · ln(total) / ln(8), limitado a [2.6, 5.0]
+ *
+ * Por que log e não linear: a informação está no PRIMEIRO salto. "1 → 2" significa que o aluno
+ * VOLTOU ao mesmo ponto (mesma autonomia, mesma classe) — o dado interessante — e ganha +0,8px,
+ * bem visível. "7 → 8" é ruído e ganha ~0,15px. Linear (`+0.7` por unidade) faria um cluster de
+ * 8 virar um balão de 7,5px que invadiria a célula vizinha; a raiz quadrada cresceria demais no
+ * meio da escala. O halo acompanha na mesma razão do original (7 / 2.6 ≈ 2,69), então a silhueta
+ * da estrela é a mesma em qualquer tamanho. Acima de 8 o marcador congela: quem quer o número
+ * exato lê o rótulo do núcleo, que não mente nem satura.
+ */
+export function raioDoCluster(total: number): { halo: number; nucleo: number } {
+  const n = Math.max(1, Math.floor(total))
+  const fator = limitar(Math.log(n) / Math.log(CLUSTER_SATURACAO), 0, 1)
+  const nucleo = CLUSTER_NUCLEO_BASE + CLUSTER_NUCLEO_GANHO * fator
+  return {
+    halo: arred(nucleo * (CLUSTER_HALO_BASE / CLUSTER_NUCLEO_BASE)),
+    nucleo: arred(nucleo),
+  }
+}
+
+/**
+ * Os pontos plotáveis agrupados por CÉLULA. A ordem dos clusters segue a do primeiro ponto de
+ * cada grupo (= cronológica, porque `montarDataset` entrega `pontos` ordenado); dentro do
+ * cluster, `pontos` está em ordem cronológica ASC — `pontos[0]` é a mais antiga.
+ */
+export function agruparEmClusters(pontos: PontoPlotavel[]): ClusterCarta[] {
+  const grupos = new Map<string, PontoPlotavel[]>()
+  for (const p of pontos) {
+    const chave = chaveDoCluster(p)
+    const g = grupos.get(chave)
+    if (g) g.push(p)
+    else grupos.set(chave, [p])
+  }
+
+  const clusters: ClusterCarta[] = []
+  for (const [chave, doGrupo] of grupos) {
+    const ordenados = [...doGrupo].sort(porTempoAsc)
+    const primeiro = ordenados[0]
+    clusters.push({
+      chave,
+      autonomia: primeiro.autonomia,
+      k: primeiro.k,
+      x: xDaAutonomia(primeiro.autonomia),
+      y: yDaClasse(primeiro.k),
+      pontos: ordenados,
+      total: ordenados.length,
+    })
+  }
+  return clusters
+}
+
+/** O cluster que contém uma resolução — para destacar o marcador selecionado. */
+export function clusterDoPonto(
+  clusters: ClusterCarta[],
+  resolucaoId: string | null | undefined,
+): ClusterCarta | null {
+  if (!resolucaoId) return null
+  return clusters.find((c) => c.pontos.some((p) => p.resolucaoId === resolucaoId)) ?? null
+}
+
+/**
+ * As resoluções que dividem a célula com `resolucaoId` — INCLUSIVE ela —, em ordem cronológica.
+ * O painel lateral usa isto nas setas "‹ 2 de 3 ›". Resolução sozinha devolve `[ela]` (array de
+ * 1 → o painel esconde as setas). Id inexistente devolve `[]`.
+ */
+export function irmaosDoCluster(pontos: PontoPlotavel[], resolucaoId: string): PontoPlotavel[] {
+  const alvo = pontos.find((p) => p.resolucaoId === resolucaoId)
+  if (!alvo) return []
+  const chave = chaveDoCluster(alvo)
+  return pontos.filter((p) => chaveDoCluster(p) === chave).sort(porTempoAsc)
+}
+
+/** Posição (base 0) da resolução dentro do seu cluster; `-1` se ela não está na lista. */
+export function indiceNoCluster(pontos: PontoPlotavel[], resolucaoId: string): number {
+  return irmaosDoCluster(pontos, resolucaoId).findIndex((p) => p.resolucaoId === resolucaoId)
+}
+
+// ── CONSTELAÇÕES sobre clusters ─────────────────────────────────────────────
+
+export interface TracoConstelacao {
+  desafioId: string
+  desafioTitulo: string
+  /** Posições em sequência cronológica, SEM segmentos degenerados. `length >= 2`. */
+  posicoes: Ponto2D[]
+  /** Pronto para `<polyline points={...}>`. */
+  polyline: string
+}
+
+/**
+ * As posições de uma constelação, com os segmentos DEGENERADOS removidos.
+ *
+ * Por que: a constelação liga as resoluções do mesmo desafio em ordem cronológica. Com clusters,
+ * duas resoluções seguidas do mesmo desafio podem cair na MESMA célula (mesma autonomia, mesma
+ * classe — o aluno tentou de novo e chegou ao mesmo lugar) e o segmento teria comprimento zero:
+ * uma `polyline` com pontos repetidos gera artefato de `stroke-linejoin` e um "nó" que parece
+ * sujeira. Colapsamos só as repetições CONSECUTIVAS — A→B→A continua sendo um V legítimo, e não
+ * pode ser achatado.
+ */
+export function posicoesDaConstelacao(constelacao: Constelacao): Ponto2D[] {
+  const posicoes: Ponto2D[] = []
+  for (const p of constelacao.pontos) {
+    const atual = posicaoNaCarta(p)
+    const anterior = posicoes[posicoes.length - 1]
+    if (anterior && anterior.x === atual.x && anterior.y === atual.y) continue
+    posicoes.push(atual)
+  }
+  return posicoes
+}
+
+/**
+ * Os traços desenháveis. Uma constelação cujas resoluções caem TODAS na mesma célula sobra com 1
+ * posição e não vira traço — mas continua existindo no `dataset` (o cluster já a declara pelo
+ * número no núcleo). Descartar o traço não descarta o dado.
+ */
+export function tracosDasConstelacoes(constelacoes: Constelacao[]): TracoConstelacao[] {
+  const tracos: TracoConstelacao[] = []
+  for (const c of constelacoes) {
+    const posicoes = posicoesDaConstelacao(c)
+    if (posicoes.length < 2) continue
+    tracos.push({
+      desafioId: c.desafioId,
+      desafioTitulo: c.desafioTitulo,
+      posicoes,
+      polyline: pontosParaPolyline(posicoes),
+    })
+  }
+  return tracos
 }
 
 // ── Eixo Y = a própria barra de colormap (spec 02 §2.4) ─────────────────────
@@ -242,84 +354,201 @@ export function posicaoCallout(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 2 · ÓRBITAS (polar) — raio = autonomia · ÂNGULO = TEMPO
+// 2 · ESPIRAL DO TEMPO (ex-Órbitas) — RAIO = tempo · TAMANHO = autonomia · COR = classe
 // ════════════════════════════════════════════════════════════════════════════
+//
+// REDESENHO. As Órbitas antigas (raio = autonomia, ângulo = tempo, §6-A Lacuna 3) eram
+// ilegíveis no app: o ângulo não tem zero natural, um portfólio pequeno virava um triângulo
+// solto e nada dizia "o tempo passa nesta direção". MORRERAM `anguloPorTempo`, `aneisOrbita` e
+// `raioPorAutonomia` (que era DISTÂNCIA AO CENTRO — não confundir com o novo raio do MARCADOR).
+//
+// A leitura nova é a de um disco de árvore / vinil, de dentro para fora:
+//   · RAIO    = TEMPO. Centro = resolução mais ANTIGA · borda = mais RECENTE.
+//   · ÂNGULO  = a espiral de Arquimedes: uma trilha ÚNICA e contínua, na ordem cronológica.
+//   · TAMANHO = AUTONOMIA (1..5). ⚠ Regra 4: autonomia é NEUTRA — vira tamanho, JAMAIS cor.
+//   · COR     = classe de complexidade (colormap), como em todo o sistema.
+//
+// A pergunta da pesquisa fica respondida de bate-pronto: "conforme o tempo passa (para fora),
+// meus pontos ficam MAIORES (mais autônomo) e mais VERDES (menos custosos)?"
 
-/** `viewBox="0 0 300 300"`, centro (150,150) — protótipo, spec 02 §3. */
-export const ORBITA_VIEWBOX = { largura: 300, altura: 300 } as const
-export const ORBITA_CENTRO: Ponto2D = { x: 150, y: 150 }
-
-/** r(a) = 26·a → 26, 52, 78, 104, 130. Conferido nos 11 pontos do protótipo (spec 02 §3.1). */
-export const ORBITA_PASSO_RAIO = 26
-export const ORBITA_RAIO_MAX = ORBITA_PASSO_RAIO * AUTONOMIA_MAX // 130
+/** Quadrado, como a órbita antiga — o painel não mudou de forma. */
+export const ESPIRAL_VIEWBOX = { largura: 300, altura: 300 } as const
+export const ESPIRAL_CENTRO: Ponto2D = { x: 150, y: 150 }
 
 /**
- * Raio pelo nível de autonomia. Centro = dependência total (autonomia 1 mais perto do centro,
- * 5 no anel externo). Com o `rMax` padrão (130) devolve exatamente `26·a` do protótipo.
+ * O raio mínimo é um BURACO deliberado no meio: a espiral de Arquimedes com r₀ = 0 amontoa as
+ * primeiras resoluções num nó ilegível e não sobra lugar para o marcador de "início".
  */
-export function raioPorAutonomia(a: number, rMax: number = ORBITA_RAIO_MAX): number {
-  const nivel = limitar(Math.round(a), AUTONOMIA_MIN, AUTONOMIA_MAX)
-  return (nivel / TOTAL_AUTONOMIA) * rMax
+export const ESPIRAL_R_MIN = 26
+/** 128 + halo (~14) = 142 < 150: o marcador mais externo não vaza do viewBox. */
+export const ESPIRAL_R_MAX = 128
+
+/** 12h = o começo do tempo (mesma âncora da órbita antiga). */
+const ESPIRAL_THETA_0 = grausParaRad(-90)
+
+/** ~1,75 volta: dá a leitura de espiral sem virar rolo de fita. */
+export const ESPIRAL_VOLTAS_BASE = 1.75
+/**
+ * Teto de voltas. Não é gosto: com `v` voltas, duas VOLTAS VIZINHAS ficam a
+ * `(R_MAX − R_MIN) / v` px uma da outra — em 7 voltas isso dá 14,6px, ainda acima do
+ * `ESPIRAL_ESPACO_MIN`. Passar disso faria a espiral colidir consigo mesma, que é pior do que
+ * dois pontos consecutivos próximos (aí some a leitura radial inteira).
+ */
+export const ESPIRAL_VOLTAS_MAX = 7
+/** Distância mínima entre marcadores CONSECUTIVOS (2 núcleos de 5,6 + folga). */
+export const ESPIRAL_ESPACO_MIN = 13
+/** Quantos anéis-guia de tempo desenhar por padrão. */
+export const ESPIRAL_ANEIS = 4
+
+/**
+ * Quantas voltas a espiral dá, ao todo.
+ *
+ * DECISÃO: **1,75 volta fixa** (independe de `n`, como pedido) — MAS com um piso de segurança.
+ * Com voltas fixas e `n` grande, dois pontos consecutivos ficam colados: a distância entre eles
+ * é `√(Δr² + (r·Δθ)²)`, e ambos os termos encolhem com 1/n. O ponto mais apertado é sempre o
+ * ANEL MAIS INTERNO (`r = R_MIN`), onde o arco é mais curto. Então: se em `R_MIN` os vizinhos
+ * ficariam a menos de `ESPIRAL_ESPACO_MIN`, a espiral GANHA VOLTAS até separá-los (é preferível
+ * mais voltas a pontos colados). Teto em `ESPIRAL_VOLTAS_MAX` (7) — daí em diante a densidade é
+ * do dado, não da geometria, e o número no callout resolve.
+ */
+export function voltasDaEspiral(n: number): number {
+  if (n <= 2) return ESPIRAL_VOLTAS_BASE
+  const dr = (ESPIRAL_R_MAX - ESPIRAL_R_MIN) / (n - 1)
+  const faltaAngular = ESPIRAL_ESPACO_MIN ** 2 - dr ** 2
+  if (faltaAngular <= 0) return ESPIRAL_VOLTAS_BASE // o passo radial já separa os vizinhos
+  const dThetaMin = Math.sqrt(faltaAngular) / ESPIRAL_R_MIN
+  const voltasMin = (dThetaMin * (n - 1)) / (2 * Math.PI)
+  return limitar(Math.max(ESPIRAL_VOLTAS_BASE, voltasMin), ESPIRAL_VOLTAS_BASE, ESPIRAL_VOLTAS_MAX)
+}
+
+/** Passo angular entre dois pontos consecutivos (radianos). */
+export function passoAngularDaEspiral(n: number): number {
+  if (n <= 1) return 0
+  return (voltasDaEspiral(n) * 2 * Math.PI) / (n - 1)
 }
 
 /**
- * ÂNGULO = TEMPO (§6-A, Lacuna 3 — decisão da entrevista, MANDA sobre a spec 02, que
- * distribuía a olho): as Órbitas são o RELÓGIO do portfólio.
- *
- *   θᵢ = -90° + i · (360° / n)
- *
- * `i` = índice do ponto na ordem cronológica ASCENDENTE (= o índice no array `dataset.pontos`,
- * que `montarDataset` já entrega ordenado). 12h = a resolução mais ANTIGA; gira em sentido
- * horário (y cresce para baixo no SVG, então ângulo crescente = horário). Índices distintos →
- * ângulos distintos → nenhum ponto se sobrepõe.
- *
- * Retorna RADIANOS (pronto para `Math.cos`/`Math.sin`).
+ * DISTÂNCIA AO CENTRO do i-ésimo ponto — o EIXO DO TEMPO.
+ * `i` é o índice na ordem cronológica ASC (o índice em `dataset.pontos`, já ordenado).
+ * Linear no ÍNDICE, não na data: espaça as resoluções por ordem, não por calendário — senão um
+ * hiato de férias empurraria metade do portfólio para a borda. Os anéis-guia carregam as datas.
  */
-export function anguloPorTempo(i: number, n: number): number {
-  if (n <= 1) return grausParaRad(-90) // ponto único: no topo
-  return grausParaRad(-90 + i * (360 / n))
-}
-
-/** O mesmo ângulo em graus — para `rotate()` de rótulos ou depuração. */
-export function anguloPorTempoGraus(i: number, n: number): number {
-  return n <= 1 ? -90 : -90 + i * (360 / n)
+export function raioDoTempo(i: number, n: number): number {
+  if (n <= 1) return 0
+  const t = limitar(i / (n - 1), 0, 1)
+  return ESPIRAL_R_MIN + (ESPIRAL_R_MAX - ESPIRAL_R_MIN) * t
 }
 
 /**
- * Posição cartesiana de um ponto na órbita.
- * cx = 150 + r·cos(θ) · cy = 150 + r·sin(θ) (convenção SVG: y cresce para baixo).
+ * Posição do i-ésimo ponto na espiral: θᵢ = θ₀ + i·Δθ · rᵢ = R_MIN + (R_MAX−R_MIN)·i/(n−1).
+ * `n === 1` → o CENTRO (uma resolução só não tem trajetória; ela é o começo e o fim).
  */
-export function posicaoOrbital(i: number, n: number, autonomia: number): Ponto2D {
-  const r = raioPorAutonomia(autonomia)
-  const theta = anguloPorTempo(i, n)
+export function posicaoEspiral(i: number, n: number): Ponto2D {
+  if (n <= 1) return { ...ESPIRAL_CENTRO }
+  const r = raioDoTempo(i, n)
+  const theta = ESPIRAL_THETA_0 + i * passoAngularDaEspiral(n)
   return {
-    x: arred(ORBITA_CENTRO.x + r * Math.cos(theta)),
-    y: arred(ORBITA_CENTRO.y + r * Math.sin(theta)),
+    x: arred(ESPIRAL_CENTRO.x + r * Math.cos(theta)),
+    y: arred(ESPIRAL_CENTRO.y + r * Math.sin(theta)),
   }
 }
 
-export interface AnelOrbita {
-  a: NivelAutonomia
+/** Vértices mínimos da trilha — abaixo disto a espiral vira polígono. */
+const ESPIRAL_AMOSTRAS_MIN = 120
+
+/**
+ * A TRILHA do tempo, por baixo dos pontos: `d` de um `<path>` (`M … L … L …`).
+ *
+ * Amostrada FINO (ligar ponto-a-ponto com retas desenharia um polígono, não uma espiral).
+ * Parametrizada em `t ∈ [0,1]`: `r(t)` linear e `θ(t) = θ₀ + 2π·voltas·t` — a MESMA curva de
+ * `posicaoEspiral`.
+ *
+ * ⚠ A amostragem é feita POR INTERVALO entre pontos (`amostrasPorPasso` sub-passos de `i` a
+ * `i+1`), e não numa grade fixa: assim `t = i/(n−1)` é SEMPRE um vértice e a trilha passa
+ * exatamente pelo centro de cada marcador. Com grade fixa, a curva passava a alguns pixels de
+ * alguns marcadores — visível como a linha "raspando" o ponto em vez de atravessá-lo.
+ * `n <= 1` → `''` (sem trajetória, o componente não desenha nada).
+ */
+export function caminhoDaEspiral(n: number, amostrasPorPasso = 8): string {
+  if (n <= 1) return ''
+  const passos = n - 1
+  const sub = Math.max(amostrasPorPasso, Math.ceil(ESPIRAL_AMOSTRAS_MIN / passos))
+  const total = passos * sub
+  const voltas = voltasDaEspiral(n)
+  const partes: string[] = []
+  for (let s = 0; s <= total; s++) {
+    const t = s / total
+    const r = ESPIRAL_R_MIN + (ESPIRAL_R_MAX - ESPIRAL_R_MIN) * t
+    const theta = ESPIRAL_THETA_0 + 2 * Math.PI * voltas * t
+    const x = arred(ESPIRAL_CENTRO.x + r * Math.cos(theta))
+    const y = arred(ESPIRAL_CENTRO.y + r * Math.sin(theta))
+    partes.push(`${s === 0 ? 'M' : 'L'}${x} ${y}`)
+  }
+  return partes.join(' ')
+}
+
+/**
+ * RAIO DO MARCADOR (não é distância ao centro — aquele é `raioDoTempo`).
+ * a=1 → 2.4 · a=5 → 5.6. Linear no raio, +0,8px por nível: 5 degraus distinguíveis sem que o
+ * ponto mais autônomo engula o vizinho. ⚠ Regra 4: é assim que a autonomia entra no gráfico —
+ * como TAMANHO. Nunca como cor de classe.
+ */
+export function raioPorAutonomia_TAMANHO(a: number): number {
+  const nivel = limitar(Math.round(a), AUTONOMIA_MIN, AUTONOMIA_MAX)
+  return arred(2.4 + (nivel - AUTONOMIA_MIN) * 0.8)
+}
+
+/** Halo do marcador, na mesma razão da estrela da Carta (7 / 2.6 ≈ 2,69). */
+export function haloPorAutonomia_TAMANHO(a: number): number {
+  return arred(raioPorAutonomia_TAMANHO(a) * (CLUSTER_HALO_BASE / CLUSTER_NUCLEO_BASE))
+}
+
+export interface AnelTempo {
+  /** Índice da resolução que ancora o anel (na ordem cronológica). */
+  i: number
+  /** Distância ao centro = `raioDoTempo(i, n)`. */
   r: number
-  /** o anel externo (a=5) é mais forte: `graf-eixo` nos internos, `line` no externo. */
-  externo: boolean
-  /** y do rótulo do anel, no topo dele: `150 − 26a + 3.5` (protótipo, spec 02 §3.2). */
+  data: Date
+  /** `dd.mm` (00-INDICE §2.5). */
+  rotulo: string
+  /** y do rótulo, logo dentro do topo do anel. */
   rotuloY: number
+  /** O anel externo (a resolução mais recente) é o mais forte. */
+  externo: boolean
 }
 
-/** Os 5 anéis. O protótipo rotula só 1, 4 e 5 — rotular 2 e 3 é opcional (polui). */
-export function aneisOrbita(): AnelOrbita[] {
-  const aneis: AnelOrbita[] = []
-  for (let a = AUTONOMIA_MIN; a <= AUTONOMIA_MAX; a++) {
-    const r = raioPorAutonomia(a)
-    aneis.push({
-      a: a as NivelAutonomia,
-      r,
-      externo: a === AUTONOMIA_MAX,
-      rotuloY: arred(ORBITA_CENTRO.y - r + 3.5),
-    })
+/**
+ * Os anéis-guia do EIXO RADIAL = tempo. Sem eles o "raio = tempo" é invisível.
+ *
+ * Cada anel é ancorado numa RESOLUÇÃO REAL (índices espaçados por igual na ordem cronológica),
+ * então o rótulo é a data EXATA daquele ponto — não uma data interpolada, que seria inventar
+ * uma medição que não existe. Sempre inclui o primeiro (mais antigo) e o último (mais recente).
+ * `n <= 1` → `[]`: com uma resolução só não há eixo do tempo a declarar.
+ *
+ * Recebe o MESMO array que a espiral plota (`dataset.pontos`), em ordem cronológica ASC.
+ */
+export function aneisDeTempo(pontos: PontoBase[], quantidade = ESPIRAL_ANEIS): AnelTempo[] {
+  const n = pontos.length
+  if (n <= 1) return []
+
+  const q = limitar(Math.round(quantidade), 2, n)
+  const indices: number[] = []
+  for (let j = 0; j < q; j++) {
+    const i = Math.round((j * (n - 1)) / (q - 1))
+    if (!indices.includes(i)) indices.push(i)
   }
-  return aneis
+
+  return indices.map((i, ordem) => {
+    const r = raioDoTempo(i, n)
+    return {
+      i,
+      r: arred(r),
+      data: pontos[i].submetidaEm,
+      rotulo: dataCurta(pontos[i].submetidaEm),
+      rotuloY: arred(ESPIRAL_CENTRO.y - r + 3.5),
+      externo: ordem === indices.length - 1,
+    }
+  })
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -366,7 +595,7 @@ export function linhasEspectro(pontos: PontoPlotavel[]): LinhaEspectro[] {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 4 · LINHA (evolução temporal) — buckets mensais
+// 4 · LINHA (evolução temporal) — buckets DIÁRIOS / SEMANAIS / MENSAIS
 // ════════════════════════════════════════════════════════════════════════════
 
 /** `viewBox="0 0 400 220"` — protótipo, spec 02 §5. */
@@ -378,10 +607,51 @@ export const LINHA_LARGURA = 344
 export const LINHA_Y_TOPO = 60
 export const LINHA_Y_BASE = 200
 
-/** Janela: os últimos 8 meses do intervalo de atividade (protótipo desenha 8 buckets). */
-export const LINHA_MAX_BUCKETS = 8
+/**
+ * Quantos buckets cabem na janela, por granularidade — a janela é sempre "os N mais RECENTES".
+ *
+ * DECISÃO (limite é PIXEL, não gosto): a faixa de dados tem 344px. O rótulo mono 9px mais largo
+ * é `mmm/aa` (~34px) e o `dd.mm` (~28px).
+ *   · MENSAL  = 8  → 49,1px por bucket. 8 meses ≈ 2 semestres: a escala em que um portfólio se
+ *                    move. É a janela do protótipo, e a padrão.
+ *   · SEMANAL = 12 → 31,3px por bucket: um trimestre, com todos os `dd.mm` ainda cabendo.
+ *   · DIARIO  = 14 → 26,5px por bucket: duas semanas. Aqui os rótulos JÁ NÃO CABEM todos —
+ *                    use `passoDeRotulos(n)` e desenhe um sim, um não. O eixo continua com 14
+ *                    posições (o tempo não encolhe); só a rotulagem é rala.
+ */
+export const MAX_BUCKETS_POR_GRANULARIDADE: Record<Granularidade, number> = {
+  DIARIO: 14,
+  SEMANAL: 12,
+  MENSAL: 8,
+}
+
 /** Com menos de 2 buckets COM DADO não há série — a tela mostra o estado vazio (Lacuna M). */
 export const LINHA_MIN_PONTOS = 2
+
+/**
+ * Largura estimada do rótulo do eixo X, em mono 9px: `dd.mm` (5 glifos) ≈ 28px · `mmm/aa`
+ * (6 glifos) ≈ 34px. É o que decide se os rótulos cabem lado a lado.
+ */
+const LINHA_ROTULO_LARGURA: Record<Granularidade, number> = {
+  DIARIO: 28,
+  SEMANAL: 28,
+  MENSAL: 34,
+}
+
+/**
+ * De quantos em quantos buckets rotular o eixo X, para os rótulos não se sobreporem.
+ * Devolve 1 (todos), 2 (um sim, um não)… — o componente rotula quando `i % passo === 0`, e deve
+ * SEMPRE rotular também o ÚLTIMO bucket (é a data de referência da leitura).
+ *
+ * Com as janelas padrão: MENSAL(8) → 1 · SEMANAL(12) → 1 · DIARIO(14) → 2 (26,5px por bucket não
+ * comportam um `dd.mm` de 28px em cada). ⚠ Ralear RÓTULO não é ralear BUCKET: os 14 dias
+ * continuam ocupando o eixo, incluindo os vazios.
+ */
+export function passoDeRotulos(n: number, granularidade: Granularidade): number {
+  if (n <= 1) return 1
+  const espacamento = LINHA_LARGURA / (n - 1)
+  return Math.max(1, Math.ceil(LINHA_ROTULO_LARGURA[granularidade] / espacamento))
+}
 
 /**
  * x(i) = 40 + i · (344 / (n−1)) — protótipo, spec 02 §5.2.
@@ -425,25 +695,26 @@ export const LINHA_GRADE_Y: readonly { autonomia: NivelAutonomia; y: number }[] 
 /** Ticks de classe à direita (opcionais): k = 0, 2, 4, 7 → y = 200, 160, 120, 60. */
 export const LINHA_TICKS_CLASSE: readonly ClasseK[] = [0, 2, 4, 7]
 
-export interface BucketMes {
-  ano: number
-  /** 1..12 (mês de calendário, não índice). */
-  mes: number
-  /** `aaaa-mm` — chave estável. */
+export interface BucketTempo {
+  granularidade: Granularidade
+  /** `aaaa-mm-dd` (dia / semana) ou `aaaa-mm` (mês) — chave estável de React. */
   chave: string
-  /** 'jan', 'fev'… — rótulo do eixo X. */
+  /** Rótulo do eixo X: `dd.mm` (dia e semana) · `mmm/aa` (mês). */
   rotulo: string
+  /** Rótulo por extenso, para o callout: `14.03.2026` · `semana de 09.03.2026` · `mar/2026`. */
+  rotuloLongo: string
+  /** Instante inicial do bucket (meia-noite local do dia / da segunda-feira / do 1º do mês). */
   inicio: Date
-  /** TODAS as resoluções do mês — inclusive as sem métrica (autonomia independe da linguagem). */
+  /** TODAS as resoluções do bucket — inclusive as sem métrica (autonomia independe da linguagem). */
   resolucoes: PontoBase[]
   /** Só as com classe de tempo: a série de COMPLEXIDADE sai daqui. */
   comMetrica: PontoBase[]
-  /** = `resolucoes.length`. Zero = mês SEM RESOLUÇÃO (o aluno não enviou nada). */
+  /** = `resolucoes.length`. Zero = bucket SEM RESOLUÇÃO (o aluno não enviou nada). */
   total: number
-  /** Quantas do mês não têm classe de complexidade. `total > 0 && semMetrica === total` é
-   *  um mês de trabalho SEM métrica — jamais um mês "vazio". */
+  /** Quantas do bucket não têm classe de complexidade. `total > 0 && semMetrica === total` é um
+   *  período de trabalho SEM métrica — jamais um período "vazio". */
   semMetrica: number
-  /** média de autonomia do mês sobre TODAS as resoluções; `null` só no mês sem resolução. */
+  /** média de autonomia sobre TODAS as resoluções; `null` só no bucket sem resolução. */
   mediaAutonomia: number | null
   /** média de `k` (classe de tempo) sobre as COM métrica; `null` quando nenhuma tem classe. */
   mediaClasse: number | null
@@ -454,67 +725,131 @@ function media(valores: number[]): number | null {
   return valores.reduce((s, v) => s + v, 0) / valores.length
 }
 
+// ── Aritmética de calendário ────────────────────────────────────────────────
+// Todo bucket vira um ÍNDICE INTEIRO em que buckets consecutivos são inteiros consecutivos —
+// é isso que faz o `for (idx = inicio; idx <= max; idx++)` produzir a janela CONTÍNUA (com os
+// buracos ocupando o seu x). Os dias são contados via `Date.UTC(ano, mês, dia)` a partir das
+// partes LOCAIS: dá um número de dia estável, imune a horário de verão (uma subtração de
+// timestamps locais erraria por 1h duas vezes por ano, e um dia inteiro na virada).
+
+const MS_POR_DIA = 86_400_000
+/** 1970-01-01 foi quinta; a primeira segunda (1970-01-05) é o dia absoluto 4. */
+const SEGUNDA_EPOCH = 4
+
+function diaAbsoluto(d: Date): number {
+  return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / MS_POR_DIA)
+}
+
+/** Dia absoluto → `Date` na meia-noite LOCAL daquele dia (inverso exato de `diaAbsoluto`). */
+function dataDoDiaAbsoluto(dia: number): Date {
+  const utc = new Date(dia * MS_POR_DIA)
+  return new Date(utc.getUTCFullYear(), utc.getUTCMonth(), utc.getUTCDate())
+}
+
+/** Dia absoluto da SEGUNDA-FEIRA da semana de `d` (semana ISO: segunda → domingo). */
+function segundaDaSemana(d: Date): number {
+  const dia = diaAbsoluto(d)
+  const desdeSegunda = (d.getDay() + 6) % 7 // getDay: 0=dom … 6=sáb
+  return dia - desdeSegunda
+}
+
+function indiceDoBucket(d: Date, g: Granularidade): number {
+  if (g === 'MENSAL') return d.getFullYear() * 12 + d.getMonth()
+  if (g === 'SEMANAL') return (segundaDaSemana(d) - SEGUNDA_EPOCH) / 7
+  return diaAbsoluto(d)
+}
+
+function inicioDoBucket(idx: number, g: Granularidade): Date {
+  if (g === 'MENSAL') return new Date(Math.floor(idx / 12), idx % 12, 1)
+  if (g === 'SEMANAL') return dataDoDiaAbsoluto(idx * 7 + SEGUNDA_EPOCH)
+  return dataDoDiaAbsoluto(idx)
+}
+
+function chaveDoBucket(inicio: Date, g: Granularidade): string {
+  const ano = inicio.getFullYear()
+  const mes = doisDigitos(inicio.getMonth() + 1)
+  if (g === 'MENSAL') return `${ano}-${mes}`
+  return `${ano}-${mes}-${doisDigitos(inicio.getDate())}`
+}
+
+function rotulosDoBucket(inicio: Date, g: Granularidade): { rotulo: string; longo: string } {
+  const mes = MESES_CURTOS[inicio.getMonth()]
+  const ano = inicio.getFullYear()
+  if (g === 'MENSAL') {
+    return { rotulo: `${mes}/${String(ano).slice(-2)}`, longo: `${mes}/${ano}` }
+  }
+  if (g === 'SEMANAL') {
+    return { rotulo: dataCurta(inicio), longo: `semana de ${dataCompleta(inicio)}` }
+  }
+  return { rotulo: dataCurta(inicio), longo: dataCompleta(inicio) }
+}
+
 /**
- * Buckets MENSAIS (spec 02 §5 + Lacuna M).
+ * Os buckets do eixo do tempo, na granularidade pedida (spec 02 §5 + Lacuna M).
  *
- * ⚠ Recebe `PontoBase[]` = `dataset.todas`, NÃO `dataset.pontos`. Um mês em que o aluno
- * submeteu 3 resoluções em Python tem 3 resoluções — ele não é um mês "sem resolução".
- * A autonomia é autodeclarada e independe da linguagem (§4.4): a série neutra atravessa
- * o mês; a série de complexidade é que se interrompe.
+ * ⚠ Recebe `PontoBase[]` = `dataset.todas`, NÃO `dataset.pontos`. Um mês em que o aluno submeteu
+ * 3 resoluções em Python TEM 3 resoluções — ele não é um mês "sem resolução". A autonomia é
+ * autodeclarada e independe da linguagem (§4.4): a série neutra atravessa o período; só a série
+ * de complexidade se interrompe. É por isso que `mediaAutonomia` sai de `resolucoes` e
+ * `mediaClasse` sai de `comMetrica`.
  *
- * DECISÃO (minha, combinando as propostas da spec):
- *   1. O intervalo é CONTÍNUO do 1º ao último mês com atividade — meses vazios NÃO somem,
- *      ocupam seu `x` (o tempo não anda mais devagar porque o aluno parou de enviar).
- *   2. Se o intervalo passar de `LINHA_MAX_BUCKETS` (8), fica com os 8 meses MAIS RECENTES.
- *   3. Mês sem resolução → `mediaAutonomia` = `null` → não vira ponto; a série QUEBRA ali
- *      (use `segmentosDaSerie`, não uma polyline única). Mês com resolução mas sem métrica →
- *      só `mediaClasse` é `null`: a linha de complexidade quebra, a de autonomia não.
+ * ⚠ Tudo aqui é CLIENT-SIDE, derivado do mesmo `dataset` dos outros 4 gráficos. Não existe
+ * chamada a `/api/metricas/evolucao`: duas fontes de verdade para o mesmo número divergem, e
+ * essa divergência é impossível de explicar ao aluno (§4.5).
  *
- * Recebe as resoluções já em ordem cronológica ascendente (garantia de `montarDataset`).
+ * INVARIANTES (não regredir — são o que torna o gráfico honesto):
+ *   1. A janela é o intervalo CONTÍNUO do primeiro ao último bucket COM ATIVIDADE. Bucket vazio
+ *      NÃO some: ocupa o seu `x`. O tempo não anda mais devagar porque o aluno parou de enviar.
+ *   2. Se o intervalo passar de `maxBuckets`, ficam os N MAIS RECENTES.
+ *   3. Bucket sem resolução → `mediaAutonomia = null` → NÃO vira ponto, e a linha QUEBRA ali
+ *      (`segmentosDaSerie`). Nada de interpolar: inventar uma medição é mentir.
+ *      Bucket com resolução mas sem métrica → só `mediaClasse` é `null`: a linha de complexidade
+ *      quebra, a de autonomia atravessa.
+ *
+ * Recebe as resoluções em ordem cronológica ascendente (garantia de `montarDataset`).
  */
-export function bucketsMensais(
+export function buckets(
   resolucoes: PontoBase[],
-  maxBuckets = LINHA_MAX_BUCKETS,
-): BucketMes[] {
+  granularidade: Granularidade,
+  maxBuckets = MAX_BUCKETS_POR_GRANULARIDADE[granularidade],
+): BucketTempo[] {
   if (resolucoes.length === 0) return []
 
-  // índice absoluto de mês: ano*12 + (mês-1) — aritmética de calendário sem fuso.
-  const indiceDe = (d: Date) => d.getFullYear() * 12 + d.getMonth()
-  const porMes = new Map<number, PontoBase[]>()
+  const porIndice = new Map<number, PontoBase[]>()
   let min = Number.POSITIVE_INFINITY
   let max = Number.NEGATIVE_INFINITY
 
   for (const p of resolucoes) {
-    const idx = indiceDe(p.submetidaEm)
+    const idx = indiceDoBucket(p.submetidaEm, granularidade)
     min = Math.min(min, idx)
     max = Math.max(max, idx)
-    const g = porMes.get(idx)
+    const g = porIndice.get(idx)
     if (g) g.push(p)
-    else porMes.set(idx, [p])
+    else porIndice.set(idx, [p])
   }
 
-  const inicio = Math.max(min, max - maxBuckets + 1) // janela: os N meses mais recentes
-  const buckets: BucketMes[] = []
-  for (let idx = inicio; idx <= max; idx++) {
-    const ano = Math.floor(idx / 12)
-    const mes0 = idx % 12
-    const doMes = porMes.get(idx) ?? []
-    const comMetrica = doMes.filter((p) => p.k != null)
-    buckets.push({
-      ano,
-      mes: mes0 + 1,
-      chave: `${ano}-${doisDigitos(mes0 + 1)}`,
-      rotulo: MESES_CURTOS[mes0],
-      inicio: new Date(ano, mes0, 1),
-      resolucoes: doMes,
+  const primeiro = Math.max(min, max - Math.max(1, maxBuckets) + 1)
+  const saida: BucketTempo[] = []
+  for (let idx = primeiro; idx <= max; idx++) {
+    const doBucket = porIndice.get(idx) ?? []
+    const comMetrica = doBucket.filter((p) => p.k != null)
+    const inicio = inicioDoBucket(idx, granularidade)
+    const { rotulo, longo } = rotulosDoBucket(inicio, granularidade)
+    saida.push({
+      granularidade,
+      chave: chaveDoBucket(inicio, granularidade),
+      rotulo,
+      rotuloLongo: longo,
+      inicio,
+      resolucoes: doBucket,
       comMetrica,
-      total: doMes.length,
-      semMetrica: doMes.length - comMetrica.length,
-      mediaAutonomia: media(doMes.map((p) => p.autonomia)),
+      total: doBucket.length,
+      semMetrica: doBucket.length - comMetrica.length,
+      mediaAutonomia: media(doBucket.map((p) => p.autonomia)),
       mediaClasse: media(comMetrica.map((p) => p.k as number)),
     })
   }
-  return buckets
+  return saida
 }
 
 /** Qual das duas séries do gráfico de Linha. */
@@ -527,16 +862,20 @@ export interface PontoSerie {
   y: number
   /** o valor bruto da média (autonomia 1..5 ou classe 0..7) — para o tooltip. */
   valor: number
-  bucket: BucketMes
+  bucket: BucketTempo
 }
 
-/** Os pontos de uma série (só os buckets COM dado). Meses vazios não viram ponto. */
-export function pontosDaSerie(buckets: BucketMes[], serie: SerieLinha): PontoSerie[] {
-  const n = buckets.length
+/**
+ * Os pontos de uma série (só os buckets COM dado). Buckets vazios não viram ponto.
+ * `janela` = a saída de `buckets(...)` (o parâmetro não se chama `buckets` para não sombrear a
+ * função de mesmo nome).
+ */
+export function pontosDaSerie(janela: BucketTempo[], serie: SerieLinha): PontoSerie[] {
+  const n = janela.length
   const saida: PontoSerie[] = []
-  buckets.forEach((bucket, i) => {
+  janela.forEach((bucket, i) => {
     const valor = serie === 'autonomia' ? bucket.mediaAutonomia : bucket.mediaClasse
-    if (valor == null) return // mês sem resolução: sem ponto (e a linha quebra aqui)
+    if (valor == null) return // sem resolução: sem ponto (e a linha quebra aqui)
     saida.push({
       i,
       x: xDaLinha(i, n),
@@ -549,13 +888,13 @@ export function pontosDaSerie(buckets: BucketMes[], serie: SerieLinha): PontoSer
 }
 
 /**
- * A série quebrada em SEGMENTOS de meses consecutivos com dado — uma `<polyline>` por
- * segmento. Uma polyline única "pularia" o buraco ligando dois meses não adjacentes, o que
+ * A série quebrada em SEGMENTOS de buckets consecutivos com dado — uma `<polyline>` por
+ * segmento. Uma polyline única "pularia" o buraco ligando dois buckets não adjacentes, o que
  * mentiria sobre o intervalo (spec 02, Lacuna M).
  * Segmento com 1 ponto é mantido (o gráfico desenha só o marcador).
  */
-export function segmentosDaSerie(buckets: BucketMes[], serie: SerieLinha): PontoSerie[][] {
-  const pontos = pontosDaSerie(buckets, serie)
+export function segmentosDaSerie(janela: BucketTempo[], serie: SerieLinha): PontoSerie[][] {
+  const pontos = pontosDaSerie(janela, serie)
   const segmentos: PontoSerie[][] = []
   let atual: PontoSerie[] = []
 
@@ -571,14 +910,14 @@ export function segmentosDaSerie(buckets: BucketMes[], serie: SerieLinha): Ponto
   return segmentos
 }
 
-/** `true` quando há série para desenhar (≥ 2 meses COM dado) — senão, estado vazio. */
-export function temSerieTemporal(buckets: BucketMes[]): boolean {
-  return buckets.filter((b) => b.total > 0).length >= LINHA_MIN_PONTOS
+/** `true` quando há série para desenhar (≥ 2 buckets COM dado) — senão, estado vazio. */
+export function temSerieTemporal(janela: BucketTempo[]): boolean {
+  return janela.filter((b) => b.total > 0).length >= LINHA_MIN_PONTOS
 }
 
 export interface Tendencia {
-  primeiro: BucketMes | null
-  ultimo: BucketMes | null
+  primeiro: BucketTempo | null
+  ultimo: BucketTempo | null
   /** último − primeiro (positivo = autonomia subiu). `null` se não dá para comparar. */
   deltaAutonomia: number | null
   /** último − primeiro (positivo = complexidade SUBIU = ficou mais custosa). `null` = sem base. */
@@ -595,13 +934,13 @@ const LIMIAR_TENDENCIA = 0.2
  * complexidade típica cai" — mas a linha tracejada dele SUBIA. A legenda NÃO PODE ser fixa:
  * é gerada comparando o primeiro e o último bucket com dado.
  *
- * ⚠ As duas séries têm bases DIFERENTES: autonomia existe em todo mês com resolução;
- * complexidade só nos meses com ao menos uma resolução classificada. Nada de `?? 0` — um
- * mês sem classe NÃO vale O(1); sem base, a tendência de complexidade simplesmente não é
+ * ⚠ As duas séries têm bases DIFERENTES: autonomia existe em todo bucket com resolução;
+ * complexidade só nos buckets com ao menos uma resolução classificada. Nada de `?? 0` — um
+ * bucket sem classe NÃO vale O(1); sem base, a tendência de complexidade simplesmente não é
  * afirmada.
  */
-export function tendenciaDaLinha(buckets: BucketMes[]): Tendencia {
-  const comResolucao = buckets.filter((b) => b.total > 0)
+export function tendenciaDaLinha(janela: BucketTempo[]): Tendencia {
+  const comResolucao = janela.filter((b) => b.total > 0)
   const primeiro = comResolucao[0] ?? null
   const ultimo = comResolucao[comResolucao.length - 1] ?? null
 
@@ -621,7 +960,7 @@ export function tendenciaDaLinha(buckets: BucketMes[]): Tendencia {
   // `mediaAutonomia` nunca é null num bucket com `total > 0`.
   const deltaAutonomia = (ultimo.mediaAutonomia as number) - (primeiro.mediaAutonomia as number)
 
-  const comClasse = buckets.filter((b) => b.mediaClasse != null)
+  const comClasse = janela.filter((b) => b.mediaClasse != null)
   const deltaClasse =
     comClasse.length >= LINHA_MIN_PONTOS
       ? (comClasse[comClasse.length - 1].mediaClasse as number) -

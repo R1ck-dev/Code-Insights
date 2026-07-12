@@ -17,7 +17,7 @@
  *
  * ⚠ `k === 0` é O(1) — a MELHOR classe, não "vazio". Nunca `if (!k)`.
  */
-import type { LinguagemProgramacao, NivelConfianca, Visibilidade } from '@/types/api'
+import type { GranularidadeTempo, LinguagemProgramacao, NivelConfianca, Visibilidade } from '@/types/api'
 import type { ClasseK, Tema } from '@/domain/enums'
 
 /** Índice de Autonomia IA — autodeclarado, 1 (mais apoio de IA) a 5 (mais autônomo). */
@@ -77,6 +77,68 @@ export interface PontoPlotavel extends PontoBase {
   espacoRotulo: string | null
   visibilidade: Visibilidade
 }
+
+/**
+ * A ORDEM CANÔNICA do portfólio: cronológica ASCENDENTE, empate resolvido pelo id (render
+ * estável entre reloads). É o contrato de `dataset.pontos`/`dataset.todas`, da sequência das
+ * constelações, dos irmãos de um cluster e do raio da Espiral. Uma função só, para que os três
+ * módulos não desempatem de jeitos diferentes.
+ */
+export function porTempoAsc(a: PontoBase, b: PontoBase): number {
+  const d = a.submetidaEm.getTime() - b.submetidaEm.getTime()
+  return d !== 0 ? d : a.resolucaoId.localeCompare(b.resolucaoId)
+}
+
+/**
+ * UM CLUSTER DA CARTA = todas as resoluções que caem na MESMA célula (mesma autonomia × mesma
+ * classe). A Carta tem domínio DISCRETO (5 autonomias × 8 classes = 40 posições): duas resoluções
+ * na mesma célula caem no mesmo pixel.
+ *
+ * ⚠ O jitter MORREU (era `deslocamentosCoincidentes`). Espalhar o grupo num anel de 5px produzia
+ * marcadores grudados, impossíveis de acertar com o mouse, e dois callouts abrindo juntos. Um
+ * grupo agora é UM marcador na posição EXATA da célula (`x`,`y` sem deslocamento nenhum), que
+ * cresce com `total` e mostra o número no núcleo quando `total >= 2`. Nenhum dado some: o cluster
+ * declara quantos são, e o painel lateral navega entre eles (`irmaosDoCluster`).
+ */
+export interface ClusterCarta {
+  /** `` `${autonomia}:${k}` `` — a identidade da célula. Chave de React e de busca. */
+  chave: string
+  autonomia: NivelAutonomia
+  k: ClasseK
+  /** Posição EXATA da célula (`xDaAutonomia(autonomia)`). */
+  x: number
+  /** Posição EXATA da célula (`yDaClasse(k)`). */
+  y: number
+  /** Ordenados por `submetidaEm` ASC: `pontos[0]` é a mais ANTIGA (a que o clique abre). */
+  pontos: PontoPlotavel[]
+  /** = `pontos.length`. Sempre ≥ 1. */
+  total: number
+}
+
+/**
+ * Granularidade do eixo do tempo da Linha. É o MESMO vocabulário do enum do backend
+ * (`GranularidadeTempo`, `types/api.ts`) — reaproveitado de propósito, para não existirem dois
+ * nomes para a mesma coisa.
+ *
+ * ⚠ O cálculo, porém, é CLIENT-SIDE, a partir do `dataset` (`buckets()` em `escalas.ts`). NÃO
+ * chamamos `/api/metricas/evolucao`: duas fontes de verdade sobre o mesmo dado exibem contagens
+ * que não batem e não têm como ser explicadas ao aluno (§4.5 do índice — a mesma armadilha do
+ * antigo `/resumo` × `/carta`).
+ */
+export type Granularidade = GranularidadeTempo
+
+/** Ordem do seletor: do mais fino ao mais grosso. */
+export const GRANULARIDADES: readonly Granularidade[] = ['DIARIO', 'SEMANAL', 'MENSAL']
+
+/** Rótulo do seletor (pt-BR, minúsculo — é chip mono, não título). */
+export const ROTULO_GRANULARIDADE: Record<Granularidade, string> = {
+  DIARIO: 'diário',
+  SEMANAL: 'semanal',
+  MENSAL: 'mensal',
+}
+
+/** O portfólio de um aluno cresce em meses, não em dias: a visão de entrada é a mensal. */
+export const GRANULARIDADE_PADRAO: Granularidade = 'MENSAL'
 
 /**
  * Uma constelação = as resoluções do MESMO desafio, em ordem cronológica (§6-A, Lacuna 11).

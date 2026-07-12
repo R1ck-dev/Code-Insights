@@ -1,5 +1,10 @@
 /*
- * PAINEL DE GRÁFICOS — a moldura que unifica as 5 visualizações (spec 02 §1 e §8).
+ * PAINEL DE GRÁFICOS — a moldura que unifica as 4 visualizações (spec 02 §1 e §8).
+ *
+ * ⚠ Eram 5. O ESPECTRO saiu (decisão do usuário, rodada de correção): ele plotava CLASSES, não
+ * resoluções — nada a selecionar, nada que conversasse com o painel da estrela ao lado —, e o
+ * dashboard já exibe a MESMA distribuição no card "Distribuição · Espectro". O histograma
+ * continua vivo lá; o que saiu foi a duplicata dentro do seletor.
  *
  * Cabeçalho (título + subtítulo que MUDA com o gráfico + `?` de "como ler") · seletor ·
  * o gráfico escolhido · RODAPÉ HONESTO.
@@ -32,7 +37,6 @@ import { useTheme } from '@/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 import type { InfoSecao } from '@/domain/metricas-explicacao'
 import { Carta } from './Carta'
-import { Espectro } from './Espectro'
 import { LINHA_JANELA_MESES, Linha } from './Linha'
 import { Matriz } from './Matriz'
 import { Orbitas } from './Orbitas'
@@ -96,45 +100,43 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       ...SECOES_COMUNS,
     ],
   },
+  /*
+   * A CHAVE continua `orbitas` (é o que já circula em `?view=` e nos imports); o gráfico é que
+   * foi redesenhado. Não é mais um conjunto de órbitas concêntricas de autonomia: é uma ESPIRAL
+   * DO TEMPO. O rótulo do seletor, o título do painel e este `?` passam a dizer isso — um `?`
+   * que explicasse a geometria antiga seria pior do que não ter `?`.
+   */
   orbitas: {
-    titulo: 'Órbitas',
-    subtitulo: 'polar · autonomia = raio · ângulo = tempo',
-    ariaLabel: 'Como ler as órbitas',
+    titulo: 'Espiral do tempo',
+    subtitulo: 'raio = tempo (centro = mais antiga) · tamanho = autonomia · cor = complexidade',
+    ariaLabel: 'Como ler a espiral do tempo',
     secoes: [
       {
         rotulo: 'Como ler',
         texto:
-          'O mesmo dado da carta, em coordenadas polares. O raio é a autonomia: quanto mais longe do centro, mais autônoma foi a resolução (o centro é o maior apoio da IA). O ângulo é o relógio do portfólio — a resolução mais antiga fica às 12h e as seguintes seguem no sentido horário.',
+          'Leia de dentro para fora, como os anéis de um tronco. Cada ponto é uma resolução e a distância dele ao centro é QUANDO você a enviou: o centro é a mais antiga, a borda é a mais recente. A trilha que liga os pontos é a sua ordem cronológica — os anéis-guia levam a data de resoluções reais, nunca uma data interpolada.',
       },
       {
-        rotulo: 'Por que polar',
+        rotulo: 'Tamanho = autonomia · cor = complexidade',
         texto:
-          'A leitura é de forma, não de valor exato: um portfólio que vai empurrando as estrelas para fora dos anéis é um portfólio ganhando autonomia ao longo do tempo.',
-      },
-      ...SECOES_COMUNS,
-    ],
-  },
-  espectro: {
-    titulo: 'Espectro',
-    subtitulo: 'distribuição por classe de complexidade',
-    ariaLabel: 'Como ler o espectro',
-    secoes: [
-      {
-        rotulo: 'Como ler',
-        texto:
-          'Um histograma: quantas resoluções caem em cada classe de complexidade. As 8 classes aparecem sempre, mesmo com contagem zero — o que não existe também é informação (uma faixa vazia em O(log n) diz algo).',
+          'São duas codificações independentes, de propósito. O TAMANHO do ponto é o Índice de Autonomia IA (1 a 5): ponto maior, mais autônomo. A COR é a classe de complexidade de tempo (verde = mais eficiente, vermelho = mais custosa). A autonomia nunca é pintada com o colormap — ela é autodeclarada e não é uma medida de qualidade do código; misturar as duas escalas na mesma cor sugeriria uma relação que o gráfico existe justamente para você investigar.',
       },
       {
-        rotulo: 'Sem interação',
+        rotulo: 'A pergunta que ela responde',
         texto:
-          'Uma barra é uma classe (um agregado), não uma resolução: não há o que selecionar. A barra da classe da resolução selecionada em outro gráfico ganha uma hairline clara — é só um eco da seleção.',
+          'Conforme o tempo passa (para fora), os seus pontos ficam maiores e mais verdes? Ou seja: você vem ganhando autonomia e, ao mesmo tempo, escrevendo soluções menos custosas? É a hipótese central da pesquisa desenhada numa só figura — o gráfico mostra o que aconteceu no seu caso, ele não avalia a sua solução.',
       },
       ...SECOES_COMUNS,
     ],
   },
   linha: {
     titulo: 'Linha temporal',
-    subtitulo: `evolução · últimos ${LINHA_JANELA_MESES} meses`,
+    /*
+     * A janela DEIXOU de ser fixa em meses (a Linha tem seletor de granularidade: diário,
+     * semanal, mensal). Um subtítulo que dissesse "últimos 8 meses" mentiria assim que o
+     * usuário escolhesse "diário" — o número dos meses fica no `?`, onde é qualificado.
+     */
+    subtitulo: 'evolução no tempo · autonomia × complexidade',
     ariaLabel: 'Como ler a linha temporal',
     secoes: [
       {
@@ -148,9 +150,14 @@ const META: Record<TipoGrafico, MetaGrafico> = {
           'É a média das classes Big O de tempo das resoluções analisadas naquele mês, arredondada para uma classe real. Como toda classe Big O aqui, vem de análise estática da AST — é uma estimativa (marcador vazado, prefixo ≈), não uma medição, e só existe para Java. Difere da "complexidade típica" do card ao lado, que é a MEDIANA de todo o histórico: são estatísticas diferentes do mesmo dado, e podem apontar classes diferentes.',
       },
       {
-        rotulo: 'Meses vazios e meses sem métrica',
+        rotulo: 'Períodos vazios e períodos sem métrica',
         texto:
-          'Mês SEM RESOLUÇÃO fica vago e as duas linhas se interrompem — interpolar por cima inventaria uma tendência que não aconteceu. Já o mês com resoluções que não têm métrica (ex.: Python) NÃO é um mês vazio: a linha de autonomia atravessa normalmente (a autonomia é autodeclarada e independe da linguagem) e só a linha de complexidade se interrompe.',
+          'Período SEM RESOLUÇÃO fica vago e as duas linhas se interrompem — interpolar por cima inventaria uma tendência que não aconteceu. Já o período com resoluções que não têm métrica (ex.: Python) NÃO é um período vazio: a linha de autonomia atravessa normalmente (a autonomia é autodeclarada e independe da linguagem) e só a linha de complexidade se interrompe.',
+      },
+      {
+        rotulo: 'A janela',
+        texto:
+          `O eixo do tempo mostra sempre os períodos mais recentes, e quantos cabem depende da granularidade escolhida — na visão mensal (a padrão), os últimos ${LINHA_JANELA_MESES} meses. O limite é de espaço: mais pontos do que isso e os rótulos das datas se sobreporiam.`,
       },
       ...SECOES_COMUNS,
     ],
@@ -252,7 +259,6 @@ export function PainelDeGraficos({
           <>
             {view === 'carta' && <Carta {...props} />}
             {view === 'orbitas' && <Orbitas {...props} />}
-            {view === 'espectro' && <Espectro {...props} />}
             {view === 'linha' && <Linha {...props} />}
             {view === 'matriz' && <Matriz {...props} />}
           </>

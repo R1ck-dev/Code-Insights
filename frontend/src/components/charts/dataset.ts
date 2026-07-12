@@ -32,6 +32,7 @@ import {
   type NivelAutonomia,
   type PontoBase,
   type PontoPlotavel,
+  porTempoAsc,
 } from './tipos'
 
 /** Nenhum descarte. */
@@ -127,12 +128,6 @@ function paraPonto(dto: PontoCartaDTO): PontoPlotavel {
   }
 }
 
-/** Ordem cronológica ascendente; empate resolvido pelo id (render estável entre reloads). */
-function porTempoAsc(a: PontoBase, b: PontoBase): number {
-  const d = a.submetidaEm.getTime() - b.submetidaEm.getTime()
-  return d !== 0 ? d : a.resolucaoId.localeCompare(b.resolucaoId)
-}
-
 /**
  * CONSTELAÇÕES (§6-A, Lacuna 11): agrupa os pontos PLOTÁVEIS por `desafioId`, ordena por
  * `submetidaEm` asc e mantém só os grupos com 2+ pontos. Cada constelação é a trajetória do
@@ -163,8 +158,9 @@ export function montarConstelacoes(pontosOrdenados: PontoPlotavel[]): Constelaca
  *
  * Garantias do contrato (os 5 gráficos dependem delas):
  *   1. `pontos` contém SÓ resoluções com classe de tempo válida (0..7).
- *   2. `pontos` e `todas` estão em ordem CRONOLÓGICA ASCENDENTE — as Órbitas usam o índice
- *      do array como `i` do ângulo (`θᵢ = -90° + i·(360°/n)`), sem reordenar nada.
+ *   2. `pontos` e `todas` estão em ordem CRONOLÓGICA ASCENDENTE — a Espiral do tempo usa o
+ *      índice do array como `i` do RAIO e do ângulo (`rᵢ` cresce com `i`: centro = mais antiga,
+ *      borda = mais recente), sem reordenar nada.
  *   3. `todas` contém TUDO (inclusive o que não plota): a série de autonomia da Linha e a
  *      contagem mensal saem daqui. Autonomia é autodeclarada e independe da linguagem —
  *      um mês só com resoluções em Python NÃO é um mês "sem resolução".

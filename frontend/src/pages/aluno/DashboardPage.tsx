@@ -1,14 +1,18 @@
 /*
  * C · DASHBOARD (spec 04 §2) — a carta do portfólio do aluno.
  *
- * Composição: saudação + ações · 3 stats · painel dos 5 gráficos (+ estrela selecionada) ·
+ * Composição: saudação + ações · 3 stats · painel de gráficos (+ estrela selecionada) ·
  * complexidade típica · distribuição · atividade recente.
  *
  * O gráfico NÃO mora mais aqui: o SVG artesanal de "Evolução" foi substituído pelo
- * `PainelDeGraficos` (Carta · Órbitas · Espectro · Linha · Matriz), que traz o seletor, os
- * estados de cada visualização e o rodapé honesto ("N de M resoluções plotadas · X sem
- * métrica"). A página só busca o dado (`useCartaCeleste` + `montarDataset`) e é dona da
- * seleção — que também alimenta o `PainelEstrelaSelecionada` ao lado.
+ * `PainelDeGraficos` (Carta · Espiral · Linha · Matriz), que traz o seletor, os estados de
+ * cada visualização e o rodapé honesto ("N de M resoluções plotadas · X sem métrica"). A
+ * página só busca o dado (`useCartaCeleste` + `montarDataset`) e é dona da seleção — que
+ * também alimenta o `PainelEstrelaSelecionada` ao lado.
+ *
+ * ⚠ O histograma por classe continua aqui, no `DistribuicaoCard` (`linhasEspectro`), e agora é o
+ * ÚNICO: a vista "Espectro" saiu do seletor do painel (era a mesma distribuição, duas vezes na
+ * mesma tela — e a única das 5 que não plotava resoluções, logo não tinha o que selecionar).
  */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -352,11 +356,13 @@ function LinhaEspectro({
 }
 
 /**
- * Distribuição · Espectro (spec 04 §2.3): contagem por classe.
+ * Distribuição · Espectro (spec 04 §2.3): contagem por classe. É o ÚNICO espectro da tela — a
+ * vista homônima saiu do seletor do `PainelDeGraficos` justamente porque duplicava este card.
  *
- * ⚠ MESMA FONTE do Espectro do painel (`dataset`), e não mais `resumo.distribuicaoBigO`: as duas
- * projeções do mesmo dado tinham populações diferentes e apareciam lado a lado, no mesmo viewport,
- * com contagens que não batiam e nenhuma explicação. Agora batem por construção.
+ * ⚠ MESMA FONTE do painel de gráficos (`dataset` — `linhasEspectro(dataset.pontos)`), e não
+ * `resumo.distribuicaoBigO`: as duas projeções do mesmo dado tinham populações diferentes e
+ * apareciam lado a lado, no mesmo viewport, com contagens que não batiam e nenhuma explicação.
+ * Agora batem por construção (a soma das linhas == `dataset.pontos.length`).
  * O `?` (não classificadas) vira uma linha extra, e o rodapé conta e EXPLICA o que ficou de fora.
  */
 function DistribuicaoCard({
@@ -601,7 +607,16 @@ export function DashboardPage() {
         />
 
         <div className="flex min-w-0 flex-col gap-3.5">
-          <PainelEstrelaSelecionada ponto={selecionado} />
+          {/*
+           * `pontos` + `onSelecionar`: a Carta colapsa num único marcador as resoluções que caem
+           * na MESMA célula (mesma autonomia × mesma classe) e o clique abre a mais antiga — é
+           * este painel que devolve as irmãs ao alcance do usuário, com o navegador "‹ 2 de 3 ›".
+           */}
+          <PainelEstrelaSelecionada
+            ponto={selecionado}
+            pontos={dataset.pontos}
+            onSelecionar={selecionar}
+          />
           <ComplexidadeTipicaCard
             dataset={dataset}
             carregando={cartaQuery.isPending}

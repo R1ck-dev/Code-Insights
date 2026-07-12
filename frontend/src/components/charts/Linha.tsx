@@ -2,15 +2,21 @@
  * LINHA — evolução temporal (o 4º dos 5 gráficos do painel).
  *
  * Duas séries, DUAS ESCALAS, um mesmo eixo de tempo:
- *   • AUTONOMIA média do mês (1–5) → eixo Y ESQUERDO, neutro (regra 4: autonomia nunca é colormap).
- *   • COMPLEXIDADE típica do mês (k médio, 0–7) → eixo Y DIREITO, que É a barra de colormap.
+ *   • AUTONOMIA média do bucket (1–5) → eixo Y ESQUERDO, neutro (regra 4: autonomia nunca é colormap).
+ *   • COMPLEXIDADE típica do bucket (k médio, 0–7) → eixo Y DIREITO, que É a barra de colormap.
+ *
+ * O eixo do tempo tem TRÊS GRANULARIDADES (mensal · semanal · diário), trocáveis por um segmented
+ * control no cabeçalho. Padrão: MENSAL — o portfólio de um aluno se move em meses, não em dias
+ * (`GRANULARIDADE_PADRAO`, tipos.ts). A re-agregação é client-side, do mesmo `dataset` dos outros 4
+ * gráficos (`buckets(...)` em escalas.ts): não existe `/api/metricas/evolucao` a consultar, porque
+ * duas fontes de verdade sobre o mesmo número divergem e não há como explicar a divergência ao aluno.
  *
  * Fonte: docs/design/specs/02-graficos.md §5 (geometria conferida contra o protótipo) e
- * 00-INDICE.md §2.7 (regras invioláveis). As lacunas K/L/M/N da spec estão resolvidas aqui —
- * cada decisão está marcada com DECISÃO e diz de onde veio.
+ * 00-INDICE.md §2.7 (regras invioláveis).
  *
  * O componente é PURO: recebe o dataset, desenha. Não busca dados, não desenha o cartão do
- * painel, não conhece o seletor.
+ * painel, não conhece o seletor de VISUALIZAÇÃO (o de GRANULARIDADE é dele, e o estado é local —
+ * é uma lente sobre o mesmo dado, não outra tela: não vai para a URL).
  */
 import { useMemo, useState } from 'react'
 import { Folder } from 'lucide-react'
@@ -28,15 +34,17 @@ import {
   tintaDaClasse,
 } from '@/domain/enums'
 import {
-  type BucketMes,
+  type BucketTempo,
   type PontoSerie,
-  bucketsMensais,
+  buckets,
   LINHA_GRADE_Y,
   LINHA_LARGURA,
   LINHA_TICKS_CLASSE,
   LINHA_Y_BASE,
   LINHA_Y_TOPO,
+  MAX_BUCKETS_POR_GRANULARIDADE,
   numeroPt,
+  passoDeRotulos,
   pontosParaPolyline,
   segmentosDaSerie,
   temSerieTemporal,
@@ -45,21 +53,26 @@ import {
   yAutonomiaLinha,
   yClasseLinha,
 } from './escalas'
-import type { PropsGrafico } from './tipos'
+import {
+  type Granularidade,
+  GRANULARIDADE_PADRAO,
+  GRANULARIDADES,
+  type PropsGrafico,
+  ROTULO_GRANULARIDADE,
+} from './tipos'
 
 // ════════════════════════════════════════════════════════════════════════════
 // GEOMETRIA
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * DECISÃO (janela) — pedido do produto, MANDA sobre o `LINHA_MAX_BUCKETS` (8) de `escalas.ts`,
- * que é o número de buckets que o protótipo por acaso desenhou: a janela é de **12 meses**.
- * `bucketsMensais` devolve o intervalo CONTÍNUO do 1º ao último mês com atividade (mês vazio
- * ocupa seu x — o tempo não anda mais devagar porque o aluno parou de enviar) e, se o intervalo
- * for maior que a janela, fica com os 12 meses MAIS RECENTES. Menos de 12 meses de história →
- * todos os meses.
+ * ⚠ COMPAT. A janela DEIXOU DE SER fixa em meses: cada granularidade tem a sua
+ * (`MAX_BUCKETS_POR_GRANULARIDADE`, escalas.ts — diário 14 · semanal 12 · mensal 8, e o limite é
+ * PIXEL, não gosto: 344px de faixa dividida pela largura do rótulo mono 9px). Este símbolo sobrevive
+ * só porque o `PainelDeGraficos` monta com ele o subtítulo do cartão; ele vale para a granularidade
+ * PADRÃO (mensal) e nada mais.
  */
-export const LINHA_JANELA_MESES = 12
+export const LINHA_JANELA_MESES = MAX_BUCKETS_POR_GRANULARIDADE.MENSAL
 
 /**
  * DECISÃO (viewBox) — o protótipo é `0 0 400 220` (`LINHA_VIEWBOX`), mas ele **não tem eixo Y**
@@ -67,8 +80,8 @@ export const LINHA_JANELA_MESES = 12
  * ali. A geometria dos DADOS é preservada byte a byte (x ∈ [40, 384], y ∈ [60, 200] — tudo vem
  * de `escalas.ts`); o que cresce é só a margem:
  *   • direita  +30 → barra de colormap (x 394–401) + ticks de classe (x 405);
- *   • inferior +12 → segunda linha de rótulo do eixo X para o ANO (a janela de 12 meses
- *     atravessa o Ano-Novo; sem isso "jan" seria ambíguo).
+ *   • inferior +12 → segunda linha de rótulo do eixo X para o ANO (qualquer das três janelas
+ *     pode atravessar o Ano-Novo; sem isso "jan" ou "03.01" seriam ambíguos).
  */
 const VB = { largura: 430, altura: 232 } as const
 
@@ -81,7 +94,7 @@ const BARRA_LARGURA = 7
 const TICK_CLASSE_X = 405
 const TICK_AUT_X = 26
 
-const ROTULO_MES_Y = 214
+const ROTULO_TEMPO_Y = 214
 const ROTULO_ANO_Y = 226
 
 /** Altura da faixa de uma classe: (200 − 60) / 7 = 20px exatos. */
@@ -110,6 +123,25 @@ const R_AUT_ATIVO = 3.2
 const R_CLS = 3
 const R_CLS_ATIVO = 3.8
 
+// ── Vocabulário do tempo ────────────────────────────────────────────────────
+
+/**
+ * Como se fala de cada granularidade. O rodapé e o rótulo acessível são DERIVADOS (Lacuna L):
+ * nenhum texto do gráfico pode dizer "mês a mês" quando o eixo está em dias.
+ */
+const ESCALA: Record<Granularidade, { singular: string; plural: string; passo: string }> = {
+  DIARIO: { singular: 'dia', plural: 'dias', passo: 'dia a dia' },
+  SEMANAL: { singular: 'semana', plural: 'semanas', passo: 'semana a semana' },
+  MENSAL: { singular: 'mês', plural: 'meses', passo: 'mês a mês' },
+}
+
+/**
+ * Ordem do segmented control: do mais GROSSO ao mais fino — o padrão (mensal) vem primeiro e a
+ * leitura "afunila" da esquerda para a direita, como um zoom. `GRANULARIDADES` (tipos.ts) guarda
+ * a lista canônica na ordem inversa (fino → grosso); inverto aqui em vez de duplicar a lista.
+ */
+const ORDEM_SELETOR: readonly Granularidade[] = [...GRANULARIDADES].reverse()
+
 // ════════════════════════════════════════════════════════════════════════════
 // PROPS
 // ════════════════════════════════════════════════════════════════════════════
@@ -117,20 +149,20 @@ const R_CLS_ATIVO = 3.8
 export interface PropsLinha extends PropsGrafico {
   /** Esqueleto pulsante no lugar das séries (a grade e os dois eixos continuam). */
   carregando?: boolean
-  /** Janela em meses. Padrão: `LINHA_JANELA_MESES` (12). */
-  janelaMeses?: number
+  /** Granularidade inicial do eixo do tempo. Padrão: `MENSAL`. Depois disso, quem manda é o usuário. */
+  granularidadeInicial?: Granularidade
   className?: string
 }
 
 interface DadosBucket {
-  bucket: BucketMes
+  bucket: BucketTempo
   i: number
   x: number
-  /** `null` só no mês SEM RESOLUÇÃO (autonomia independe da linguagem — §4.4). */
+  /** `null` só no bucket SEM RESOLUÇÃO (autonomia independe da linguagem — §4.4). */
   yAut: number | null
-  /** `null` quando nenhuma resolução do mês tem classe de complexidade. */
+  /** `null` quando nenhuma resolução do bucket tem classe de complexidade. */
   yCls: number | null
-  /** classe média ARREDONDADA — a cor do ponto e do rótulo. `null` sem classe no mês. */
+  /** classe média ARREDONDADA — a cor do ponto e do rótulo. `null` sem classe no bucket. */
   k: ClasseK | null
 }
 
@@ -144,82 +176,129 @@ export function Linha({
   onSelecionar,
   tema,
   carregando = false,
-  janelaMeses = LINHA_JANELA_MESES,
+  granularidadeInicial = GRANULARIDADE_PADRAO,
   className,
 }: PropsLinha) {
+  const [granularidade, setGranularidade] = useState<Granularidade>(granularidadeInicial)
   const [hoverIdx, setHoverIdx] = useState<number | null>(null)
 
   /*
    * ⚠ `dataset.todas`, NÃO `dataset.pontos`. A série de AUTONOMIA é autodeclarada e INDEPENDE
    * da linguagem (§4.4): um mês com 3 resoluções em Python é um mês com 3 resoluções — não um
-   * mês "sem resolução". Só a série de COMPLEXIDADE se interrompe ali.
+   * mês "sem resolução". Só a série de COMPLEXIDADE se interrompe ali. Vale nas três escalas.
    */
-  const buckets = useMemo(
-    () => bucketsMensais(dataset.todas, janelaMeses),
-    [dataset.todas, janelaMeses],
+  const janela = useMemo(
+    () => buckets(dataset.todas, granularidade),
+    [dataset.todas, granularidade],
   )
 
   const dados = useMemo<DadosBucket[]>(
     () =>
-      buckets.map((bucket, i) => ({
+      janela.map((bucket, i) => ({
         bucket,
         i,
-        x: xDaLinha(i, buckets.length),
+        x: xDaLinha(i, janela.length),
         yAut: bucket.mediaAutonomia == null ? null : yAutonomiaLinha(bucket.mediaAutonomia),
         yCls: bucket.mediaClasse == null ? null : yClasseLinha(bucket.mediaClasse),
         k: ordemArredondada(bucket.mediaClasse),
       })),
-    [buckets],
+    [janela],
   )
 
-  const segAut = useMemo(() => segmentosDaSerie(buckets, 'autonomia'), [buckets])
-  const segCls = useMemo(() => segmentosDaSerie(buckets, 'classe'), [buckets])
-  const tendencia = useMemo(() => tendenciaDaLinha(buckets), [buckets])
+  const segAut = useMemo(() => segmentosDaSerie(janela, 'autonomia'), [janela])
+  const segCls = useMemo(() => segmentosDaSerie(janela, 'classe'), [janela])
+  const tendencia = useMemo(() => tendenciaDaLinha(janela), [janela])
 
-  /** ≥ 2 meses COM dado. Abaixo disso não se desenha linha — só os pontos (pedido do produto). */
-  const temSerie = temSerieTemporal(buckets)
+  /*
+   * RÓTULOS DO EIXO X (item 4 do pedido). O passo vem de `passoDeRotulos(n, granularidade)`, que
+   * compara o espaçamento em pixels com a largura do rótulo mono 9px — em DIÁRIO (14 buckets em
+   * 344px = 26,5px cada) um `dd.mm` de ~28px não cabe em todos, e o passo vira 2.
+   *
+   * ⚠ Rotular RALO não é agregar RALO: os 14 dias continuam ocupando o eixo (inclusive os vazios) —
+   * só o texto é rareado. E a contagem vai DE TRÁS PARA A FRENTE (`(n−1−i) % passo === 0`), nunca
+   * da frente: assim o ÚLTIMO bucket — a data de referência da leitura, "onde você está agora" — é
+   * SEMPRE rotulado, e o espaçamento entre rótulos é uniforme. Ancorar no primeiro deixaria o
+   * último de fora, ou o colocaria colado no penúltimo rótulo (exatamente a sobreposição a evitar).
+   */
+  const passoRotulos = passoDeRotulos(dados.length, granularidade)
+  const rotulados = useMemo(() => {
+    const marcados = new Set<number>()
+    for (let i = dados.length - 1; i >= 0; i -= passoRotulos) marcados.add(i)
+    return marcados
+  }, [dados.length, passoRotulos])
+
+  /**
+   * O ano aparece sob o PRIMEIRO rótulo visível e sempre que o ano VIRA — nas três escalas
+   * (`jan` e `03.01` são igualmente ambíguos sem ele). Só sob buckets rotulados: um ano solto
+   * embaixo de um bucket sem rótulo seria uma segunda linha de texto sem âncora.
+   */
+  const anosVisiveis = useMemo(() => {
+    const mostrar = new Set<number>()
+    let anterior: number | null = null
+    for (let i = 0; i < dados.length; i++) {
+      if (!rotulados.has(i)) continue
+      const ano = dados[i].bucket.inicio.getFullYear()
+      if (anterior === null || ano !== anterior) mostrar.add(i)
+      anterior = ano
+    }
+    return mostrar
+  }, [dados, rotulados])
+
+  /** ≥ 2 buckets COM dado. Abaixo disso não se desenha linha — só os pontos (pedido do produto). */
+  const temSerie = temSerieTemporal(janela)
   /** Vazio = nenhuma RESOLUÇÃO (não "nenhuma plotável"): a autonomia existe sem métrica. */
   const vazio = !carregando && dataset.todas.length === 0
 
   const idxSelecionado = useMemo(() => {
     if (!selecionadoId) return -1
-    return buckets.findIndex((b) => b.resolucoes.some((p) => p.resolucaoId === selecionadoId))
-  }, [buckets, selecionadoId])
+    return janela.findIndex((b) => b.resolucoes.some((p) => p.resolucaoId === selecionadoId))
+  }, [janela, selecionadoId])
 
-  /** O bucket "ativo" — o hover manda; sem hover, o mês da resolução selecionada. */
+  /** O bucket "ativo" — o hover manda; sem hover, o bucket da resolução selecionada. */
   const idxAtivo = hoverIdx ?? (idxSelecionado >= 0 ? idxSelecionado : null)
   const ativo = idxAtivo == null ? null : dados[idxAtivo] ?? null
 
-  /** Largura da coluna de hover (também é o passo entre meses). */
-  const passo = buckets.length > 1 ? LINHA_LARGURA / (buckets.length - 1) : LINHA_LARGURA
+  /** Largura da coluna de hover (também é o passo entre buckets). */
+  const passo = janela.length > 1 ? LINHA_LARGURA / (janela.length - 1) : LINHA_LARGURA
 
-  function selecionar(b: BucketMes) {
+  function trocarGranularidade(proxima: Granularidade) {
+    // O índice do bucket muda de significado ao reagregar: um hover pendurado apontaria para
+    // outro período. A SELEÇÃO (resolucaoId) sobrevive — ela é de uma resolução, não de um bucket.
+    setHoverIdx(null)
+    setGranularidade(proxima)
+  }
+
+  function selecionar(b: BucketTempo) {
     // Só as COM métrica viram estrela nos outros gráficos — selecionar uma resolução que não
-    // existe na Carta deixaria a seleção pendurada. Mês sem nenhuma plotável não é clicável.
+    // existe na Carta deixaria a seleção pendurada. Bucket sem nenhuma plotável não é clicável.
     if (!onSelecionar || b.comMetrica.length === 0) return
     // `bucket.comMetrica` está em ordem cronológica ASCENDENTE.
-    // DECISÃO: o mês é um AGREGADO — não dá para "selecionar um mês". Clicar seleciona a
-    // resolução MAIS RECENTE do mês, e o tooltip diz isso em voz alta quando há mais de uma.
+    // DECISÃO: o bucket é um AGREGADO — não dá para "selecionar um mês". Clicar seleciona a
+    // resolução MAIS RECENTE do período, e o tooltip diz isso em voz alta quando há mais de uma.
     // Nunca escolher em silêncio: o clique é explicado antes de acontecer.
     onSelecionar(b.comMetrica[b.comMetrica.length - 1].resolucaoId)
   }
 
   return (
     <div className={cn('flex flex-col gap-2.5', className)}>
-      <Legenda tema={tema} />
+      {/* ── cabeçalho do gráfico: legenda (o que é) + granularidade (em que escala) ───── */}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <Legenda tema={tema} />
+        <SeletorDeGranularidade value={granularidade} onChange={trocarGranularidade} />
+      </div>
 
       <div className="relative" onMouseLeave={() => setHoverIdx(null)}>
         {/*
          * `role="group"`, não `role="img"`: por ARIA, os descendentes de um `img` são
-         * PRESENTATIONAL — os 12 alvos de mês (`role="button"` + `<title>`) simplesmente
-         * não existiriam para o leitor de tela. Um gráfico interativo é um grupo.
+         * PRESENTATIONAL — os alvos de bucket (`role="button"`) simplesmente não existiriam
+         * para o leitor de tela. Um gráfico interativo é um grupo.
          */}
         <svg
           viewBox={`0 0 ${VB.largura} ${VB.altura}`}
           width="100%"
           className="block"
           role="group"
-          aria-label={rotuloAcessivel(buckets, tendencia.texto, carregando)}
+          aria-label={rotuloAcessivel(janela, granularidade, tendencia.texto, carregando)}
         >
           {/* ── grade: regrada nos INTEIROS de autonomia (DECISÃO — Lacuna K) ────────── */}
           {LINHA_GRADE_Y.map(({ autonomia, y }) => (
@@ -289,36 +368,38 @@ export function Linha({
             </text>
           ))}
 
-          {/* ── eixo X: mês (+ ano quando vira o calendário) ─────────────────────────── */}
-          {dados.map(({ bucket, i, x }) => (
-            <g key={bucket.chave}>
-              <text
-                x={x}
-                y={ROTULO_MES_Y}
-                textAnchor="middle"
-                fontSize={9}
-                className={cn(
-                  'font-mono',
-                  idxAtivo === i ? 'fill-mid' : 'fill-soft',
-                  bucket.total === 0 && 'opacity-55',
-                )}
-              >
-                {bucket.rotulo}
-              </text>
-              {/* o ano aparece no 1º bucket e a cada janeiro — a janela de 12 meses cruza anos */}
-              {(i === 0 || bucket.mes === 1) && (
+          {/* ── eixo X: dd.mm (dia/semana) ou mmm/aa (mês) + o ano quando ele vira ───── */}
+          {dados.map(({ bucket, i, x }) => {
+            if (!rotulados.has(i)) return null
+            return (
+              <g key={bucket.chave}>
                 <text
                   x={x}
-                  y={ROTULO_ANO_Y}
+                  y={ROTULO_TEMPO_Y}
                   textAnchor="middle"
-                  fontSize={8.5}
-                  className="fill-soft font-mono tabular opacity-70"
+                  fontSize={9}
+                  className={cn(
+                    'font-mono tabular',
+                    idxAtivo === i ? 'fill-mid' : 'fill-soft',
+                    bucket.total === 0 && 'opacity-55',
+                  )}
                 >
-                  {bucket.ano}
+                  {bucket.rotulo}
                 </text>
-              )}
-            </g>
-          ))}
+                {anosVisiveis.has(i) && (
+                  <text
+                    x={x}
+                    y={ROTULO_ANO_Y}
+                    textAnchor="middle"
+                    fontSize={8.5}
+                    className="fill-soft font-mono tabular opacity-70"
+                  >
+                    {bucket.inicio.getFullYear()}
+                  </text>
+                )}
+              </g>
+            )
+          })}
 
           {carregando ? (
             <Fantasma />
@@ -336,7 +417,9 @@ export function Linha({
                 />
               )}
 
-              {/* ── série COMPLEXIDADE: linha NEUTRA tracejada, pontos no COLORMAP ──── */}
+              {/* ── série COMPLEXIDADE: linha NEUTRA tracejada, pontos no COLORMAP ────
+                   Um segmento por sequência contígua: o bucket sem classe QUEBRA a linha.
+                   Interpolar por cima do buraco inventaria uma medição que não existe. */}
               {temSerie &&
                 segCls.map((seg) => (
                   <polyline
@@ -351,7 +434,10 @@ export function Linha({
                   />
                 ))}
 
-              {/* ── série AUTONOMIA: sólida, NEUTRA (regra 4) ───────────────────────── */}
+              {/* ── série AUTONOMIA: sólida, NEUTRA (regra 4) ─────────────────────────
+                   Ela ATRAVESSA os buckets que só têm resolução não-Java: autonomia é
+                   autodeclarada e independe da linguagem (§4.4). Só quebra no bucket em que
+                   NADA foi enviado. */}
               {temSerie &&
                 segAut.map((seg) => (
                   <polyline
@@ -400,16 +486,19 @@ export function Linha({
                 ),
               )}
 
-              {/* "onde você está agora": halo no último mês COM dado da série de autonomia */}
+              {/* "onde você está agora": halo no último bucket COM dado da série de autonomia */}
               <Agora segmentos={segAut} />
 
-              {/* ── alvos de hover/clique: uma coluna por mês ───────────────────────── */}
+              {/* ── alvos de hover/clique: uma coluna por bucket ────────────────────── */}
               {dados.map((d) => {
                 const x0 = Math.max(GRADE_X0, d.x - passo / 2)
                 const x1 = Math.min(GRADE_X1, d.x + passo / 2)
                 const clicavel = !!onSelecionar && d.bucket.comMetrica.length > 0
-                // Mês sem resolução não vira parada de tabulação muda: ou é botão de verdade,
-                // ou é um `img` com rótulo (o leitor ainda ouve "mar 2026: sem resolução").
+                // Bucket sem resolução não vira parada de tabulação muda: ou é botão de verdade,
+                // ou é um `img` com rótulo (o leitor ainda ouve "mar/2026: sem resolução").
+                // ⚠ SEM `<title>` aqui: o navegador desenharia o tooltip NATIVO por cima do
+                // callout — dois pop-ups, e o nativo roubando o clique. A acessibilidade vai
+                // inteira por `aria-label`; o tooltip visual é só o callout abaixo.
                 const temDado = d.bucket.total > 0
                 return (
                   <rect
@@ -433,9 +522,7 @@ export function Linha({
                         selecionar(d.bucket)
                       }
                     }}
-                  >
-                    <title>{resumoDoBucket(d)}</title>
-                  </rect>
+                  />
                 )
               })}
             </>
@@ -476,8 +563,8 @@ export function Linha({
         {carregando
           ? 'calculando a evolução…'
           : temSerie
-            ? `${tendencia.texto} · ${meses(buckets.length)}`
-            : 'mês a mês · esquerda = autonomia (1–5) · direita = complexidade típica'}
+            ? `${tendencia.texto} · ${periodos(janela.length, granularidade)}`
+            : `${ESCALA[granularidade].passo} · esquerda = autonomia (1–5) · direita = complexidade típica`}
       </p>
     </div>
   )
@@ -486,6 +573,53 @@ export function Linha({
 // ════════════════════════════════════════════════════════════════════════════
 // PEÇAS
 // ════════════════════════════════════════════════════════════════════════════
+
+/**
+ * SEGMENTED CONTROL de granularidade — a mesma pele do `SeletorDeGrafico` (mono 11px, hairline,
+ * raio 3px), mas com o ativo em `elevated`/`ink` em vez do `ink` sólido: os dois seletores
+ * aparecem no mesmo cartão, e o sólido é do de cima (a VISUALIZAÇÃO manda; a escala do tempo é
+ * uma lente dentro dela). A hairline fica no trilho, não em cada botão — assim a altura não muda
+ * quando o ativo troca.
+ *
+ * ⚠ `role="group"` + `aria-pressed`, não `tablist`/`tab`: não há painéis a alternar — são três
+ * estados do MESMO gráfico. Três `<button>` de verdade, cada um na sua parada de tabulação, com
+ * o anel de foco do sistema (`.ci-foco-botao`).
+ */
+function SeletorDeGranularidade({
+  value,
+  onChange,
+}: {
+  value: Granularidade
+  onChange: (proxima: Granularidade) => void
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="Granularidade do eixo do tempo"
+      className="flex shrink-0 items-center gap-px rounded-ci border border-line bg-recess p-[2px]"
+    >
+      {ORDEM_SELETOR.map((g) => {
+        const ativo = g === value
+        return (
+          <button
+            key={g}
+            type="button"
+            aria-pressed={ativo}
+            onClick={() => onChange(g)}
+            className={cn(
+              'ci-foco-botao cursor-pointer rounded-ci px-2 py-[3px] font-mono text-[11px] transition-colors',
+              ativo
+                ? 'bg-elevated font-semibold text-ink'
+                : 'bg-transparent text-soft hover:text-ink',
+            )}
+          >
+            {ROTULO_GRANULARIDADE[g]}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 /**
  * Legenda (spec 02 §5.1). Três itens, porque são três coisas a distinguir:
@@ -526,7 +660,7 @@ function Legenda({ tema }: { tema: Tema }) {
   )
 }
 
-/** Halo no último mês com dado da autonomia — "onde você está agora" (protótipo, §5.3). */
+/** Halo no último bucket com dado da autonomia — "onde você está agora" (protótipo, §5.3). */
 function Agora({ segmentos }: { segmentos: PontoSerie[][] }) {
   const ultimoSeg = segmentos[segmentos.length - 1]
   const ultimo = ultimoSeg?.[ultimoSeg.length - 1]
@@ -566,8 +700,10 @@ function Fantasma() {
 }
 
 /**
- * Tooltip do bucket ativo. Mono em tudo (regra 5), `≈` quando a classe do mês é estimada
- * (regra 3), e a contagem do mês — o mês é um agregado e isso não pode ficar implícito.
+ * Tooltip do bucket ativo — o ÚNICO pop-up do gráfico (não há `<title>` no SVG). Mono em tudo
+ * (regra 5), `≈` quando a classe do período é estimada (regra 3), o rótulo POR EXTENSO do bucket
+ * (`14.03.2026` · `semana de 09.03.2026` · `mar/2026` — só ele desambigua a escala) e a CONTAGEM
+ * de resoluções: o bucket é um agregado, e isso não pode ficar implícito.
  */
 function Tooltip({
   dados,
@@ -581,7 +717,7 @@ function Tooltip({
   const { bucket, x, k } = dados
   const yAncora = Math.min(dados.yAut ?? LINHA_Y_BASE, dados.yCls ?? LINHA_Y_BASE)
   const pos = posicaoTooltip(x, yAncora)
-  /** SEM RESOLUÇÃO ≠ sem métrica. O mês só é vazio quando o aluno não enviou nada. */
+  /** SEM RESOLUÇÃO ≠ sem métrica. O bucket só é vazio quando o aluno não enviou nada. */
   const semResolucao = bucket.total === 0
 
   return (
@@ -595,17 +731,15 @@ function Tooltip({
     >
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] font-semibold text-ink tabular">
-          {bucket.rotulo} {bucket.ano}
+          {bucket.rotuloLongo}
         </span>
         <span className="font-mono text-[10px] text-soft tabular">
-          {semResolucao
-            ? 'sem resolução'
-            : pluralPt(bucket.total, 'resolução', 'resoluções')}
+          {semResolucao ? 'sem resolução' : pluralPt(bucket.total, 'resolução', 'resoluções')}
           {bucket.semMetrica > 0 && ` · ${bucket.semMetrica} sem métrica`}
         </span>
       </div>
 
-      {/* Autonomia: existe em TODO mês com resolução — independe da linguagem (§4.4). */}
+      {/* Autonomia: existe em TODO bucket com resolução — independe da linguagem (§4.4). */}
       {!semResolucao && (
         <span className="flex items-center gap-1.5 font-mono text-[10px] text-mid tabular">
           <span className="h-[2px] w-2.5 rounded-ci-sm bg-ink" aria-hidden="true" />
@@ -613,7 +747,7 @@ function Tooltip({
         </span>
       )}
 
-      {/* Complexidade: só quando ao menos uma resolução do mês foi classificada. */}
+      {/* Complexidade: só quando ao menos uma resolução do bucket foi classificada. */}
       {k != null && bucket.mediaClasse != null ? (
         <span
           className="flex items-center gap-1.5 font-mono text-[10px] tabular"
@@ -638,7 +772,7 @@ function Tooltip({
       )}
 
       {clicavel && bucket.comMetrica.length > 1 && (
-        <span className="font-mono text-[9px] text-soft">clique → a mais recente do mês</span>
+        <span className="font-mono text-[9px] text-soft">clique → a mais recente do período</span>
       )}
     </div>
   )
@@ -667,16 +801,17 @@ function posicaoTooltip(x: number, y: number) {
 }
 
 /**
- * Texto nativo do `<title>`/`aria-label` da coluna — é o que o leitor de tela lê ao focar o mês.
- * "sem resolução" é reservado ao mês em que NADA foi enviado. Mês com resoluções sem métrica
- * diz quantas ficaram sem classe: o trabalho existiu, só não pôde ser medido.
+ * Texto do `aria-label` da coluna — é o que o leitor de tela lê ao focar o bucket (e a ÚNICA via
+ * de acessibilidade dele: não há `<title>` no SVG). "sem resolução" é reservado ao período em que
+ * NADA foi enviado. Bucket com resoluções sem métrica diz quantas ficaram sem classe: o trabalho
+ * existiu, só não pôde ser medido.
  */
 function resumoDoBucket(d: DadosBucket): string {
   const { bucket, k } = d
-  if (bucket.total === 0) return `${bucket.rotulo} ${bucket.ano}: sem resolução`
+  if (bucket.total === 0) return `${bucket.rotuloLongo}: sem resolução`
 
   const partes = [
-    `${bucket.rotulo} ${bucket.ano}: ${pluralPt(bucket.total, 'resolução', 'resoluções')}`,
+    `${bucket.rotuloLongo}: ${pluralPt(bucket.total, 'resolução', 'resoluções')}`,
     `autonomia média ${numeroPt(bucket.mediaAutonomia as number, 1)} de 5`,
   ]
   if (k != null) {
@@ -688,18 +823,25 @@ function resumoDoBucket(d: DadosBucket): string {
   return partes.join(' · ')
 }
 
-function meses(n: number): string {
-  return `${n} ${pluralPt(n, 'mês', 'meses')}`
+/** "8 meses" · "12 semanas" · "14 dias" — a extensão da janela, na escala corrente. */
+function periodos(n: number, g: Granularidade): string {
+  return pluralPt(n, ESCALA[g].singular, ESCALA[g].plural)
 }
 
-function rotuloAcessivel(buckets: BucketMes[], tendencia: string, carregando: boolean): string {
-  if (carregando) return 'Carregando a evolução mensal.'
-  const comResolucao = buckets.filter((b) => b.total > 0).length
-  if (comResolucao === 0) return 'Evolução mensal: nenhuma resolução enviada.'
-  const semMetrica = buckets.reduce((s, b) => s + b.semMetrica, 0)
+function rotuloAcessivel(
+  janela: BucketTempo[],
+  granularidade: Granularidade,
+  tendencia: string,
+  carregando: boolean,
+): string {
+  const escala = ESCALA[granularidade].passo
+  if (carregando) return `Carregando a evolução ${escala}.`
+  const comResolucao = janela.filter((b) => b.total > 0).length
+  if (comResolucao === 0) return `Evolução ${escala}: nenhuma resolução enviada.`
+  const semMetrica = janela.reduce((s, b) => s + b.semMetrica, 0)
   const nota = semMetrica > 0 ? ` ${semMetrica} resolução(ões) sem métrica de complexidade.` : ''
   return (
-    `Evolução mensal em ${meses(buckets.length)}, ` +
+    `Evolução ${escala} em ${periodos(janela.length, granularidade)}, ` +
     `${comResolucao} com resolução. Autonomia média (1 a 5) e complexidade típica ` +
     `(O(1) a O(n!), estimada). ${tendencia}.${nota}`
   )
