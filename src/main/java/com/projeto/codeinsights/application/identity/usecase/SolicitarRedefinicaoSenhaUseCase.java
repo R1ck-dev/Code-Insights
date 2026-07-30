@@ -9,6 +9,7 @@ import com.projeto.codeinsights.domain.identity.model.TokenVerificacao;
 import com.projeto.codeinsights.domain.identity.port.EmailSenderPort;
 import com.projeto.codeinsights.domain.identity.port.TokenVerificacaoRepository;
 import com.projeto.codeinsights.domain.identity.port.UsuarioRepository;
+import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +23,15 @@ public class SolicitarRedefinicaoSenhaUseCase {
 
     @Transactional
     public void execute(EsqueciSenhaInput input) {
+        // Sem canal de e-mail nao ha como entregar o link. Recusar com mensagem clara e melhor do
+        // que a resposta neutra de sempre, que aqui viraria mentira: o aluno esperaria por um
+        // e-mail que nunca foi enviado. A mensagem e igual para qualquer endereco, entao continua
+        // sem revelar quem tem conta.
+        if (!emailSenderPort.habilitado()) {
+            throw new NegocioException("A redefinicao de senha por e-mail esta indisponivel. "
+                    + "Procure o responsavel pela pesquisa para recuperar o seu acesso.");
+        }
+
         // Sem 'else' e sem excecao quando o e-mail nao existe: resposta neutra
         // (nao revela se o e-mail esta cadastrado).
         usuarioRepository.buscarPorEmail(input.email()).ifPresent(usuario -> {

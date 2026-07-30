@@ -29,6 +29,9 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                        // Sinal de vida para o health check da hospedagem e para o ping que evita
+                        // a hibernacao no tier gratuito. Nao expoe dado nem toca o banco.
+                        .requestMatchers(HttpMethod.GET, "/health").permitAll()
                         // --- Rotas publicas (acesso e recuperacao de conta) ---
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/reenviar-ativacao").permitAll()

@@ -260,6 +260,15 @@ export interface SnippetDTO {
   criadoEm: string
 }
 
+/**
+ * Resultado do cadastro. Quando a instalação não tem provedor de e-mail configurado, a conta já
+ * nasce ativa e `precisaAtivarPorEmail` vem `false` — o aluno entra direto, sem tela de "verifique
+ * seu e-mail". A tela segue o que o backend responde em vez de assumir um fluxo fixo.
+ */
+export interface RegistroDTO {
+  precisaAtivarPorEmail: boolean
+}
+
 // ---- Payloads de request ----
 export interface RegistrarUsuarioRequest {
   username: string

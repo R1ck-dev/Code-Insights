@@ -53,8 +53,14 @@ export function RegistroPage() {
     e.preventDefault()
     setError(null)
     try {
-      await registrar.mutateAsync({ username, email, password })
-      navigate('/verifique-email', { state: { email } })
+      const { precisaAtivarPorEmail } = await registrar.mutateAsync({ username, email, password })
+      if (precisaAtivarPorEmail) {
+        navigate('/verifique-email', { state: { email } })
+      } else {
+        // Sem provedor de e-mail a conta já nasce ativa: mandar para "verifique seu e-mail" faria
+        // o aluno esperar por uma mensagem que nunca vai chegar.
+        navigate('/entrar', { state: { email, contaCriada: true } })
+      }
     } catch (err) {
       setError(apiErrorMessage(err, 'Não foi possível criar a conta.'))
     }

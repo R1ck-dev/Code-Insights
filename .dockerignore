@@ -1,0 +1,25 @@
+# Contexto de build da imagem do backend. O Dockerfile so precisa de pom.xml e src/;
+# tudo o mais aqui e peso morto enviado ao daemon a cada build.
+
+# Build local do Maven (a imagem compila do zero na propria camada de build)
+target/
+
+# Frontend: vai para deploy estatico proprio (Vercel), nunca para dentro do jar
+frontend/
+
+# Git e metadados
+.git/
+.gitignore
+.github/
+
+# Documentacao e artefatos de pesquisa (o PDF do projeto sozinho e alguns MB)
+docs/
+*.pdf
+*.md
+
+# Ambiente local
+docker-compose.yml
+.env
+.env.*
+.idea/
+.vscode/

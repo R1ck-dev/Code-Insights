@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { AlertTriangle, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { AuthLayout } from '@/layouts/AuthLayout'
 import { Button } from '@/components/ui/button'
 import { Input, PasswordInput } from '@/components/ui/input'
@@ -30,9 +30,16 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/app'
+  const navegacao = location.state as {
+    from?: { pathname?: string }
+    email?: string
+    contaCriada?: boolean
+  } | null
+  const from = navegacao?.from?.pathname ?? '/app'
+  // Vindo do cadastro numa instalação sem e-mail: a conta já está ativa, então só falta entrar.
+  const contaCriada = navegacao?.contaCriada === true
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(navegacao?.email ?? '')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -112,6 +119,16 @@ export function LoginPage() {
             required
           />
         </FormField>
+
+        {contaCriada && !error && (
+          <p
+            role="status"
+            className="flex items-start gap-[7px] rounded-ci border border-sucesso-line bg-sucesso-bg px-[11px] py-[9px] text-[12px] leading-snug text-sucesso-ink"
+          >
+            <CheckCircle2 size={13} strokeWidth={2} aria-hidden className="mt-[1px] shrink-0" />
+            Conta criada e já ativa. Entre com a senha que você acabou de escolher.
+          </p>
+        )}
 
         {error && (
           <p

@@ -6,13 +6,14 @@ import type {
   MeuPerfilDTO,
   Pagina,
   RegistrarUsuarioRequest,
+  RegistroDTO,
   TokenResponse,
   UsuarioPublicoDTO,
 } from '@/types/api'
 
 export const identityApi = {
   registrar: (body: RegistrarUsuarioRequest) =>
-    api.post<void>('/api/usuarios', body).then((r) => r.data),
+    api.post<RegistroDTO>('/api/usuarios', body).then((r) => r.data),
 
   login: (body: LoginRequest) =>
     api.post<TokenResponse>('/api/auth/login', body).then((r) => r.data),
