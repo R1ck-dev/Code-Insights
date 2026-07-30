@@ -1,14 +1,36 @@
 spring:
   datasource:
+    # A URL precisa carregar ?sslmode=require: o Postgres gerenciado (Neon) recusa conexao
+    # sem TLS. Ver docs/deploy.md.
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+    hikari:
+      # O pool precisa ESVAZIAR quando ocioso, e nao so encolher.
+      #
+      # O Neon suspende o compute do banco apos alguns minutos sem conexao e o plano
+      # gratuito da uma cota mensal de horas de computo. No default do Hikari,
+      # minimum-idle acompanha maximum-pool-size: o pool mantem conexoes abertas para
+      # sempre, o banco nunca fica ocioso, nunca suspende, e a cota do mes evapora em
+      # poucos dias de aplicacao no ar sem ninguem usando.
+      #
+      # Com minimum-idle: 0 o pool fecha tudo depois de idle-timeout, o banco suspende
+      # e so acorda quando ha requisicao de verdade. O custo e a primeira consulta apos
+      # a ociosidade pagar o wake-up (~1s) alem do handshake TLS.
+      minimum-idle: 0
+      idle-timeout: 60000
+      max-lifetime: 900000
+      # Container de 512MB e trafego de piloto nao justificam as 10 conexoes do default.
+      maximum-pool-size: 5
+
   jpa:
     show-sql: false
 
   mail:
+    # Gmail: smtp.gmail.com na 587. MAIL_PASSWORD e a *senha de app* (exige 2FA na conta),
+    # nunca a senha real do Google.
     host: ${MAIL_HOST}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
@@ -24,6 +46,17 @@ app:
   cors:
     # Em producao a origem e obrigatoria (sem fallback localhost): o boot falha se ausente.
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
+  web:
+    # Base dos links de ativacao de conta e de redefinicao de senha. Obrigatoria em
+    # producao: com o fallback localhost:5173 do application.yml, todo e-mail enviado
+    # ao aluno levaria a um endereco que so existe na sua maquina — e a falha so
+    # apareceria depois, na caixa de entrada dele.
+    base-url: ${APP_WEB_BASE_URL}
+  mail:
+    # Precisa ser exatamente a conta autenticada em MAIL_USERNAME. O Gmail reescreve
+    # (ou recusa) um From diferente do remetente autenticado, entao um valor decorativo
+    # aqui vira e-mail entregue com outro remetente ou erro 550.
+    from: ${APP_MAIL_FROM}
 
 server:
   port: ${PORT:8080}
