@@ -19,6 +19,7 @@ import com.projeto.codeinsights.application.identity.dto.AtualizarMeuPerfilInput
 import com.projeto.codeinsights.application.identity.dto.MeuPerfilDTO;
 import com.projeto.codeinsights.application.identity.dto.ReenviarAtivacaoInput;
 import com.projeto.codeinsights.application.identity.dto.RegistrarUsuarioInput;
+import com.projeto.codeinsights.application.identity.dto.RegistroDTO;
 import com.projeto.codeinsights.application.identity.dto.UsuarioPublicoDTO;
 import com.projeto.codeinsights.application.identity.usecase.AlterarVisibilidadePerfilUseCase;
 import com.projeto.codeinsights.application.identity.usecase.AtivarContaUseCase;
@@ -52,14 +53,18 @@ public class UsuarioController {
     private final BuscarUsuarioPublicoUseCase buscarUsuarioPublicoUseCase;
     private final ListarUsuariosPublicosUseCase listarUsuariosPublicosUseCase;
 
+    /**
+     * A resposta diz se ainda falta ativar a conta por e-mail. Sem provedor configurado a conta ja
+     * nasce ativa, e e o front que decide para onde levar o aluno com base nisso — em vez de supor
+     * um fluxo fixo que passaria a mentir se o e-mail fosse religado.
+     */
     @PostMapping
-    public ResponseEntity<Void> registrar(@RequestBody @Valid RegistrarUsuarioRequest request) {
+    public ResponseEntity<RegistroDTO> registrar(@RequestBody @Valid RegistrarUsuarioRequest request) {
         RegistrarUsuarioInput input = new RegistrarUsuarioInput(
                 request.username(),
                 request.email(),
                 request.password());
-        registrarUsuarioUseCase.execute(input);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(registrarUsuarioUseCase.execute(input));
     }
 
     @GetMapping("/ativar")

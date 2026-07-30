@@ -43,14 +43,19 @@ app:
     # apareceria depois, na caixa de entrada dele.
     base-url: ${APP_WEB_BASE_URL}
   mail:
-    # Precisa ser um remetente VERIFICADO no SMTP2GO (Sending > Verified Senders). O plano
-    # gratuito aceita verificar um endereco avulso, sem dominio proprio. Remetente nao
-    # verificado nao gera erro de conexao: a API responde 200 e marca o envio como recusado.
-    from: ${APP_MAIL_FROM}
-    provider: smtp2go
+    # A plataforma roda SEM provedor de e-mail. Nao e preferencia: nao ha caminho viavel com os
+    # recursos atuais — o Render bloqueia as portas SMTP no plano gratuito, Brevo e Resend exigem
+    # dominio proprio verificado para enviar a terceiros, e o SMTP2GO recusa cadastro com e-mail
+    # gratuito. Em vez de manter um canal que falha, as contas nascem ativas e a recuperacao de
+    # acesso passa pelas rotas administrativas (ver docs/deploy.md).
+    #
+    # Para religar o e-mail um dia, basta trocar para 'smtp2go' e definir SMTP2GO_API_KEY e
+    # APP_MAIL_FROM com um remetente verificado. Nada de codigo muda, nem o front — o registro
+    # devolve precisaAtivarPorEmail e a interface se adapta sozinha.
+    provider: ${APP_MAIL_PROVIDER:nenhum}
+    from: ${APP_MAIL_FROM:no-reply@codeinsights.app}
     smtp2go:
-      # Obrigatoria em producao (sem fallback vazio): sem chave, todo envio e recusado.
-      api-key: ${SMTP2GO_API_KEY}
+      api-key: ${SMTP2GO_API_KEY:}
 
 server:
   port: ${PORT:8080}

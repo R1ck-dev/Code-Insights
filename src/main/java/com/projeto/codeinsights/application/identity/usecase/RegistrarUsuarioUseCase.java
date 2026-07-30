@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.projeto.codeinsights.application.identity.dto.RegistrarUsuarioInput;
+import com.projeto.codeinsights.application.identity.dto.RegistroDTO;
 import com.projeto.codeinsights.domain.identity.enums.TipoToken;
 import com.projeto.codeinsights.domain.identity.model.TokenVerificacao;
 import com.projeto.codeinsights.domain.identity.model.Usuario;
@@ -25,7 +26,7 @@ public class RegistrarUsuarioUseCase {
     private final EmailSenderPort emailSenderPort;
 
     @Transactional
-    public void execute(RegistrarUsuarioInput input) {
+    public RegistroDTO execute(RegistrarUsuarioInput input) {
         if (usuarioRepository.existePorEmail(input.email())) {
             throw new NegocioException("Ja existe um usuario registrado com este e-mail.");
         }
@@ -34,13 +35,25 @@ public class RegistrarUsuarioUseCase {
         }
 
         String hash = passwordEncoderPort.encode(input.password());
-
         Usuario novoUsuario = new Usuario(null, input.username(), input.email(), hash);
+
+        // Sem canal de e-mail, exigir confirmacao deixaria a conta presa em
+        // PENDENTE_VERIFICACAO para sempre — o login recusa qualquer status diferente de ATIVO.
+        // A confirmacao por e-mail prova que o endereco pertence a quem se cadastrou; sem ela essa
+        // garantia se perde, o que e aceitavel num piloto fechado onde o pesquisador conhece os
+        // participantes, e nao numa plataforma aberta.
+        if (!emailSenderPort.habilitado()) {
+            novoUsuario.ativarConta();
+            usuarioRepository.salvar(novoUsuario);
+            return new RegistroDTO(false);
+        }
+
         Usuario usuarioSalvo = usuarioRepository.salvar(novoUsuario);
 
         TokenVerificacao token = new TokenVerificacao(usuarioSalvo, TipoToken.ATIVACAO);
         tokenVerificacaoRepository.salvar(token);
 
         emailSenderPort.enviarEmailAtivacao(usuarioSalvo.getEmail(), usuarioSalvo.getUsername(), token.getToken());
+        return new RegistroDTO(true);
     }
 }

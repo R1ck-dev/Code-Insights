@@ -31,6 +31,11 @@ public class JavaMailSenderAdapter implements EmailSenderPort {
     private String remetente;
 
     @Override
+    public boolean habilitado() {
+        return true;
+    }
+
+    @Override
     public void enviarEmailAtivacao(String destinatario, String nome, String token) {
         enviar(destinatario, mensagens.ativacaoDeConta(nome, token));
     }
