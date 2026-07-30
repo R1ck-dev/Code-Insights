@@ -28,19 +28,9 @@ spring:
   jpa:
     show-sql: false
 
-  mail:
-    # Gmail: smtp.gmail.com na 587. MAIL_PASSWORD e a *senha de app* (exige 2FA na conta),
-    # nunca a senha real do Google.
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+  # Sem bloco spring.mail em producao de proposito: o envio nao passa por SMTP.
+  # O plano gratuito do Render bloqueia a saida nas portas 25, 465 e 587, entao o
+  # canal e a API HTTP do SMTP2GO (ver app.mail.provider abaixo).
 
 app:
   cors:
@@ -53,10 +43,14 @@ app:
     # apareceria depois, na caixa de entrada dele.
     base-url: ${APP_WEB_BASE_URL}
   mail:
-    # Precisa ser exatamente a conta autenticada em MAIL_USERNAME. O Gmail reescreve
-    # (ou recusa) um From diferente do remetente autenticado, entao um valor decorativo
-    # aqui vira e-mail entregue com outro remetente ou erro 550.
+    # Precisa ser um remetente VERIFICADO no SMTP2GO (Sending > Verified Senders). O plano
+    # gratuito aceita verificar um endereco avulso, sem dominio proprio. Remetente nao
+    # verificado nao gera erro de conexao: a API responde 200 e marca o envio como recusado.
     from: ${APP_MAIL_FROM}
+    provider: smtp2go
+    smtp2go:
+      # Obrigatoria em producao (sem fallback vazio): sem chave, todo envio e recusado.
+      api-key: ${SMTP2GO_API_KEY}
 
 server:
   port: ${PORT:8080}
