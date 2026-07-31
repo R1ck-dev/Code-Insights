@@ -265,11 +265,9 @@
       "arquivo": "aluno/inverte-frase-com-concatenacao.java",
       "nome": "inverte frase com concatenacao",
       "origem": "estilo de aluno iniciante — String concatenada dentro do laco",
-      "nota": "ACHADO. O motor reconhece a forma composta 's += x' (ver canonico/concatenacao-de-string-em-laco.java, que ele acerta), mas nao a forma explicita 's = s + x' — que e justamente como o iniciante escreve. Erra para menos: diz O(n) onde o custo real e O(n^2), e o espaco cai de O(n) para O(1). Subestimar e a direcao perigosa: a plataforma informaria ao aluno que a solucao custa menos do que custa.",
+      "nota": "Este caso encontrou um defeito real e agora o prende. O motor reconhecia a forma composta 's += x' (ver canonico/concatenacao-de-string-em-laco.java) mas nao a forma explicita 's = s + x' — justamente como o iniciante escreve — e errava para menos: O(n) onde o custo e O(n^2). Corrigido em AstUtils.alvoDeAcumulacao, que passou a ser a unica definicao de acumulo para tempo e espaco.",
       "tempoGabarito": "O(n^2)",
-      "tempoMotor": "O(n)",
-      "espacoGabarito": "O(n)",
-      "espacoMotor": "O(1)"
+      "espacoGabarito": "O(n)"
     },
     {
       "arquivo": "aluno/palindromo-com-charat.java",
@@ -367,11 +365,9 @@
       "arquivo": "adversarial/mdc-euclidiano.java",
       "nome": "MDC euclidiano",
       "origem": "Knuth, TAOCP vol. 2, sec. 4.5.2 — algoritmo de Euclides",
-      "nota": "ACHADO. A reducao do argumento e por resto (a % b), e nao por divisao ou subtracao — formas que o motor reconhece. No tempo ele recusa classificar ('?'), que e honesto; no espaco assume n niveis de pilha e superestima. Euclides e onipresente em programacao competitiva.",
+      "nota": "Este caso encontrou um defeito real e agora o prende. A reducao do argumento e por resto (a % b), forma que o motor nao reconhecia: recusava classificar o tempo e assumia n niveis de pilha. Corrigido em AnalisadorDeRecursao.restoEntreParametros, com a regra estreita de exigir parametro dos dois lados do '%'.",
       "tempoGabarito": "O(log n)",
-      "tempoMotor": "?",
-      "espacoGabarito": "O(log n)",
-      "espacoMotor": "O(n)"
+      "espacoGabarito": "O(log n)"
     },
     {
       "arquivo": "adversarial/contagem-com-hashmap.java",
@@ -440,10 +436,9 @@
       "arquivo": "adversarial/preenchimento-por-inundacao.java",
       "nome": "preenchimento por inundacao",
       "origem": "flood fill em grade n x n — cada celula visitada uma vez",
-      "nota": "Quatro auto-chamadas sem laco: a recorrencia so termina porque a grade e marcada. O motor acerta o tempo — o detector de cache/visitados enxerga a marcacao e limita a recursao ao numero de estados. No espaco assume profundidade n, e nao os n^2 quadros que a pilha pode chegar a ter no pior caso.",
+      "nota": "Quatro auto-chamadas sem laco: a recorrencia so termina porque a grade e marcada. O detector de cache/visitados sempre enxergou a marcacao no tempo, mas a pilha era estimada em n niveis — a recursao desce por celula, nao por linha, e chega a n^2 quadros. Corrigido em AvaliadorDeEspaco.pilhaLimitadaPelosEstados, que so pode elevar a estimativa.",
       "tempoGabarito": "O(n^2)",
-      "espacoGabarito": "O(n^2)",
-      "espacoMotor": "O(n)"
+      "espacoGabarito": "O(n^2)"
     }
   ]
 }

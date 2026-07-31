@@ -174,6 +174,7 @@ public final class AnalisadorDeRecursao {
         Set<String> locais = nomesDeLocais(metodo, parametros);
 
         boolean divisiva = false;
+        boolean porResto = false;
         boolean subtrativa = false;
         boolean estrutural = false;
         boolean derivadoDeLocal = false;
@@ -188,6 +189,10 @@ public final class AnalisadorDeRecursao {
                 } else if (divisor.isPresent()) {
                     divisiva = true;
                     fatorDivisao = Math.min(fatorDivisao, divisor.getAsInt());
+                } else if (restoEntreParametros(argumento, parametros)) {
+                    divisiva = true;
+                    porResto = true;
+                    fatorDivisao = Math.min(fatorDivisao, 2);
                 } else if (subtracaoDeParametro(argumento, parametros)) {
                     subtrativa = true;
                 } else if (ehAcessoEstrutural(argumento, parametros)) {
@@ -199,10 +204,8 @@ public final class AnalisadorDeRecursao {
         }
 
         if (divisiva) {
-            String suposicao = subtrativa
-                    ? "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina"
-                    : null;
-            return new Recursao(Reducao.DIVISIVA, a, fatorDivisao, false, 0, suposicao);
+            return new Recursao(Reducao.DIVISIVA, a, fatorDivisao, false, 0,
+                    suposicaoDaDivisao(subtrativa, porResto));
         }
         if (subtrativa) {
             return new Recursao(Reducao.SUBTRATIVA, a, 1, false, 0, null);
@@ -241,6 +244,34 @@ public final class AnalisadorDeRecursao {
         return chamadas.stream()
                 .flatMap(chamada -> chamada.getArguments().stream())
                 .anyMatch(argumento -> AstUtils.referenciaAlguma(argumento, Set.of(variavel)));
+    }
+
+    private static String suposicaoDaDivisao(boolean subtrativa, boolean porResto) {
+        if (subtrativa) {
+            return "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina";
+        }
+        if (porResto) {
+            return "reducao por resto entre parametros, como no algoritmo de Euclides; "
+                    + "assumida queda geometrica do argumento";
+        }
+        return null;
+    }
+
+    /**
+     * {@code f(b, a % b)}: o argumento cai por resto, e nao por divisao explicita. E a forma do
+     * algoritmo de Euclides, cujo numero de passos e logaritmico (Lame). Sem esta regra o motor
+     * classificava a reducao como INDETERMINADA e <b>recusava responder</b> um dos algoritmos mais
+     * comuns em programacao competitiva.
+     * <p>
+     * A regra e estreita de proposito — exige que <b>os dois</b> lados do {@code %} sejam
+     * parametros. {@code f(n % 2)}, com literal a direita, nao e reducao geometrica: cai para uma
+     * constante num passo so.
+     */
+    private static boolean restoEntreParametros(Expression argumento, Set<String> parametros) {
+        return argumento.findAll(BinaryExpr.class).stream()
+                .anyMatch(binaria -> binaria.getOperator() == BinaryExpr.Operator.REMAINDER
+                        && AstUtils.referenciaAlguma(binaria.getLeft(), parametros)
+                        && AstUtils.referenciaAlguma(binaria.getRight(), parametros));
     }
 
     /** {@code f(n / 2)}, {@code f(n >> 1)}: devolve o divisor. */

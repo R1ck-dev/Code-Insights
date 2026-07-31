@@ -1,9 +1,11 @@
 package com.projeto.codeinsights.infrastructure.metrica.custo;
 
+import java.util.Optional;
 import java.util.Set;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -92,5 +94,33 @@ public final class AstUtils {
     public static boolean referenciaAlguma(Node no, Set<String> nomes) {
         return no.findAll(NameExpr.class).stream()
                 .anyMatch(referencia -> nomes.contains(referencia.getNameAsString()));
+    }
+
+    /**
+     * Nome da variavel que uma atribuicao <b>acumula sobre si mesma</b>, nas duas formas que
+     * significam a mesma coisa: {@code s += x} e {@code s = s + x}.
+     * <p>
+     * As duas precisam ser reconhecidas porque o iniciante escreve a segunda, e ler so a
+     * primeira fazia o motor <b>subestimar</b> a concatenacao de String em laco — dizer O(n)
+     * onde o custo e O(n^2). Cabe aqui, e nao em cada avaliador, para que tempo e espaco nao
+     * possam divergir sobre o que conta como acumulo.
+     * <p>
+     * Nao filtra por tipo: quem chama decide se o alvo e uma {@code String} (acumulo caro) ou
+     * um {@code int} (acumulo O(1)).
+     */
+    public static Optional<String> alvoDeAcumulacao(AssignExpr atribuicao) {
+        if (!atribuicao.getTarget().isNameExpr()) {
+            return Optional.empty();
+        }
+        String alvo = atribuicao.getTarget().asNameExpr().getNameAsString();
+
+        if (atribuicao.getOperator() == AssignExpr.Operator.PLUS) {
+            return Optional.of(alvo);
+        }
+        boolean somaQueSeReferencia = atribuicao.getOperator() == AssignExpr.Operator.ASSIGN
+                && atribuicao.getValue() instanceof BinaryExpr soma
+                && soma.getOperator() == BinaryExpr.Operator.PLUS
+                && referenciaAlguma(soma, Set.of(alvo));
+        return somaQueSeReferencia ? Optional.of(alvo) : Optional.empty();
     }
 }

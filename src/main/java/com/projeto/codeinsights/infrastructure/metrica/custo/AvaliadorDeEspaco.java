@@ -67,9 +67,9 @@ public final class AvaliadorDeEspaco {
     }
 
     private static boolean ehConcatenacaoDeTexto(AssignExpr atribuicao, TiposDeVariavel tipos) {
-        return atribuicao.getOperator() == AssignExpr.Operator.PLUS
-                && atribuicao.getTarget().isNameExpr()
-                && "String".equals(tipos.tipoDe(atribuicao.getTarget().asNameExpr().getNameAsString()));
+        return AstUtils.alvoDeAcumulacao(atribuicao)
+                .map(alvo -> "String".equals(tipos.tipoDe(alvo)))
+                .orElse(false);
     }
 
     /** {@code new int[n]} -> grau 1; {@code new int[n][n]} -> grau 2; {@code new int[26]} -> grau 0 (constante). */
@@ -121,6 +121,23 @@ public final class AvaliadorDeEspaco {
                     "profundidade da pilha nao determinada; assumidos n niveis");
             default -> CustoAvaliado.exato(Custo.LINEAR).comNota("pilha de recursao: n niveis");
         };
+        profundidade = profundidade.mais(pilhaLimitadaPelosEstados(recursao));
         return recursao.temSuposicao() ? profundidade.rebaixado(NivelConfianca.MEDIA) : profundidade;
+    }
+
+    /**
+     * Quando ha cache ou marcacao de visitados, nenhum estado se repete na pilha — mas o numero de
+     * estados pode ser <b>maior</b> que os n niveis que a reducao do argumento sugere. Um flood
+     * fill numa grade {@code n x n} desce por celula, nao por linha: a pilha chega a {@code n^2}
+     * quadros. Combina-se com {@code mais} (que toma o maior), entao esta regra so pode elevar a
+     * estimativa — nunca baixar uma profundidade ja corretamente deduzida.
+     */
+    private static CustoAvaliado pilhaLimitadaPelosEstados(Recursao recursao) {
+        if (!recursao.memoizada()) {
+            return CustoAvaliado.exato(Custo.CONSTANTE);
+        }
+        return CustoAvaliado.estimado(Custo.poliLog(recursao.dimensoesDoCache(), 0),
+                "pilha limitada pelos estados distintos do cache (grau %d)"
+                        .formatted(recursao.dimensoesDoCache()));
     }
 }
