@@ -1,0 +1,164 @@
+# Backup diario do banco de producao.
+#
+# POR QUE EXISTE
+# O plano gratuito do Neon guarda ~6 horas de point-in-time restore. O banco E o dado da Iniciacao
+# Cientifica: submissoes, metricas e os registros de consentimento. Seis horas nao e backup, e um
+# pg_dump que depende de alguem lembrar tambem nao.
+#
+# POR QUE NAO SOBE COMO ARTIFACT
+# Este repositorio e PUBLICO, e artifact de repositorio publico e baixavel por qualquer pessoa. O
+# dump carrega nome, e-mail, codigo-fonte e consentimentos de participantes de pesquisa. Por isso o
+# arquivo vai cifrado para um repositorio PRIVADO separado, e nunca fica neste.
+#
+# ---------------------------------------------------------------------------------------------
+# CONFIGURACAO (uma vez, e so voce pode fazer — exige acesso a conta)
+#
+#  1. Crie um repositorio PRIVADO vazio, ex.: R1ck-dev/codeinsights-backups
+#     (repositorios privados sao ilimitados e gratuitos).
+#
+#  2. Gere um token de acesso com permissao de escrita NAQUELE repositorio:
+#     GitHub -> Settings -> Developer settings -> Personal access tokens -> Fine-grained tokens
+#     Repository access: apenas o repo de backup · Permissions: Contents = Read and write.
+#
+#  3. Neste repositorio, em Settings -> Secrets and variables -> Actions, crie quatro secrets:
+#
+#     BACKUP_DB_URL       String de conexao do Neon no formato libpq (NAO o jdbc: do Render):
+#                         postgresql://usuario:senha@ep-nome-123.us-east-1.aws.neon.tech/codeinsights?sslmode=require
+#                         Use o host DIRETO, sem o sufixo -pooler.
+#     BACKUP_PASSPHRASE   Senha longa e aleatoria para cifrar o dump.
+#                         GUARDE-A FORA DAQUI. Sem ela os backups sao irrecuperaveis — nao ha
+#                         recuperacao de senha em criptografia simetrica.
+#     BACKUP_REPO         owner/nome do repositorio privado, ex.: R1ck-dev/codeinsights-backups
+#     BACKUP_REPO_TOKEN   O token do passo 2.
+#
+# ---------------------------------------------------------------------------------------------
+# COMO RESTAURAR
+#
+#   gpg --decrypt --output codeinsights.dump codeinsights-2026-08-02.dump.gpg
+#   pg_restore --no-owner --clean --if-exists \
+#     --dbname "postgresql://usuario:senha@host/codeinsights?sslmode=require" codeinsights.dump
+#
+# Backup que nunca foi restaurado e hipotese, nao backup: restaure um deles num banco local ao menos
+# uma vez, ANTES do piloto, e confira que os usuarios e as resolucoes chegaram.
+#
+# ---------------------------------------------------------------------------------------------
+# MODO DE FALHA SILENCIOSA QUE VOCE PRECISA CONHECER
+#
+# O GitHub DESATIVA workflows agendados apos 60 dias sem nenhuma atividade no repositorio. Se o
+# projeto ficar dois meses parado, o backup para sozinho e ninguem e avisado. Se isso acontecer, a
+# aba Actions mostra um aviso com um botao para reativar. Em periodo de coleta, vale conferir a aba
+# de vez em quando — ou rodar manualmente pelo "Run workflow", que tambem serve de teste.
+
+name: Backup do banco
+
+on:
+  schedule:
+    # 06:17 UTC = 03:17 em Brasilia. Minuto quebrado de proposito: agendamentos no minuto zero
+    # concorrem com o resto do mundo e o GitHub os atrasa ou descarta sob carga.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+# Nunca dois backups ao mesmo tempo: dois clones do repositorio de backup empurrando commits
+# concorrentes terminariam num push rejeitado, e o backup do dia se perderia sem barulho.
+concurrency:
+  group: backup-do-banco
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Instalar o cliente do PostgreSQL
+        # Versao explicita e a mais nova, nao a do runner: pg_dump recusa servidor MAIS NOVO que
+        # ele ("server version mismatch"), e o Neon atualiza a versao do Postgres sem nos avisar.
+        # Cliente novo dumpa servidor antigo sem problema; o contrario nao existe.
+        run: |
+          set -euo pipefail
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Gerar o dump
+        env:
+          DB_URL: ${{ secrets.BACKUP_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DB_URL:-}" ]; then
+            echo "::error::BACKUP_DB_URL nao esta configurado. Veja as instrucoes no topo deste arquivo."
+            exit 1
+          fi
+          ARQUIVO="codeinsights-$(date -u +%Y-%m-%d).dump"
+          # --format=custom leva schema e dados e permite restauracao seletiva.
+          # --no-owner: o dono no Neon nao e o dono no destino da restauracao.
+          pg_dump "$DB_URL" --no-owner --format=custom --file="$ARQUIVO"
+          echo "ARQUIVO=$ARQUIVO" >> "$GITHUB_ENV"
+
+      - name: Conferir que o dump nao esta vazio nem truncado
+        # Um dump de 0 linhas nao falha o pg_dump: conexao ok, resultado inutil. Sem esta checagem,
+        # meses de arquivos vazios pareceriam meses de backup, e a descoberta seria no pior dia.
+        run: |
+          set -euo pipefail
+          TAMANHO=$(stat -c%s "$ARQUIVO")
+          echo "tamanho: $TAMANHO bytes"
+          if [ "$TAMANHO" -lt 4096 ]; then
+            echo "::error::Dump com $TAMANHO bytes — pequeno demais para ser um banco com dados."
+            exit 1
+          fi
+          # Le o indice interno do arquivo: falha aqui significa arquivo corrompido ou incompleto.
+          pg_restore --list "$ARQUIVO" > /dev/null
+          echo "tabelas no dump:"
+          pg_restore --list "$ARQUIVO" | grep -c 'TABLE DATA' || true
+
+      - name: Cifrar
+        env:
+          SENHA: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SENHA:-}" ]; then
+            echo "::error::BACKUP_PASSPHRASE nao esta configurado."
+            exit 1
+          fi
+          # A senha vai por arquivo, e nao por --passphrase na linha de comando: argumento de
+          # processo e legivel por qualquer outro processo da maquina.
+          printf '%s' "$SENHA" > /tmp/senha
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+              --passphrase-file /tmp/senha --pinentry-mode loopback \
+              --output "$ARQUIVO.gpg" "$ARQUIVO"
+          shred -u /tmp/senha "$ARQUIVO"
+          ls -la "$ARQUIVO.gpg"
+
+      - name: Guardar no repositorio privado
+        env:
+          TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TOKEN:-}" ] || [ -z "${REPO:-}" ]; then
+            echo "::error::BACKUP_REPO e/ou BACKUP_REPO_TOKEN nao estao configurados."
+            exit 1
+          fi
+          # --depth 1: o historico de backups cresce sem parar e nao serve para nada aqui.
+          git clone --quiet --depth 1 "https://x-access-token:$TOKEN@github.com/$REPO.git" cofre
+          ANO=$(date -u +%Y)
+          mkdir -p "cofre/$ANO"
+          mv "$ARQUIVO.gpg" "cofre/$ANO/"
+          cd cofre
+          git config user.name  "backup automatico"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          # Testa o que mudou em vez de ignorar a falha do commit: `git commit || true` engoliria
+          # tambem os erros reais, e o job passaria verde sem ter guardado nada.
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "::warning::Nada novo para guardar — ja existe backup com a data de hoje."
+            exit 0
+          fi
+          git commit --quiet -m "backup $(date -u +%F)"
+          git push --quiet
+          echo "guardado em $REPO na pasta $ANO/"
