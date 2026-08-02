@@ -1,6 +1,7 @@
 package com.projeto.codeinsights.infrastructure.persistence.pesquisa.repository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -36,9 +37,14 @@ public interface SpringDataCoorteRepository extends JpaRepository<ResolucaoJpaEn
             left join ResultadoMetricaJpaEntity mt on mt.resolucao = r and mt.tipo = :tipoTempo
             left join ResultadoMetricaJpaEntity me on me.resolucao = r and me.tipo = :tipoEspaco
             left join ResultadoMetricaJpaEntity mc on mc.resolucao = r and mc.tipo = :tipoCiclomatica
+            where r.autor.id in :autores
             order by r.submetidaEm asc
             """)
     List<Object[]> coorte(@Param("tipoTempo") TipoMetrica tipoTempo,
             @Param("tipoEspaco") TipoMetrica tipoEspaco,
-            @Param("tipoCiclomatica") TipoMetrica tipoCiclomatica);
+            @Param("tipoCiclomatica") TipoMetrica tipoCiclomatica,
+            @Param("autores") Set<UUID> autores);
+
+    @Query("select distinct r.autor.id from ResolucaoJpaEntity r")
+    Set<UUID> autoresComResolucao();
 }

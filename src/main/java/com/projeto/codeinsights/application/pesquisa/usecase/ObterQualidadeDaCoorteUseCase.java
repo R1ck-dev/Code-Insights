@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,8 +21,12 @@ import com.projeto.codeinsights.application.pesquisa.dto.QualidadeDaCoorteDTO;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.domain.knowledge.port.AnalisadorMetricas;
+import com.projeto.codeinsights.domain.pesquisa.model.HistoricoDeConsentimento;
 import com.projeto.codeinsights.domain.pesquisa.model.ResolucaoDaCoorte;
+import com.projeto.codeinsights.domain.pesquisa.model.TermoDeConsentimento;
+import com.projeto.codeinsights.domain.pesquisa.port.ConsentimentoRepository;
 import com.projeto.codeinsights.domain.pesquisa.port.CoorteRepository;
+import com.projeto.codeinsights.domain.pesquisa.port.TermoDeConsentimentoPort;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,14 +47,26 @@ import lombok.RequiredArgsConstructor;
 public class ObterQualidadeDaCoorteUseCase {
 
     private final CoorteRepository coorteRepository;
+    private final ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
+    private final TermoDeConsentimentoPort termoDeConsentimentoPort;
     private final AnalisadorMetricas analisadorMetricas;
 
     @Transactional(readOnly = true)
     public QualidadeDaCoorteDTO execute() {
-        List<ResolucaoDaCoorte> coorte = coorteRepository.listarCoorte();
+        TermoDeConsentimento termo = termoDeConsentimentoPort.vigente();
+        HistoricoDeConsentimento historico = obterParticipantesConsentidosUseCase.historicoVigente();
+
+        Set<UUID> autorizam = historico.participantesQueAutorizam();
+        List<ResolucaoDaCoorte> coorte = coorteRepository.listarCoorte(autorizam);
 
         Map<UUID, Long> porAutor = coorte.stream()
                 .collect(Collectors.groupingBy(ResolucaoDaCoorte::autorId, Collectors.counting()));
+
+        // Denominador: quem submeteu. Quem nunca submeteu nao tem dado a autorizar e so inflaria a
+        // taxa de resposta sem mudar nada na amostra.
+        Set<UUID> submeteram = coorteRepository.autoresComResolucao();
+        int consentiram = quantosDentre(submeteram, autorizam);
+        int recusaram = quantosDentre(submeteram, historico.participantesQueRecusam());
 
         return new QualidadeDaCoorteDTO(
                 porAutor.size(),
@@ -63,7 +80,17 @@ public class ObterQualidadeDaCoorteUseCase {
                 ultimaSubmissao(coorte),
                 porLinguagem(coorte),
                 porConfiancaDoTempo(coorte),
-                porAutonomia(coorte));
+                porAutonomia(coorte),
+                termo.versao(),
+                termo.aprovadoPeloComite(),
+                consentiram,
+                recusaram,
+                submeteram.size() - consentiram - recusaram,
+                (int) (coorteRepository.totalDeResolucoes() - coorte.size()));
+    }
+
+    private int quantosDentre(Set<UUID> populacao, Set<UUID> subconjunto) {
+        return (int) populacao.stream().filter(subconjunto::contains).count();
     }
 
     // ------------------------------------------------------------------ cobertura

@@ -27,6 +27,9 @@ import { ResolucaoDetalhePage } from '@/pages/aluno/ResolucaoDetalhePage'
 import { SnippetsPage } from '@/pages/aluno/SnippetsPage'
 import { MeuPerfilPage } from '@/pages/aluno/MeuPerfilPage'
 
+// Consentimento (participante — não é área de pesquisa, é do próprio aluno)
+import { ConsentimentoPage } from '@/pages/consentimento/ConsentimentoPage'
+
 // Pesquisa
 import { QualidadeDosDadosPage } from '@/pages/pesquisa/QualidadeDosDadosPage'
 import { CoortePage } from '@/pages/pesquisa/CoortePage'
@@ -72,6 +75,10 @@ export function App() {
           <Route path="resolucoes/:resolucaoId" element={<ResolucaoDetalhePage />} />
           <Route path="snippets" element={<SnippetsPage />} />
           <Route path="perfil" element={<MeuPerfilPage />} />
+
+          {/* Sem RequireRole: o termo é do participante, não do pesquisador. Todo mundo que tem
+              conta responde ao seu, inclusive quem já é PESQUISADOR ou ADMIN e também submete. */}
+          <Route path="consentimento" element={<ConsentimentoPage />} />
 
           {/* Pesquisa: dentro do mesmo shell, mas atrás do papel. Esconder a rota é conveniência —
               quem autoriza de verdade é o SecurityConfig em /api/pesquisa/**. */}

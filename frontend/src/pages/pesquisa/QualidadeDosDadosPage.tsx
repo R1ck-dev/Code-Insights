@@ -64,7 +64,9 @@ export function QualidadeDosDadosPage() {
             />
           ) : (
             <div className="flex flex-col gap-[18px]">
+              {!dados.termoAprovadoPeloComite && <AvisoDeTermoNaoAprovado versao={dados.versaoDoTermo} />}
               <Resumo dados={dados} />
+              <Consentimento dados={dados} />
               <Cobertura dados={dados} />
               <Alertas dados={dados} />
 
@@ -113,6 +115,75 @@ function Resumo({ dados }: { dados: QualidadeDaCoorteDTO }) {
         pequeno
       />
     </div>
+  )
+}
+
+/* ---------------------------------------------------- consentimento (TCLE) --- */
+
+function AvisoDeTermoNaoAprovado({ versao }: { versao: string }) {
+  return (
+    <div
+      role="status"
+      className="flex items-start gap-[11px] rounded-ci border border-atencao-line bg-atencao-bg p-[15px]"
+    >
+      <TriangleAlert size={16} strokeWidth={2} aria-hidden className="mt-[2px] shrink-0 text-atencao-ink" />
+      <div className="flex flex-col gap-[5px]">
+        <p className="text-[13px] font-semibold text-atencao-ink">
+          Termo <span className="font-mono">{versao}</span> não aprovado pelo Comitê de Ética.
+        </p>
+        <p className="text-[12.5px] leading-[1.6] text-atencao-ink">
+          Isto aqui é ensaio, não coleta: nada nesta tela pode ir para o artigo. O arquivo exportado
+          carrega a versão do termo no nome, justamente para não se misturar com dado válido depois.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * A cobertura de consentimento é o denominador de tudo o mais nesta tela. Sem ela, uma coorte de 3
+ * resoluções numa plataforma de 40 pareceria uma plataforma de 3 resoluções — e a conclusão sairia
+ * sobre uma amostra que ninguém sabia que era pequena.
+ *
+ * "Sem resposta" aparece separado de "recusou" porque são coisas acionáveis diferentes: a um se
+ * convida de novo, ao outro não se insiste.
+ */
+function Consentimento({ dados }: { dados: QualidadeDaCoorteDTO }) {
+  const responderam = dados.participantesQueConsentiram + dados.participantesQueRecusaram
+  const total = responderam + dados.participantesSemResposta
+
+  return (
+    <Card className="flex flex-col gap-[13px] p-[18px]">
+      <div className="flex flex-wrap items-baseline justify-between gap-[9px]">
+        <Titulo texto="Consentimento" />
+        <span className="font-mono text-[11px] text-soft">
+          termo {dados.versaoDoTermo} · {percentual(dados.participantesQueConsentiram, total)} de
+          quem submeteu
+        </span>
+      </div>
+
+      <ul className="flex flex-wrap gap-x-[22px] gap-y-[9px]">
+        <Contagem rotulo="Autorizaram" valor={dados.participantesQueConsentiram} />
+        <Contagem rotulo="Recusaram" valor={dados.participantesQueRecusaram} />
+        <Contagem rotulo="Sem resposta" valor={dados.participantesSemResposta} />
+        <Contagem rotulo="Resoluções fora da coorte" valor={dados.resolucoesForaDaCoorte} />
+      </ul>
+
+      <p className="text-[11.5px] leading-[1.5] text-soft">
+        Tudo o mais nesta tela e na tabela descreve <strong className="font-semibold">apenas</strong>{' '}
+        quem autorizou. Quem recusou ou não respondeu não aparece em nenhuma contagem, distribuição
+        ou export.
+      </p>
+    </Card>
+  )
+}
+
+function Contagem({ rotulo, valor }: { rotulo: string; valor: number }) {
+  return (
+    <li className="flex items-baseline gap-[7px]">
+      <span className="text-[12.5px] text-mid">{rotulo}</span>
+      <span className="tabular font-mono text-[15px] font-semibold text-ink">{valor}</span>
+    </li>
   )
 }
 

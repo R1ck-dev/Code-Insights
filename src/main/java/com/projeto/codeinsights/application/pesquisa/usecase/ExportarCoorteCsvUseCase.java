@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.projeto.codeinsights.application.pesquisa.dto.ArquivoExportadoDTO;
 import com.projeto.codeinsights.application.pesquisa.dto.ResolucaoDaCoorteDTO;
+import com.projeto.codeinsights.domain.pesquisa.port.TermoDeConsentimentoPort;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +36,7 @@ public class ExportarCoorteCsvUseCase {
             "espaco_rotulo", "espaco_ordem", "confianca_espaco", "ciclomatica", "submetida_em");
 
     private final ListarCoorteUseCase listarCoorteUseCase;
+    private final TermoDeConsentimentoPort termoDeConsentimentoPort;
 
     @Transactional(readOnly = true)
     public ArquivoExportadoDTO execute() {
@@ -42,9 +44,19 @@ public class ExportarCoorteCsvUseCase {
                 .map(ExportarCoorteCsvUseCase::paraLinha)
                 .toList();
 
-        return new ArquivoExportadoDTO(
-                "codeinsights-coorte-%s.csv".formatted(LocalDate.now()),
-                EscritorDeCsv.escrever(CABECALHO, linhas));
+        return new ArquivoExportadoDTO(nomeDoArquivo(), EscritorDeCsv.escrever(CABECALHO, linhas));
+    }
+
+    /**
+     * A versao do termo entra no nome, junto da data. O CSV nao tem onde carregar metadado — e um
+     * formato de linhas e virgulas —, e o nome do arquivo e o unico lugar que sobrevive ao download,
+     * ao anexo de e-mail e a pasta do orientador. Um arquivo chamado
+     * {@code codeinsights-coorte-v0-rascunho-2026-08-02.csv} nao consegue ser confundido com dado de
+     * pesquisa; um chamado apenas {@code codeinsights-coorte-2026-08-02.csv} consegue.
+     */
+    private String nomeDoArquivo() {
+        return "codeinsights-coorte-%s-%s.csv"
+                .formatted(termoDeConsentimentoPort.vigente().versao(), LocalDate.now());
     }
 
     /**

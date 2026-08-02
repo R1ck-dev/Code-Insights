@@ -17,19 +17,26 @@ import com.projeto.codeinsights.domain.shared.exception.NegocioException;
 import lombok.RequiredArgsConstructor;
 
 /**
- * O corpus inteiro, pseudonimizado, como linhas comparaveis entre si. E a leitura crua da qual
- * saem tanto a tela quanto o CSV — uma fonte so, para que o que o pesquisador ve e o que ele
- * analisa nao possam divergir.
+ * O corpus dos participantes que consentiram, pseudonimizado, como linhas comparaveis entre si. E a
+ * leitura crua da qual saem tanto a tela quanto o CSV — uma fonte so, para que o que o pesquisador
+ * ve e o que ele analisa nao possam divergir.
+ * <p>
+ * <b>O consentimento e resolvido aqui, antes da consulta.</b> Quem nao autorizou nao aparece porque
+ * seu id nunca entra no {@code in} da JPQL — e nao porque alguem lembrou de filtrar depois. A
+ * diferenca importa: filtro posterior e um passo que se esquece, e o esquecimento so apareceria
+ * quando o dado ja tivesse ido para a analise.
  */
 @Service
 @RequiredArgsConstructor
 public class ListarCoorteUseCase {
 
     private final CoorteRepository coorteRepository;
+    private final ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
 
     @Transactional(readOnly = true)
     public List<ResolucaoDaCoorteDTO> execute() {
-        List<ResolucaoDaCoorte> coorte = coorteRepository.listarCoorte();
+        List<ResolucaoDaCoorte> coorte =
+                coorteRepository.listarCoorte(obterParticipantesConsentidosUseCase.execute());
         Map<UUID, String> pseudonimos = pseudonimizar(coorte);
 
         return coorte.stream()

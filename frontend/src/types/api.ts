@@ -328,6 +328,33 @@ export interface QualidadeDaCoorteDTO {
   porLinguagem: ContagemPorLinguagemDTO[]
   porConfiancaDoTempo: ContagemDTO[]
   porAutonomia: ContagemDTO[]
+  /** Versão do TCLE que autoriza esta amostra — o mesmo número significa coisas diferentes sob termos diferentes. */
+  versaoDoTermo: string
+  /** Falso enquanto o Comitê de Ética não aprovar: nada disto é dado de pesquisa, é ensaio. */
+  termoAprovadoPeloComite: boolean
+  participantesQueConsentiram: number
+  participantesQueRecusaram: number
+  /** Quem submeteu e ainda não respondeu. Silêncio não é recusa — a este ainda dá para convidar. */
+  participantesSemResposta: number
+  /** Quanto da plataforma está fora da coorte. Cobertura sem denominador não é cobertura. */
+  resolucoesForaDaCoorte: number
+}
+
+export type DecisaoDeConsentimento = 'ACEITE' | 'RECUSA'
+
+/**
+ * O termo em vigor e a decisão de quem perguntou, na mesma leitura: separá-los abriria a janela em
+ * que a versão muda entre as duas chamadas e a pessoa responde sobre um texto que não leu.
+ */
+export interface MeuConsentimentoDTO {
+  versao: string
+  titulo: string
+  /** Markdown, exatamente como está no repositório. */
+  texto: string
+  podeSerUsadoEmPesquisa: boolean
+  /** `null` = ainda não respondeu. Ausência de resposta não é `RECUSA`. */
+  decisao: DecisaoDeConsentimento | null
+  decididoEm: string | null
 }
 
 export interface ParticipanteIdentificadoDTO {

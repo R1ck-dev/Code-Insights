@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,8 @@ class IdentificarParticipanteUseCaseTest {
     @Mock
     private CoorteRepository coorteRepository;
     @Mock
+    private ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
+    @Mock
     private UsuarioRepository usuarioRepository;
 
     @InjectMocks
@@ -44,8 +47,14 @@ class IdentificarParticipanteUseCaseTest {
                 Visibilidade.PUBLICO, StatusConta.ATIVO, OffsetDateTime.now(), OffsetDateTime.now());
     }
 
+    /**
+     * So quem consentiu e identificavel: o pseudonimo de quem recusou nunca aparece na coorte, entao
+     * uma busca que o alcancasse revelaria a identidade de alguem que pediu para ficar de fora.
+     */
     private void anaEhParticipante() {
-        when(coorteRepository.listarCoorte()).thenReturn(List.of(CoorteDeTeste.analisada(anaId, 4)));
+        when(obterParticipantesConsentidosUseCase.execute()).thenReturn(Set.of(anaId));
+        when(coorteRepository.listarCoorte(Set.of(anaId)))
+                .thenReturn(List.of(CoorteDeTeste.analisada(anaId, 4)));
         when(usuarioRepository.buscarPorIds(any())).thenReturn(List.of(ana()));
     }
 
@@ -71,8 +80,7 @@ class IdentificarParticipanteUseCaseTest {
 
     @Test
     void falhaQuandoNenhumParticipanteCorresponde() {
-        when(coorteRepository.listarCoorte()).thenReturn(List.of(CoorteDeTeste.analisada(anaId, 4)));
-        when(usuarioRepository.buscarPorIds(any())).thenReturn(List.of(ana()));
+        anaEhParticipante();
 
         assertThatThrownBy(() -> useCase.execute("A-000000"))
                 .isInstanceOf(NegocioException.class)
@@ -85,7 +93,7 @@ class IdentificarParticipanteUseCaseTest {
         assertThatThrownBy(() -> useCase.execute("  "))
                 .isInstanceOf(NegocioException.class);
 
-        verify(coorteRepository, never()).listarCoorte();
+        verify(coorteRepository, never()).listarCoorte(any());
         verify(usuarioRepository, never()).buscarPorIds(any());
     }
 }

@@ -2,6 +2,7 @@ import {
   Braces,
   ChevronDown,
   Compass,
+  FileText,
   FlaskConical,
   LayoutDashboard,
   LogOut,
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/auth/useAuth'
+import { useMeuConsentimento } from '@/features/pesquisa/hooks'
 import { ROLE_LABEL } from '@/domain/enums'
 import { cn } from '@/lib/utils'
 import type { Role } from '@/types/api'
@@ -58,6 +60,7 @@ const NAV: NavItem[] = [
   { to: '/app/desafios', label: 'Desafios', icon: Target, tambemEm: ['/app/resolucoes'] },
   { to: '/app/snippets', label: 'Snippets', icon: Braces },
   { to: '/app/perfil', label: 'Perfil', icon: User },
+  { to: '/app/consentimento', label: 'Consentimento', icon: FileText },
   {
     to: '/app/pesquisa',
     label: 'Pesquisa',
@@ -175,8 +178,42 @@ export function AppLayout() {
         </header>
 
         <main id="conteudo" tabIndex={-1} className="min-w-0 flex-1 outline-none">
+          <ConviteDeConsentimento />
           <Outlet />
         </main>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Faixa que convida a responder ao TCLE — some assim que a pessoa responde, aceitando OU recusando.
+ *
+ * É convite, e não portão: não bloqueia nada, não tem modal e não volta depois de respondida. Um
+ * aviso que só desaparece com "sim" seria pressão, e pressão invalida o consentimento. Também não
+ * aparece enquanto a consulta carrega — piscar "responda ao termo" para quem já respondeu seria
+ * ruído em toda navegação.
+ */
+function ConviteDeConsentimento() {
+  const { data } = useMeuConsentimento()
+  const { pathname } = useLocation()
+
+  if (!data || data.decisao !== null || pathname === '/app/consentimento') return null
+
+  return (
+    <div className="border-b border-line-soft bg-recess px-4 py-[11px] md:px-6">
+      <div className="flex flex-wrap items-center gap-x-[11px] gap-y-[7px]">
+        <FlaskConical size={14} strokeWidth={2} aria-hidden className="shrink-0 text-soft" />
+        <p className="text-[12.5px] text-body">
+          Esta plataforma é objeto de uma pesquisa. Você decide se suas submissões podem ser usadas
+          nela.
+        </p>
+        <Link
+          to="/app/consentimento"
+          className="ci-foco-botao rounded-ci font-mono text-[12px] font-medium text-steel underline-offset-2 transition-colors hover:text-steel-hover hover:underline"
+        >
+          Ler o termo e responder
+        </Link>
       </div>
     </div>
   )

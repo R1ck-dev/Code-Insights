@@ -41,6 +41,20 @@ app:
   # o endpoint administrativo POST /api/admin/metricas/reanalisar; esta flag existe para o caso de
   # nao haver conta admin semeada (ADMIN_PASSWORD ausente).
   reanalisar-na-inicializacao: ${REANALISAR_NA_INICIALIZACAO:false}
+  pesquisa:
+    consentimento:
+      # Versao do TCLE em vigor. Precisa existir um src/main/resources/consentimento/termo-<versao>.md
+      # correspondente, senao o boot falha — erro de digitacao aqui nao pode virar tela quebrada para
+      # o participante. Consentimento e dado A UMA VERSAO: publicar uma versao nova esvazia a coorte
+      # ate as pessoas responderem de novo, o que e proposital.
+      # O default e um RASCUNHO, e nao 'v1': enquanto o Comite de Etica nao aprovar o texto, aceite
+      # nenhum autoriza uso de dado em pesquisa, e o nome da versao precisa dizer isso.
+      versao: ${TERMO_CONSENTIMENTO_VERSAO:v0-rascunho}
+      # Declaracao explicita, e nao deducao a partir do nome da versao. Enquanto for false, tudo
+      # funciona (da para testar o fluxo inteiro) mas a plataforma avisa em toda parte que o aceite
+      # nao autoriza pesquisa: aviso na tela do termo, alerta no relatorio de qualidade e a versao
+      # dentro do nome do arquivo exportado. Ligar isto e ato de quem tem o parecer do CEP em maos.
+      aprovado-pelo-comite: ${TERMO_APROVADO_PELO_COMITE:false}
 
 admin:
   default:
