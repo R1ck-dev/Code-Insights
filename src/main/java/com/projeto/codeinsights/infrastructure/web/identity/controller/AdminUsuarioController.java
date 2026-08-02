@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.projeto.codeinsights.application.identity.dto.ContaAtivadaDTO;
+import com.projeto.codeinsights.application.identity.dto.PapelAlteradoDTO;
 import com.projeto.codeinsights.application.identity.dto.TokenRedefinicaoDTO;
 import com.projeto.codeinsights.application.identity.usecase.AtivarContaPeloAdminUseCase;
 import com.projeto.codeinsights.application.identity.usecase.GerarTokenRedefinicaoSenhaUseCase;
+import com.projeto.codeinsights.application.identity.usecase.PromoverParaPesquisadorUseCase;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.LinkRedefinicaoResponse;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.UsuarioPorEmailRequest;
 
@@ -34,6 +36,7 @@ public class AdminUsuarioController {
 
     private final AtivarContaPeloAdminUseCase ativarContaPeloAdminUseCase;
     private final GerarTokenRedefinicaoSenhaUseCase gerarTokenRedefinicaoSenhaUseCase;
+    private final PromoverParaPesquisadorUseCase promoverParaPesquisadorUseCase;
 
     @Value("${app.web.base-url}")
     private String webBaseUrl;
@@ -60,5 +63,18 @@ public class AdminUsuarioController {
 
         return ResponseEntity.ok(
                 new LinkRedefinicaoResponse(dto.username(), dto.email(), link, dto.expiraEm()));
+    }
+
+    /**
+     * Da a um usuario acesso a area de pesquisa ({@code /api/pesquisa/**}).
+     * <p>
+     * O papel viaja dentro do JWT, entao <b>a promocao so vale apos novo login</b> — quem ja estava
+     * autenticado continua com o papel antigo ate o token expirar. Nao ha revogacao de token na
+     * plataforma; se a pessoa estiver logada, peca que saia e entre de novo.
+     */
+    @PostMapping("/api/admin/usuarios/promover-pesquisador")
+    public ResponseEntity<PapelAlteradoDTO> promoverParaPesquisador(
+            @Valid @RequestBody UsuarioPorEmailRequest request) {
+        return ResponseEntity.ok(promoverParaPesquisadorUseCase.execute(request.email()));
     }
 }

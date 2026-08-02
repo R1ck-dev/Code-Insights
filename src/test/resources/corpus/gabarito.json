@@ -1,0 +1,444 @@
+{
+  "casos": [
+    {
+      "arquivo": "canonico/laco-com-limite-constante.java",
+      "nome": "laco com limite constante",
+      "origem": "sintetico — limite literal, nao depende da entrada",
+      "tempoGabarito": "O(1)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/busca-linear.java",
+      "nome": "busca linear",
+      "origem": "Cormen et al., Introduction to Algorithms, cap. 2.1",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/laco-de-indice-multiplicativo.java",
+      "nome": "laco de indice multiplicativo",
+      "origem": "sintetico — indice dobra a cada passo",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/ordenacao-bolha.java",
+      "nome": "ordenacao bolha",
+      "origem": "Knuth, TAOCP vol. 3, sec. 5.2.2",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/tres-lacos-aninhados.java",
+      "nome": "tres lacos aninhados",
+      "origem": "sintetico — aninhamento puro",
+      "tempoGabarito": "O(n^3)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/busca-binaria-iterativa.java",
+      "nome": "busca binaria iterativa",
+      "origem": "Cormen et al., cap. 2.3-5",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/busca-binaria-recursiva.java",
+      "nome": "busca binaria recursiva",
+      "origem": "Cormen et al., cap. 2.3-5",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(log n)"
+    },
+    {
+      "arquivo": "canonico/merge-sort.java",
+      "nome": "merge sort",
+      "origem": "Cormen et al., cap. 2.3",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/quick-sort.java",
+      "nome": "quick sort",
+      "origem": "Hoare (1962); Cormen et al., cap. 7 — caso medio",
+      "nota": "O gabarito e o caso medio, nao o pior (O(n^2) com pivo degenerado). O motor nao distingue os dois.",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(log n)"
+    },
+    {
+      "arquivo": "canonico/fibonacci-ingenuo.java",
+      "nome": "fibonacci ingenuo",
+      "origem": "Cormen et al., cap. 15.1 — recorrencia T(n)=T(n-1)+T(n-2)",
+      "tempoGabarito": "O(2^n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/fibonacci-memoizado.java",
+      "nome": "fibonacci memoizado",
+      "origem": "Cormen et al., cap. 15.3 — memoizacao top-down",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/fatorial-recursivo.java",
+      "nome": "fatorial recursivo",
+      "origem": "recorrencia linear T(n)=T(n-1)+O(1)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/exponenciacao-rapida.java",
+      "nome": "exponenciacao rapida",
+      "origem": "Knuth, TAOCP vol. 2, sec. 4.6.3",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(log n)"
+    },
+    {
+      "arquivo": "canonico/torre-de-hanoi.java",
+      "nome": "torre de hanoi",
+      "origem": "recorrencia T(n)=2T(n-1)+O(1)",
+      "tempoGabarito": "O(2^n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/duplicada-por-laco-aninhado.java",
+      "nome": "duplicada por laco aninhado",
+      "origem": "forca bruta — n(n-1)/2 comparacoes",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/duplicada-com-list-contains.java",
+      "nome": "duplicada com List.contains",
+      "origem": "javadoc de ArrayList.contains — busca linear",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/duplicada-com-hashset.java",
+      "nome": "duplicada com HashSet",
+      "origem": "javadoc de HashSet — contains/add em O(1) amortizado",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/ordenacao-delegada-arrays-sort.java",
+      "nome": "ordenacao delegada a Arrays.sort",
+      "origem": "javadoc de Arrays.sort — dual-pivot quicksort",
+      "nota": "Espaco sem gabarito: o auxiliar de Arrays.sort varia com a implementacao (O(1) a O(log n)).",
+      "tempoGabarito": "O(n log n)"
+    },
+    {
+      "arquivo": "canonico/concatenacao-de-string-em-laco.java",
+      "nome": "concatenacao de String em laco",
+      "origem": "String e imutavel — cada += copia o acumulado",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/string-builder-em-laco.java",
+      "nome": "StringBuilder em laco",
+      "origem": "javadoc de StringBuilder.append — O(1) amortizado",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/treeset-em-laco.java",
+      "nome": "TreeSet em laco",
+      "origem": "javadoc de TreeSet — arvore rubro-negra, add em O(log n)",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/fila-de-prioridade-em-laco.java",
+      "nome": "fila de prioridade em laco",
+      "origem": "javadoc de PriorityQueue — heap binario, add em O(log n)",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/programacao-dinamica-da-mochila.java",
+      "nome": "programacao dinamica da mochila",
+      "origem": "Cormen et al., cap. 16 — pseudopolinomial O(n*W)",
+      "nota": "Com um unico simbolo de entrada, n*W colapsa em n^2.",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n^2)"
+    },
+    {
+      "arquivo": "canonico/busca-em-profundidade-com-visitados.java",
+      "nome": "busca em profundidade com visitados",
+      "origem": "Cormen et al., cap. 22.3 — DFS sobre matriz de adjacencia",
+      "nota": "Matriz de adjacencia: O(V^2). A versao com lista de adjacencia esta em adversarial/.",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/lista-de-listas.java",
+      "nome": "lista de listas",
+      "origem": "sintetico — n listas de n elementos",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n^2)"
+    },
+    {
+      "arquivo": "canonico/contagem-de-vogais-com-switch.java",
+      "nome": "contagem de vogais com switch",
+      "origem": "sintetico — varredura linear com switch",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/metodo-auxiliar-chamado-dentro-de-laco.java",
+      "nome": "metodo auxiliar chamado dentro de laco",
+      "origem": "sintetico — custo interprocedural",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/metodo-auxiliar-morto-nao-contamina.java",
+      "nome": "metodo auxiliar morto nao contamina",
+      "origem": "sintetico — codigo inalcancavel a partir do main",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/recursao-mutua.java",
+      "nome": "recursao mutua",
+      "origem": "par/impar mutuamente recursivos — decrementa n ate 0",
+      "nota": "O motor responde '?' em vez de errar a classe. Nao acerta o gabarito, mas a resposta e honesta: recusa classificar em vez de chutar.",
+      "tempoGabarito": "O(n)",
+      "tempoMotor": "?",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/crivo-de-eratostenes.java",
+      "nome": "crivo de eratostenes",
+      "origem": "Cormen et al.; serie harmonica dos primos",
+      "nota": "O(n log log n) nao existe na escala de 8 classes do motor.",
+      "tempoGabarito": "O(n log log n)",
+      "tempoMotor": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+
+    {
+      "arquivo": "aluno/soma-de-vetor-com-scanner.java",
+      "nome": "soma de vetor com Scanner",
+      "origem": "estilo de aluno iniciante — tudo no main, leitura com Scanner",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/maior-elemento-no-main.java",
+      "nome": "maior elemento no main",
+      "origem": "estilo de aluno iniciante — sem metodo auxiliar",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/tabuada-completa.java",
+      "nome": "tabuada completa",
+      "origem": "estilo de aluno iniciante — laco aninhado com limites literais",
+      "nota": "Caso-armadilha: parece quadratico, mas os limites nao dependem da entrada.",
+      "tempoGabarito": "O(1)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/busca-com-flag-e-break.java",
+      "nome": "busca com flag e break",
+      "origem": "estilo de aluno iniciante — variavel booleana de controle",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/ordenacao-por-selecao-no-main.java",
+      "nome": "ordenacao por selecao no main",
+      "origem": "estilo de aluno iniciante — selection sort escrito inline",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/conta-repetidos-com-dois-lacos.java",
+      "nome": "conta repetidos com dois lacos",
+      "origem": "estilo de aluno iniciante — forca bruta com i != j",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/inverte-frase-com-concatenacao.java",
+      "nome": "inverte frase com concatenacao",
+      "origem": "estilo de aluno iniciante — String concatenada dentro do laco",
+      "nota": "Este caso encontrou um defeito real e agora o prende. O motor reconhecia a forma composta 's += x' (ver canonico/concatenacao-de-string-em-laco.java) mas nao a forma explicita 's = s + x' — justamente como o iniciante escreve — e errava para menos: O(n) onde o custo e O(n^2). Corrigido em AstUtils.alvoDeAcumulacao, que passou a ser a unica definicao de acumulo para tempo e espaco.",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/palindromo-com-charat.java",
+      "nome": "palindromo com charAt",
+      "origem": "estilo de aluno iniciante — sem break ao falhar",
+      "nota": "Laco vai ate length/2: constante multiplicativa, nao muda a classe.",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/media-com-lacos-em-sequencia.java",
+      "nome": "media com lacos em sequencia",
+      "origem": "estilo de aluno iniciante — tres lacos sequenciais",
+      "nota": "Testa soma de custos: tres O(n) em sequencia continuam O(n), nao O(n^3).",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/fatorial-com-laco.java",
+      "nome": "fatorial com laco",
+      "origem": "estilo de aluno iniciante — versao iterativa",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/primo-testando-todos-os-divisores.java",
+      "nome": "primo testando todos os divisores",
+      "origem": "estilo de aluno iniciante — sem parar na raiz",
+      "nota": "Contraste deliberado com adversarial/primo-por-raiz-quadrada.java.",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/multiplicacao-de-matrizes-no-main.java",
+      "nome": "multiplicacao de matrizes no main",
+      "origem": "estilo de aluno iniciante — tres lacos aninhados no main",
+      "tempoGabarito": "O(n^3)",
+      "espacoGabarito": "O(n^2)"
+    },
+    {
+      "arquivo": "aluno/remove-repetidos-com-arraylist.java",
+      "nome": "remove repetidos com ArrayList",
+      "origem": "estilo de aluno iniciante — contains dentro do laco de leitura",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/piramide-de-asteriscos.java",
+      "nome": "piramide de asteriscos",
+      "origem": "estilo de aluno iniciante — dois lacos internos dependentes do externo",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+
+    {
+      "arquivo": "adversarial/dois-ponteiros-soma-alvo.java",
+      "nome": "dois ponteiros para soma alvo",
+      "origem": "arquetipo de programacao competitiva — two pointers",
+      "nota": "Os dois indices se movem em direcoes opostas; o total de passos e n, nao n^2.",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/soma-de-prefixos.java",
+      "nome": "soma de prefixos",
+      "origem": "arquetipo de programacao competitiva — prefix sums",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/janela-deslizante-maior-soma.java",
+      "nome": "janela deslizante de maior soma",
+      "origem": "arquetipo de programacao competitiva — sliding window",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/busca-binaria-na-resposta.java",
+      "nome": "busca binaria na resposta",
+      "origem": "arquetipo de programacao competitiva — binary search on answer",
+      "nota": "log iteracoes, cada uma com uma verificacao linear.",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/bfs-em-lista-de-adjacencia.java",
+      "nome": "BFS em lista de adjacencia",
+      "origem": "Cormen et al., cap. 22.2",
+      "nota": "O(V + E) e multivariavel: nao existe na escala de simbolo unico do motor.",
+      "tempoGabarito": "O(V + E)",
+      "tempoMotor": "O(n^2)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/mdc-euclidiano.java",
+      "nome": "MDC euclidiano",
+      "origem": "Knuth, TAOCP vol. 2, sec. 4.5.2 — algoritmo de Euclides",
+      "nota": "Este caso encontrou um defeito real e agora o prende. A reducao do argumento e por resto (a % b), forma que o motor nao reconhecia: recusava classificar o tempo e assumia n niveis de pilha. Corrigido em AnalisadorDeRecursao.restoEntreParametros, com a regra estreita de exigir parametro dos dois lados do '%'.",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(log n)"
+    },
+    {
+      "arquivo": "adversarial/contagem-com-hashmap.java",
+      "nome": "contagem de frequencia com HashMap",
+      "origem": "arquetipo de programacao competitiva — frequency map",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/ordena-lista-com-comparator.java",
+      "nome": "ordena lista com Comparator",
+      "origem": "javadoc de Collections.sort — TimSort",
+      "nota": "Espaco sem gabarito: o auxiliar do TimSort varia com o padrao dos dados.",
+      "tempoGabarito": "O(n log n)"
+    },
+    {
+      "arquivo": "adversarial/maior-subsequencia-comum.java",
+      "nome": "maior subsequencia comum",
+      "origem": "Cormen et al., cap. 15.4 — LCS",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n^2)"
+    },
+    {
+      "arquivo": "adversarial/exponenciacao-modular-iterativa.java",
+      "nome": "exponenciacao modular iterativa",
+      "origem": "arquetipo de programacao competitiva — fast power com deslocamento de bits",
+      "nota": "O laco anda por deslocamento (>>), nao por divisao explicita.",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/backtracking-de-permutacoes.java",
+      "nome": "backtracking de permutacoes",
+      "origem": "geracao de permutacoes por troca — n! folhas",
+      "nota": "Contando o trabalho por folha seria O(n * n!), que tambem esta fora da escala; o gabarito usa a forma padrao O(n!), que a escala representa. Este caso tambem prende um falso positivo do detector de memoizacao: a guarda 'if (k == v.length) return;' le v, e o corpo escreve v[k] — se a guarda nao precisasse indexar o cache, esta busca exponencial seria lida como recursao memoizada e classificada como O(n).",
+      "tempoGabarito": "O(n!)",
+      "tempoMotor": "O(2^n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/primo-por-raiz-quadrada.java",
+      "nome": "primalidade ate a raiz quadrada",
+      "origem": "teste de divisao por tentativa ate sqrt(n)",
+      "nota": "O(raiz de n) nao existe na escala. O motor superestima para O(n) — o lado seguro de errar.",
+      "tempoGabarito": "O(raiz de n)",
+      "tempoMotor": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/dois-lacos-sobre-entradas-distintas.java",
+      "nome": "dois lacos sobre entradas distintas",
+      "origem": "sintetico — produto cartesiano de duas colecoes independentes",
+      "nota": "O(n*m) e multivariavel; o motor tem um unico simbolo de tamanho de entrada.",
+      "tempoGabarito": "O(n*m)",
+      "tempoMotor": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/contagem-de-inversoes-com-merge.java",
+      "nome": "contagem de inversoes com merge",
+      "origem": "Cormen et al., problema 2-4",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/preenchimento-por-inundacao.java",
+      "nome": "preenchimento por inundacao",
+      "origem": "flood fill em grade n x n — cada celula visitada uma vez",
+      "nota": "Quatro auto-chamadas sem laco: a recorrencia so termina porque a grade e marcada. O detector de cache/visitados sempre enxergou a marcacao no tempo, mas a pilha era estimada em n niveis — a recursao desce por celula, nao por linha, e chega a n^2 quadros. Corrigido em AvaliadorDeEspaco.pilhaLimitadaPelosEstados, que so pode elevar a estimativa.",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(n^2)"
+    }
+  ]
+}

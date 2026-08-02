@@ -2,6 +2,7 @@ import {
   Braces,
   ChevronDown,
   Compass,
+  FlaskConical,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -24,6 +25,7 @@ import {
 import { useAuth } from '@/auth/useAuth'
 import { ROLE_LABEL } from '@/domain/enums'
 import { cn } from '@/lib/utils'
+import type { Role } from '@/types/api'
 
 /*
  * Shell autenticado · ÓRBITA (spec 04 §1).
@@ -46,6 +48,8 @@ interface NavItem {
   /** Prefixos extra que mantêm o item aceso (ex.: /app/resolucoes/:id acende "Desafios"). */
   tambemEm?: string[]
   end?: boolean
+  /** Papéis que enxergam o item. Ausente = todos. */
+  papeis?: readonly Role[]
 }
 
 const NAV: NavItem[] = [
@@ -54,7 +58,21 @@ const NAV: NavItem[] = [
   { to: '/app/desafios', label: 'Desafios', icon: Target, tambemEm: ['/app/resolucoes'] },
   { to: '/app/snippets', label: 'Snippets', icon: Braces },
   { to: '/app/perfil', label: 'Perfil', icon: User },
+  {
+    to: '/app/pesquisa',
+    label: 'Pesquisa',
+    icon: FlaskConical,
+    papeis: ['PESQUISADOR', 'ADMIN'],
+  },
 ]
+
+/**
+ * Esconder o item é cortesia com o aluno, não segurança: quem digitar a URL bate no `RequireRole`,
+ * e quem chamar a API bate no `SecurityConfig`. São três camadas com propósitos distintos.
+ */
+function navDoPapel(role: Role | undefined): NavItem[] {
+  return NAV.filter((item) => !item.papeis || (role !== undefined && item.papeis.includes(role)))
+}
 
 function itemAtivo(pathname: string, item: NavItem): boolean {
   const casa = (base: string) => pathname === base || pathname.startsWith(`${base}/`)
@@ -84,7 +102,7 @@ export function AppLayout() {
         </Link>
 
         <nav className="flex flex-col gap-[3px]" aria-label="Navegação principal">
-          {NAV.map((item) => {
+          {navDoPapel(user?.role).map((item) => {
             const { to, label, icon: Icon, end } = item
             const ativo = itemAtivo(pathname, item)
             return (
@@ -216,6 +234,7 @@ function UserMenu() {
 
 /** < md: a sidebar vira menu (mesmo comportamento de antes, pele nova). */
 function MobileNav({ pathname }: { pathname: string }) {
+  const { user } = useAuth()
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -225,7 +244,7 @@ function MobileNav({ pathname }: { pathname: string }) {
         <Menu size={18} strokeWidth={2} aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {NAV.map((item) => {
+        {navDoPapel(user?.role).map((item) => {
           const { to, label, icon: Icon, end } = item
           const ativo = itemAtivo(pathname, item)
           return (

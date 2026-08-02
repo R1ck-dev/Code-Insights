@@ -187,17 +187,20 @@ public final class AvaliadorDeCusto {
         return !tamanho.isIntegerLiteralExpr() && !tamanho.isLongLiteralExpr();
     }
 
-    /** {@code texto += x} dentro de um laco e a armadilha classica: cada concatenacao copia a String. */
+    /**
+     * {@code texto += x} — ou {@code texto = texto + x} — dentro de um laco e a armadilha
+     * classica: cada concatenacao copia a String inteira. As duas formas contam, porque
+     * significam a mesma coisa e o iniciante escreve a segunda.
+     */
     private CustoAvaliado custoDeConcatenacao(AssignExpr atribuicao) {
-        if (atribuicao.getOperator() != AssignExpr.Operator.PLUS || !atribuicao.getTarget().isNameExpr()) {
-            return CustoAvaliado.exato(Custo.CONSTANTE);
-        }
-        String alvo = atribuicao.getTarget().asNameExpr().getNameAsString();
-        if (!"String".equals(tipos.tipoDe(alvo))) {
+        boolean acumulaTexto = AstUtils.alvoDeAcumulacao(atribuicao)
+                .map(alvo -> "String".equals(tipos.tipoDe(alvo)))
+                .orElse(false);
+        if (!acumulaTexto) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
         return CustoAvaliado.exato(Custo.LINEAR)
-                .comNota("concatenacao de String com `+=` copia a cadeia inteira a cada vez");
+                .comNota("concatenacao de String copia a cadeia inteira a cada vez");
     }
 
     private CustoAvaliado custoDaChamada(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
