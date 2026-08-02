@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  ShieldCheck,
   Target,
   User,
 } from 'lucide-react'
@@ -67,6 +68,7 @@ const NAV: NavItem[] = [
     icon: FlaskConical,
     papeis: ['PESQUISADOR', 'ADMIN'],
   },
+  { to: '/app/admin', label: 'Administração', icon: ShieldCheck, papeis: ['ADMIN'] },
 ]
 
 /**

@@ -30,4 +30,10 @@ public interface SpringDataUsuarioRepository extends JpaRepository<UsuarioJpaEnt
     // que descarta todas as linhas e devolveria a lista vazia.
     Page<UsuarioJpaEntity> findByVisibilidadePerfilAndStatusAndUsernameContainingIgnoreCase(
             Visibilidade visibilidadePerfil, StatusConta status, String username, Pageable pageable);
+
+    // Administracao: todas as contas, em qualquer status ou visibilidade. Busca por username OU
+    // e-mail porque o admin costuma ter so um dos dois em maos — o aluno manda mensagem pelo nome,
+    // e o cadastro se procura pelo e-mail.
+    Page<UsuarioJpaEntity> findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+            String username, String email, Pageable pageable);
 }

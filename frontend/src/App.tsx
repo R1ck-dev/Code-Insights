@@ -30,6 +30,9 @@ import { MeuPerfilPage } from '@/pages/aluno/MeuPerfilPage'
 // Consentimento (participante — não é área de pesquisa, é do próprio aluno)
 import { ConsentimentoPage } from '@/pages/consentimento/ConsentimentoPage'
 
+// Administração
+import { AdministracaoPage } from '@/pages/admin/AdministracaoPage'
+
 // Pesquisa
 import { QualidadeDosDadosPage } from '@/pages/pesquisa/QualidadeDosDadosPage'
 import { CoortePage } from '@/pages/pesquisa/CoortePage'
@@ -85,6 +88,12 @@ export function App() {
           <Route element={<RequireRole roles={['PESQUISADOR', 'ADMIN']} />}>
             <Route path="pesquisa" element={<QualidadeDosDadosPage />} />
             <Route path="pesquisa/coorte" element={<CoortePage />} />
+          </Route>
+
+          {/* Só ADMIN: PESQUISADOR não entra. A tela dá papel a outras contas, e quem pode conceder
+              acesso precisa ser um conjunto menor que quem tem acesso. */}
+          <Route element={<RequireRole roles={['ADMIN']} />}>
+            <Route path="admin" element={<AdministracaoPage />} />
           </Route>
         </Route>
       </Route>

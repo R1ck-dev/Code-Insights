@@ -1,9 +1,4 @@
-# Termo de Consentimento Livre e Esclarecido — RASCUNHO
-
-> **Este texto ainda não foi aprovado pelo Comitê de Ética em Pesquisa.** Ele está aqui para que a
-> plataforma possa ser testada de ponta a ponta antes do piloto. O aceite dado a esta versão
-> (`v0-rascunho`) **não autoriza uso de dados em pesquisa** e não será reaproveitado: quando o texto
-> aprovado entrar como `v1`, todos serão consultados novamente.
+# Termo de Consentimento Livre e Esclarecido
 
 ## Sobre a pesquisa
 
@@ -13,9 +8,7 @@ artificial generativa afeta a autonomia de quem resolve um problema, e como a co
 algorítmica das soluções evolui ao longo do tempo.
 
 - **Instituição:** Instituto Federal de São Paulo (IFSP) — PIBIFSP
-- **Pesquisador responsável:** _(a preencher)_
-- **Orientação:** _(a preencher)_
-- **Contato do CEP/IFSP:** _(a preencher)_
+- **Pesquisador responsável:** Henrique de Almeida Marangoni Inacio
 
 ## O que será coletado
 
@@ -36,11 +29,11 @@ Suas submissões aparecem sob um **código** no lugar do seu nome — por exempl
 código é o mesmo em todas as suas linhas, o que permite acompanhar a evolução de uma pessoa sem que
 ela seja nomeada.
 
-Seja claro sobre o alcance disso: **é pseudonimização, não anonimização.** O código é derivado do seu
-identificador de conta, e o pesquisador responsável consegue, deliberadamente e a partir da própria
-plataforma, descobrir a quem ele pertence — isso existe para que ele possa entrar em contato com você
-se necessário, e para que você possa pedir a retirada dos seus dados e ela seja encontrável. Arquivos
-exportados para análise levam o código, nunca o seu nome ou e-mail.
+O alcance disso tem um limite que vale conhecer: **é pseudonimização, não anonimização.** O código é
+derivado do seu identificador de conta, e o pesquisador responsável consegue, deliberadamente e a
+partir da própria plataforma, descobrir a quem ele pertence — isso existe para que ele possa entrar
+em contato com você se necessário, e para que você possa pedir a retirada dos seus dados e ela seja
+encontrável. Arquivos exportados para análise levam o código, nunca o seu nome ou e-mail.
 
 ## Riscos e benefícios
 

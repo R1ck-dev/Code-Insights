@@ -80,6 +80,22 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
         return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
     }
 
+    /**
+     * Ordenado por {@code criadoEm} decrescente: quem chegou por ultimo e quem costuma precisar de
+     * acao administrativa (ativar conta, promover), entao aparece primeiro sem ninguem procurar.
+     */
+    @Override
+    public Pagina<Usuario> listarTodos(String busca, int pagina, int tamanho) {
+        PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.by(Sort.Direction.DESC, "criadoEm"));
+        String filtro = busca == null ? "" : busca.trim();
+        // O mesmo termo vai nos dois campos: e um OU, e "" esta contido em qualquer string, entao
+        // filtro vazio devolve todos.
+        Page<UsuarioJpaEntity> page = springDataUsuarioRepository
+                .findByUsernameContainingIgnoreCaseOrEmailContainingIgnoreCase(filtro, filtro, pageRequest);
+        List<Usuario> itens = page.getContent().stream().map(usuarioMapper::toDomain).toList();
+        return new Pagina<>(itens, page.getNumber(), page.getTotalPages(), page.getTotalElements());
+    }
+
     private String normalizarEmail(String email) {
         return email == null ? null : email.trim().toLowerCase();
     }

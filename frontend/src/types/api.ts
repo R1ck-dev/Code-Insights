@@ -340,6 +340,40 @@ export interface QualidadeDaCoorteDTO {
   resolucoesForaDaCoorte: number
 }
 
+// ---- Administração ----
+
+/** Leva e-mail, ao contrário do perfil público: é a chave que as rotas administrativas aceitam. */
+export interface UsuarioAdminDTO {
+  id: string
+  username: string
+  email: string
+  role: Role
+  status: StatusConta
+  criadoEm: string
+}
+
+export interface PapelAlteradoDTO {
+  id: string
+  username: string
+  email: string
+  role: Role
+}
+
+export interface ContaAtivadaDTO {
+  id: string
+  username: string
+  email: string
+  status: StatusConta
+}
+
+/** O link já vem montado pelo servidor — a base pública do front é configuração, não do navegador. */
+export interface LinkRedefinicaoResponse {
+  username: string
+  email: string
+  link: string
+  expiraEm: string
+}
+
 export type DecisaoDeConsentimento = 'ACEITE' | 'RECUSA'
 
 /**

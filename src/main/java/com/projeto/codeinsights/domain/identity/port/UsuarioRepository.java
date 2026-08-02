@@ -23,4 +23,12 @@ public interface UsuarioRepository {
 
     /** Perfis publicos e ativos (exceto o solicitante), paginados e filtrados por username. */
     Pagina<Usuario> listarPublicos(UUID excluidoId, String filtroUsername, int pagina, int tamanho);
+
+    /**
+     * <b>Todas</b> as contas, sem filtro de visibilidade nem de status, paginadas e filtradas por
+     * username ou e-mail. E o oposto de {@link #listarPublicos}: existe para a administracao, onde
+     * justamente as contas que nao aparecem no diretorio — pendentes de verificacao, perfis privados
+     * — sao as que precisam de acao.
+     */
+    Pagina<Usuario> listarTodos(String busca, int pagina, int tamanho);
 }
