@@ -1,10 +1,36 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { pesquisaApi } from './api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { consentimentoApi, pesquisaApi } from './api'
 
 export const pesquisaKeys = {
   all: ['pesquisa'] as const,
   qualidade: () => ['pesquisa', 'qualidade'] as const,
   coorte: () => ['pesquisa', 'coorte'] as const,
+  consentimento: () => ['consentimento'] as const,
+}
+
+/**
+ * Carregado no shell autenticado, porque o aviso de "responda ao termo" aparece em qualquer tela.
+ * O texto do termo vem junto — é um arquivo, não muda entre requisições, e buscá-lo à parte só
+ * criaria a chance de a tela mostrar um texto e gravar a resposta sob outra versão.
+ */
+export function useMeuConsentimento() {
+  return useQuery({
+    queryKey: pesquisaKeys.consentimento(),
+    queryFn: () => consentimentoApi.meu(),
+  })
+}
+
+export function useDecidirConsentimento() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (autoriza: boolean) => consentimentoApi.decidir(autoriza),
+    onSuccess: (atualizado) => {
+      queryClient.setQueryData(pesquisaKeys.consentimento(), atualizado)
+      // A coorte muda de tamanho com a decisão — sem invalidar, a tela do pesquisador seguiria
+      // mostrando quem acabou de revogar.
+      queryClient.invalidateQueries({ queryKey: pesquisaKeys.all })
+    },
+  })
 }
 
 export function useQualidadeDaCoorte() {

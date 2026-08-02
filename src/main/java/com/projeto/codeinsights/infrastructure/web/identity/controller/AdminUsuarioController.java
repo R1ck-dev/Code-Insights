@@ -2,16 +2,21 @@ package com.projeto.codeinsights.infrastructure.web.identity.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.projeto.codeinsights.application.identity.dto.ContaAtivadaDTO;
 import com.projeto.codeinsights.application.identity.dto.PapelAlteradoDTO;
 import com.projeto.codeinsights.application.identity.dto.TokenRedefinicaoDTO;
+import com.projeto.codeinsights.application.identity.dto.UsuarioAdminDTO;
 import com.projeto.codeinsights.application.identity.usecase.AtivarContaPeloAdminUseCase;
 import com.projeto.codeinsights.application.identity.usecase.GerarTokenRedefinicaoSenhaUseCase;
+import com.projeto.codeinsights.application.identity.usecase.ListarUsuariosParaAdminUseCase;
 import com.projeto.codeinsights.application.identity.usecase.PromoverParaPesquisadorUseCase;
+import com.projeto.codeinsights.domain.shared.Pagina;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.LinkRedefinicaoResponse;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.UsuarioPorEmailRequest;
 
@@ -37,9 +42,23 @@ public class AdminUsuarioController {
     private final AtivarContaPeloAdminUseCase ativarContaPeloAdminUseCase;
     private final GerarTokenRedefinicaoSenhaUseCase gerarTokenRedefinicaoSenhaUseCase;
     private final PromoverParaPesquisadorUseCase promoverParaPesquisadorUseCase;
+    private final ListarUsuariosParaAdminUseCase listarUsuariosParaAdminUseCase;
 
     @Value("${app.web.base-url}")
     private String webBaseUrl;
+
+    /**
+     * Todas as contas, com papel e status. As outras rotas daqui identificam a pessoa por e-mail —
+     * contrato certo para uma API, e impraticavel como interface: sem esta listagem, quem opera
+     * precisaria saber o endereco de cor ou consultar o banco antes de usar a propria tela.
+     */
+    @GetMapping("/api/admin/usuarios")
+    public ResponseEntity<Pagina<UsuarioAdminDTO>> listar(
+            @RequestParam(defaultValue = "") String busca,
+            @RequestParam(defaultValue = "0") int pagina,
+            @RequestParam(defaultValue = "20") int tamanho) {
+        return ResponseEntity.ok(listarUsuariosParaAdminUseCase.execute(busca, pagina, tamanho));
+    }
 
     /** Ativa a conta sem o e-mail de confirmacao, para o aluno que nunca recebeu a mensagem. */
     @PostMapping("/api/admin/usuarios/ativar")

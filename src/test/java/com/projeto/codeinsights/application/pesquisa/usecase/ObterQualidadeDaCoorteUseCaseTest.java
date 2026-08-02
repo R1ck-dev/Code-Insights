@@ -4,7 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -17,14 +21,25 @@ import com.projeto.codeinsights.application.pesquisa.dto.ContagemDTO;
 import com.projeto.codeinsights.application.pesquisa.dto.QualidadeDaCoorteDTO;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.port.AnalisadorMetricas;
+import com.projeto.codeinsights.domain.pesquisa.enums.DecisaoDeConsentimento;
+import com.projeto.codeinsights.domain.pesquisa.model.ConsentimentoDePesquisa;
+import com.projeto.codeinsights.domain.pesquisa.model.HistoricoDeConsentimento;
 import com.projeto.codeinsights.domain.pesquisa.model.ResolucaoDaCoorte;
+import com.projeto.codeinsights.domain.pesquisa.model.TermoDeConsentimento;
 import com.projeto.codeinsights.domain.pesquisa.port.CoorteRepository;
+import com.projeto.codeinsights.domain.pesquisa.port.TermoDeConsentimentoPort;
 
 @ExtendWith(MockitoExtension.class)
 class ObterQualidadeDaCoorteUseCaseTest {
 
+    private static final String VERSAO = "v1";
+
     @Mock
     private CoorteRepository coorteRepository;
+    @Mock
+    private ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
+    @Mock
+    private TermoDeConsentimentoPort termoDeConsentimentoPort;
     @Mock
     private AnalisadorMetricas analisadorMetricas;
 
@@ -33,14 +48,43 @@ class ObterQualidadeDaCoorteUseCaseTest {
 
     private final UUID ana = UUID.randomUUID();
     private final UUID bruno = UUID.randomUUID();
+    private final UUID carla = UUID.randomUUID();
 
     private void soJavaEhSuportado() {
         when(analisadorMetricas.suporta(any())).thenAnswer(chamada ->
                 chamada.getArgument(0) == LinguagemProgramacao.JAVA);
     }
 
+    /** Cenario comum: todos os autores das linhas consentiram, e ninguem mais submeteu. */
     private void coorte(ResolucaoDaCoorte... resolucoes) {
-        when(coorteRepository.listarCoorte()).thenReturn(List.of(resolucoes));
+        Set<UUID> autores = new LinkedHashSet<>(
+                Arrays.stream(resolucoes).map(ResolucaoDaCoorte::autorId).toList());
+        cenario(autores, Set.of(), autores, resolucoes);
+    }
+
+    /**
+     * @param aceitaram quem consentiu com a versao vigente
+     * @param recusaram quem respondeu "nao"
+     * @param submeteram todos os que tem ao menos uma resolucao — o denominador da cobertura
+     */
+    private void cenario(Set<UUID> aceitaram, Set<UUID> recusaram, Set<UUID> submeteram,
+            ResolucaoDaCoorte... resolucoesDaCoorte) {
+        when(termoDeConsentimentoPort.vigente())
+                .thenReturn(new TermoDeConsentimento(VERSAO, "Termo", "texto", true));
+        when(obterParticipantesConsentidosUseCase.historicoVigente())
+                .thenReturn(historicoCom(aceitaram, recusaram));
+        when(coorteRepository.listarCoorte(aceitaram)).thenReturn(List.of(resolucoesDaCoorte));
+        when(coorteRepository.autoresComResolucao()).thenReturn(submeteram);
+        when(coorteRepository.totalDeResolucoes()).thenReturn((long) resolucoesDaCoorte.length);
+    }
+
+    private HistoricoDeConsentimento historicoCom(Set<UUID> aceitaram, Set<UUID> recusaram) {
+        List<ConsentimentoDePesquisa> decisoes = new ArrayList<>();
+        aceitaram.forEach(id -> decisoes.add(
+                new ConsentimentoDePesquisa(id, VERSAO, DecisaoDeConsentimento.ACEITE)));
+        recusaram.forEach(id -> decisoes.add(
+                new ConsentimentoDePesquisa(id, VERSAO, DecisaoDeConsentimento.RECUSA)));
+        return new HistoricoDeConsentimento(decisoes, VERSAO);
     }
 
     /**
@@ -94,6 +138,43 @@ class ObterQualidadeDaCoorteUseCaseTest {
 
         assertThat(qualidade.participantes()).isEqualTo(2);
         assertThat(qualidade.participantesComUmaResolucao()).isEqualTo(1);
+    }
+
+    /**
+     * Os tres estados de consentimento particionam quem submeteu, e silencio nao e recusa: sao
+     * numeros acionaveis diferentes — a um se convida de novo, ao outro nao se insiste.
+     */
+    @Test
+    void separaQuemConsentiuDeQuemRecusouEDeQuemNaoRespondeu() {
+        soJavaEhSuportado();
+        cenario(Set.of(ana), Set.of(bruno), Set.of(ana, bruno, carla),
+                CoorteDeTeste.analisada(ana, 4));
+
+        QualidadeDaCoorteDTO qualidade = useCase.execute();
+
+        assertThat(qualidade.participantesQueConsentiram()).isEqualTo(1);
+        assertThat(qualidade.participantesQueRecusaram()).isEqualTo(1);
+        assertThat(qualidade.participantesSemResposta()).isEqualTo(1);
+        assertThat(qualidade.versaoDoTermo()).isEqualTo(VERSAO);
+    }
+
+    /**
+     * O pesquisador precisa saber o tamanho do que nao esta vendo. Sem este numero, uma coorte de
+     * 1 resolucao numa plataforma de 40 pareceria uma plataforma de 1 resolucao.
+     */
+    @Test
+    void mostraQuantasResolucoesFicaramForaDaCoorte() {
+        soJavaEhSuportado();
+        when(termoDeConsentimentoPort.vigente())
+                .thenReturn(new TermoDeConsentimento(VERSAO, "Termo", "texto", true));
+        when(obterParticipantesConsentidosUseCase.historicoVigente())
+                .thenReturn(historicoCom(Set.of(ana), Set.of(bruno)));
+        when(coorteRepository.listarCoorte(Set.of(ana)))
+                .thenReturn(List.of(CoorteDeTeste.analisada(ana, 4)));
+        when(coorteRepository.autoresComResolucao()).thenReturn(Set.of(ana, bruno));
+        when(coorteRepository.totalDeResolucoes()).thenReturn(9L);
+
+        assertThat(useCase.execute().resolucoesForaDaCoorte()).isEqualTo(8);
     }
 
     /** A escala 1..5 aparece inteira: nivel sem nenhuma resolucao e informacao, nao ausencia. */

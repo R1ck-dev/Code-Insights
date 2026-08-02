@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class IdentificarParticipanteUseCase {
 
     private final CoorteRepository coorteRepository;
+    private final ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
     private final UsuarioRepository usuarioRepository;
 
     @Transactional(readOnly = true)
@@ -42,7 +43,8 @@ public class IdentificarParticipanteUseCase {
         }
         String procurado = pseudonimo.trim().toUpperCase();
 
-        List<UUID> participantes = coorteRepository.listarCoorte().stream()
+        List<UUID> participantes = coorteRepository
+                .listarCoorte(obterParticipantesConsentidosUseCase.execute()).stream()
                 .map(ResolucaoDaCoorte::autorId)
                 .distinct()
                 .toList();

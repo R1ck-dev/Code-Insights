@@ -2,6 +2,7 @@ package com.projeto.codeinsights.infrastructure.persistence.pesquisa.adapter;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -22,13 +23,30 @@ public class CoorteRepositoryAdapter implements CoorteRepository {
 
     private final SpringDataCoorteRepository springDataCoorteRepository;
 
+    /**
+     * Conjunto vazio nao chega ao banco: {@code in ()} nao e SQL valido, e "ninguem autorizou" ja e
+     * uma resposta completa. O curto-circuito e correcao, nao economia.
+     */
     @Override
-    public List<ResolucaoDaCoorte> listarCoorte() {
+    public List<ResolucaoDaCoorte> listarCoorte(Set<UUID> participantesQueAutorizam) {
+        if (participantesQueAutorizam == null || participantesQueAutorizam.isEmpty()) {
+            return List.of();
+        }
         return springDataCoorteRepository.coorte(
                 TipoMetrica.BIG_O_TEMPO, TipoMetrica.COMPLEXIDADE_ESPACO,
-                TipoMetrica.COMPLEXIDADE_CICLOMATICA).stream()
+                TipoMetrica.COMPLEXIDADE_CICLOMATICA, participantesQueAutorizam).stream()
                 .map(CoorteRepositoryAdapter::paraDominio)
                 .toList();
+    }
+
+    @Override
+    public Set<UUID> autoresComResolucao() {
+        return springDataCoorteRepository.autoresComResolucao();
+    }
+
+    @Override
+    public long totalDeResolucoes() {
+        return springDataCoorteRepository.count();
     }
 
     /**

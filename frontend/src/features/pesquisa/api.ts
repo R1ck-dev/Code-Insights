@@ -1,9 +1,21 @@
 import { api } from '@/lib/api'
 import type {
+  MeuConsentimentoDTO,
   ParticipanteIdentificadoDTO,
   QualidadeDaCoorteDTO,
   ResolucaoDaCoorteDTO,
 } from '@/types/api'
+
+/**
+ * Fora de `/api/pesquisa/**` de propósito: aquele prefixo é restrito a PESQUISADOR e ADMIN no
+ * `SecurityConfig`, e quem responde ao termo é o aluno.
+ */
+export const consentimentoApi = {
+  meu: () => api.get<MeuConsentimentoDTO>('/api/consentimento').then((r) => r.data),
+
+  decidir: (autoriza: boolean) =>
+    api.post<MeuConsentimentoDTO>('/api/consentimento', { autoriza }).then((r) => r.data),
+}
 
 export const pesquisaApi = {
   qualidade: () => api.get<QualidadeDaCoorteDTO>('/api/pesquisa/qualidade').then((r) => r.data),

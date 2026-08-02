@@ -2,10 +2,12 @@ package com.projeto.codeinsights.infrastructure.persistence.pesquisa.adapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -43,8 +45,19 @@ class CoorteRepositoryAdapterTest {
 
     /** A testemunha de tipo evita que o varargs de {@code List.of} espalhe o array em varios itens. */
     private void retorna(Object[] linha) {
-        when(springDataCoorteRepository.coorte(any(), any(), any()))
+        when(springDataCoorteRepository.coorte(any(), any(), any(), any()))
                 .thenReturn(List.<Object[]>of(linha));
+    }
+
+    /**
+     * Conjunto vazio nao pode virar {@code in ()} — nao e SQL valido. O adapter responde sem tocar no
+     * banco, e "ninguem consentiu" e uma resposta completa, nao um caso degenerado.
+     */
+    @Test
+    void semParticipantesConsentidosNaoConsultaOBanco() {
+        assertThat(adapter.listarCoorte(Set.of())).isEmpty();
+
+        verifyNoInteractions(springDataCoorteRepository);
     }
 
     @Test
@@ -56,7 +69,7 @@ class CoorteRepositoryAdapterTest {
                 "O(log n)", 1, NivelConfianca.BAIXA,
                 7, SUBMETIDA });
 
-        ResolucaoDaCoorte resolucao = adapter.listarCoorte().get(0);
+        ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 
         assertThat(resolucao.resolucaoId()).isEqualTo(RESOLUCAO);
         assertThat(resolucao.autorId()).isEqualTo(AUTOR);
@@ -90,7 +103,7 @@ class CoorteRepositoryAdapterTest {
                 null, null, null,
                 null, SUBMETIDA });
 
-        ResolucaoDaCoorte resolucao = adapter.listarCoorte().get(0);
+        ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 
         assertThat(resolucao.tempoOrdem()).isNull();
         assertThat(resolucao.espacoOrdem()).isNull();
@@ -111,7 +124,7 @@ class CoorteRepositoryAdapterTest {
                 "O(1)", 0L, NivelConfianca.ALTA,
                 3L, SUBMETIDA });
 
-        ResolucaoDaCoorte resolucao = adapter.listarCoorte().get(0);
+        ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 
         assertThat(resolucao.indiceAutonomiaIA()).isEqualTo(5);
         assertThat(resolucao.tempoOrdem()).isEqualTo(2);

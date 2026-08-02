@@ -1,6 +1,7 @@
 package com.projeto.codeinsights.application.pesquisa.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
@@ -17,6 +18,8 @@ import com.projeto.codeinsights.application.pesquisa.dto.ArquivoExportadoDTO;
 import com.projeto.codeinsights.application.pesquisa.dto.ResolucaoDaCoorteDTO;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
+import com.projeto.codeinsights.domain.pesquisa.model.TermoDeConsentimento;
+import com.projeto.codeinsights.domain.pesquisa.port.TermoDeConsentimentoPort;
 
 /**
  * O CSV e o artefato que sai da plataforma e vira analise. Um campo mal escapado nao quebra nada
@@ -27,12 +30,16 @@ class ExportarCoorteCsvUseCaseTest {
 
     @Mock
     private ListarCoorteUseCase listarCoorteUseCase;
+    @Mock
+    private TermoDeConsentimentoPort termoDeConsentimentoPort;
 
     @InjectMocks
     private ExportarCoorteCsvUseCase useCase;
 
     private void coorte(ResolucaoDaCoorteDTO... linhas) {
         when(listarCoorteUseCase.execute()).thenReturn(List.of(linhas));
+        lenient().when(termoDeConsentimentoPort.vigente())
+                .thenReturn(new TermoDeConsentimento("v1", "Termo", "texto", true));
     }
 
     private ResolucaoDaCoorteDTO linha(String desafio) {
@@ -130,13 +137,19 @@ class ExportarCoorteCsvUseCaseTest {
         assertThat(linhasDe(useCase.execute().conteudo())).hasSize(4);
     }
 
+    /**
+     * Data para nao sobrescrever o export anterior; versao do termo porque o CSV nao tem onde
+     * carregar metadado, e o nome do arquivo e a unica coisa que sobrevive ao download e ao anexo de
+     * e-mail. Um arquivo com "v0-rascunho" no nome nao consegue ser confundido com dado de pesquisa.
+     */
     @Test
-    void oNomeDoArquivoCarregaADataParaNaoSobrescreverExportAnterior() {
+    void oNomeDoArquivoCarregaAVersaoDoTermoEADataDaExportacao() {
         coorte(linha("Two Sum"));
 
         ArquivoExportadoDTO arquivo = useCase.execute();
 
-        assertThat(arquivo.nomeDoArquivo()).matches("codeinsights-coorte-\\d{4}-\\d{2}-\\d{2}\\.csv");
+        assertThat(arquivo.nomeDoArquivo())
+                .matches("codeinsights-coorte-v1-\\d{4}-\\d{2}-\\d{2}\\.csv");
     }
 
     @Test
