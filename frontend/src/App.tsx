@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { PublicLayout } from '@/layouts/PublicLayout'
 import { AppLayout } from '@/layouts/AppLayout'
-import { RedirectIfAuthenticated, RequireAuth } from '@/auth/guards'
+import { RedirectIfAuthenticated, RequireAuth, RequireRole } from '@/auth/guards'
 
 // Acesso
 import { LoginPage } from '@/pages/acesso/LoginPage'
@@ -26,6 +26,10 @@ import { SubmeterResolucaoPage } from '@/pages/aluno/SubmeterResolucaoPage'
 import { ResolucaoDetalhePage } from '@/pages/aluno/ResolucaoDetalhePage'
 import { SnippetsPage } from '@/pages/aluno/SnippetsPage'
 import { MeuPerfilPage } from '@/pages/aluno/MeuPerfilPage'
+
+// Pesquisa
+import { QualidadeDosDadosPage } from '@/pages/pesquisa/QualidadeDosDadosPage'
+import { CoortePage } from '@/pages/pesquisa/CoortePage'
 
 export function App() {
   return (
@@ -68,6 +72,13 @@ export function App() {
           <Route path="resolucoes/:resolucaoId" element={<ResolucaoDetalhePage />} />
           <Route path="snippets" element={<SnippetsPage />} />
           <Route path="perfil" element={<MeuPerfilPage />} />
+
+          {/* Pesquisa: dentro do mesmo shell, mas atrás do papel. Esconder a rota é conveniência —
+              quem autoriza de verdade é o SecurityConfig em /api/pesquisa/**. */}
+          <Route element={<RequireRole roles={['PESQUISADOR', 'ADMIN']} />}>
+            <Route path="pesquisa" element={<QualidadeDosDadosPage />} />
+            <Route path="pesquisa/coorte" element={<CoortePage />} />
+          </Route>
         </Route>
       </Route>
 

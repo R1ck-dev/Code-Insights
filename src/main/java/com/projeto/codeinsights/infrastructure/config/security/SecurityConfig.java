@@ -59,6 +59,10 @@ public class SecurityConfig {
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Area administrativa
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Area de pesquisa: o corpus de toda a plataforma, pseudonimizado. Esta linha
+                        // e o modelo de seguranca do contexto — sem ela, qualquer aluno autenticado
+                        // leria as resolucoes dos colegas pelo prefixo proprio.
+                        .requestMatchers("/api/pesquisa/**").hasAnyRole("PESQUISADOR", "ADMIN")
                         // Demais rotas exigem autenticacao
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

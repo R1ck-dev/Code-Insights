@@ -269,6 +269,74 @@ export interface RegistroDTO {
   precisaAtivarPorEmail: boolean
 }
 
+// ---- Pesquisa: corpus de toda a plataforma ----
+
+/**
+ * Uma resolução da coorte. **Não existe `autorId` aqui** — a identidade para no backend, e a linha
+ * chega ao front já pseudonimizada (`A-3F9C21`). Revelar quem é exige chamar
+ * `POST /api/pesquisa/participantes/identificar`; ver o dado é o padrão, saber de quem é é um ato.
+ */
+export interface ResolucaoDaCoorteDTO {
+  resolucaoId: string
+  pseudonimo: string
+  desafioId: string
+  desafioTitulo: string
+  linguagem: LinguagemProgramacao
+  indiceAutonomiaIA: number
+  analisada: boolean
+  /** Ex.: `"O(n log n)"`, ou `"?"` quando `tempoOrdem === -1`. */
+  tempoRotulo: string | null
+  /** `k` do colormap: 0..7; `-1` = desconhecido; `null` = sem dado. */
+  tempoOrdem: number | null
+  confiancaTempo: NivelConfianca | null
+  espacoRotulo: string | null
+  espacoOrdem: number | null
+  confiancaEspaco: NivelConfianca | null
+  ciclomatica: number | null
+  submetidaEm: string
+}
+
+export interface ContagemDTO {
+  chave: string
+  total: number
+}
+
+export interface ContagemPorLinguagemDTO {
+  linguagem: LinguagemProgramacao
+  total: number
+  /** Vem do backend, e não de constante no front: só a porta `AnalisadorMetricas` sabe a resposta. */
+  comAnalisador: boolean
+}
+
+/**
+ * Saúde da amostra, não seus resultados. `comMetrica`, `aguardandoAnalise`, `falhaDeAnalise` e
+ * `semAnalisadorDeLinguagem` **particionam** `resolucoes` — somam exatamente o total.
+ */
+export interface QualidadeDaCoorteDTO {
+  participantes: number
+  resolucoes: number
+  comMetrica: number
+  aguardandoAnalise: number
+  /** O motor rodou e não produziu métrica: o código não parseou. É o único balde a investigar. */
+  falhaDeAnalise: number
+  /** Escopo conhecido, não defeito — hoje tudo que não é Java. */
+  semAnalisadorDeLinguagem: number
+  /** Quem submeteu uma vez só não contribui para nenhuma análise de evolução. */
+  participantesComUmaResolucao: number
+  primeiraSubmissao: string | null
+  ultimaSubmissao: string | null
+  porLinguagem: ContagemPorLinguagemDTO[]
+  porConfiancaDoTempo: ContagemDTO[]
+  porAutonomia: ContagemDTO[]
+}
+
+export interface ParticipanteIdentificadoDTO {
+  pseudonimo: string
+  usuarioId: string
+  username: string
+  email: string
+}
+
 // ---- Payloads de request ----
 export interface RegistrarUsuarioRequest {
   username: string
