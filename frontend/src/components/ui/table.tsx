@@ -13,14 +13,22 @@ import { cn } from '@/lib/utils'
  * A única cor que pode entrar numa célula é a do colormap de complexidade, vinda de quem usa.
  */
 
-/** Moldura + rolagem horizontal própria: a página nunca rola no eixo X por causa da tabela. */
+/**
+ * Moldura + região de rolagem própria: a página nunca rola no eixo X por causa da tabela.
+ *
+ * O `max-h` não é decoração — é o que faz o `sticky` do `<thead>` existir. Um box com
+ * `overflow-x: auto` já computa `overflow-y: auto`, ou seja, este div é o scrollport mais próximo do
+ * cabeçalho quer queiramos ou não; sem altura máxima ele cresce com o conteúdo, nunca rola, e o
+ * sticky fica com deslocamento zero para sempre. Quem rolaria seria a página, e o cabeçalho subiria
+ * junto. Dar altura ao container é o que devolve o comportamento prometido em `TableHead`.
+ */
 export function Table({
   className,
   children,
   ...props
 }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-ci border border-line bg-panel">
+    <div className="max-h-[70vh] overflow-auto rounded-ci border border-line bg-panel">
       <table className={cn('w-full border-collapse text-left', className)} {...props}>
         {children}
       </table>

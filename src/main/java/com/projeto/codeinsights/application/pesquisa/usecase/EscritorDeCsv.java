@@ -29,6 +29,9 @@ final class EscritorDeCsv {
     private static final String SEPARADOR = ",";
     private static final String FIM_DE_LINHA = "\r\n";
 
+    /** Caracteres que fazem a planilha ler a celula como formula em vez de texto. */
+    private static final String PREFIXOS_DE_FORMULA = "=+-@\t\r";
+
     private EscritorDeCsv() {
     }
 
@@ -48,10 +51,26 @@ final class EscritorDeCsv {
         if (campo == null || campo.isEmpty()) {
             return "";
         }
-        if (!precisaDeAspas(campo)) {
-            return campo;
+        String neutralizado = neutralizarFormula(campo);
+        if (!precisaDeAspas(neutralizado)) {
+            return neutralizado;
         }
-        return '"' + campo.replace("\"", "\"\"") + '"';
+        return '"' + neutralizado.replace("\"", "\"\"") + '"';
+    }
+
+    /**
+     * Titulo de desafio e texto livre escrito por um aluno, e a planilha do pesquisador trata
+     * {@code =}, {@code +}, {@code -} e {@code @} no inicio da celula como <b>formula</b>: um titulo
+     * {@code =1+1} chega ao pesquisador como {@code 2}, e um {@code #NAME?} entra no lugar do dado
+     * sem nenhum aviso. O apostrofo a frente e a neutralizacao padrao — a planilha o consome ao
+     * exibir, entao o titulo aparece intacto; aspas de CSV nao serviriam, porque o parser as remove
+     * antes de decidir se a celula e formula.
+     * <p>
+     * Custo assumido: quem ler o arquivo com pandas ou R ve o apostrofo, porque para essas
+     * ferramentas ele e um caractere comum. Preferimos o caractere visivel ao dado adulterado.
+     */
+    private static String neutralizarFormula(String campo) {
+        return PREFIXOS_DE_FORMULA.indexOf(campo.charAt(0)) >= 0 ? "'" + campo : campo;
     }
 
     private static boolean precisaDeAspas(String campo) {

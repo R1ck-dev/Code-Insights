@@ -17,6 +17,10 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <b>O papel viaja dentro do JWT</b>, entao promover alguem nao afeta o token que a pessoa ja tem:
  * o acesso novo so vale apos novo login. Nao ha revogacao nem refresh de token na plataforma.
+ * <p>
+ * <b>Papeis nao se somam.</b> O campo e unico, entao aplicar esta rota a uma conta ADMIN trocaria o
+ * papel em vez de acrescentar um — quem faz isso perde a area administrativa sem aviso. O dominio
+ * recusa esse caso; aqui a chamada apenas propaga a {@link NegocioException}.
  */
 @Service
 @RequiredArgsConstructor

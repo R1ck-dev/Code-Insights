@@ -26,13 +26,21 @@ public class WebMvcConfig implements WebMvcConfigurer {
         resolvers.add(currentUserIdArgumentResolver);
     }
 
+    /**
+     * {@code exposedHeaders} e uma lista fechada: o navegador esconde do JavaScript todo cabecalho
+     * de resposta que nao esteja aqui ou na safelist do CORS. {@code Content-Disposition} nao esta
+     * na safelist, e o export da coorte le dele o nome do arquivo (o download vai por blob URL, que
+     * ignora o cabecalho real). Sem esta linha o defeito e invisivel em desenvolvimento — o proxy do
+     * Vite torna a chamada same-origin — e aparece so em producao, onde front e back estao em
+     * origens diferentes: todo CSV baixaria com o nome padrao, sem a data que versiona a amostra.
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .exposedHeaders("Authorization")
+                .exposedHeaders("Authorization", "Content-Disposition")
                 .allowCredentials(false)
                 .maxAge(3600);
     }

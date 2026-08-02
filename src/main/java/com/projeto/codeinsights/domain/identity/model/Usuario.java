@@ -90,7 +90,19 @@ public class Usuario {
         marcarAtualizacao();
     }
 
+    /**
+     * Da acesso a area de pesquisa. Recusa um ADMIN: para ele isso seria <b>rebaixamento</b>, nao
+     * promocao — ADMIN ja alcanca a area de pesquisa, e PESQUISADOR nao alcanca a area
+     * administrativa. Sem esta guarda, aplicar a rota a conta administradora a destroi em silencio:
+     * nao existe caminho de volta pela API e o semeador so cria o admin quando o e-mail ainda nao
+     * esta no banco, entao a recuperacao exigiria UPDATE manual no Postgres.
+     */
     public void promoverParaPesquisador() {
+        if (ehAdmin()) {
+            throw new NegocioException(
+                    "Conta administradora ja alcanca a area de pesquisa. Promove-la a pesquisador seria "
+                            + "rebaixamento, e nao ha como desfazer pela plataforma.");
+        }
         this.role = Role.PESQUISADOR;
         marcarAtualizacao();
     }

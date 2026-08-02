@@ -293,14 +293,33 @@ function DialogDeIdentificacao({
   const [participante, setParticipante] = useState<ParticipanteIdentificadoDTO | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
+  /*
+   * O `atual` descarta resposta obsoleta. Sem ele: abre A, fecha, abre B — B responde primeiro, A
+   * responde depois e sobrescreve. O título continuaria dizendo "Participante B" enquanto os campos
+   * mostrariam o nome e o e-mail de A. Numa tela cujo único propósito é ligar pseudônimo a pessoa,
+   * isso é a identidade errada atribuída ao dado errado, e nada mais corrige depois.
+   *
+   * A limpeza vem ANTES do early return de propósito: fechar o diálogo também precisa zerar o
+   * estado, senão a resposta em voo cai num componente que continua montado (ele é irmão do
+   * QueryBoundary e nunca desmonta) e vaza para a próxima abertura.
+   */
   useEffect(() => {
-    if (!pseudonimo) return
     setParticipante(null)
     setErro(null)
+    if (!pseudonimo) return
+
+    let atual = true
     identificar
       .mutateAsync(pseudonimo)
-      .then(setParticipante)
-      .catch((err) => setErro(apiErrorMessage(err, 'Não foi possível identificar o participante.')))
+      .then((dados) => {
+        if (atual) setParticipante(dados)
+      })
+      .catch((err) => {
+        if (atual) setErro(apiErrorMessage(err, 'Não foi possível identificar o participante.'))
+      })
+    return () => {
+      atual = false
+    }
     // Depende SÓ do pseudônimo: `identificar` é recriado a cada render e, se entrasse aqui,
     // dispararia a chamada em laço.
   }, [pseudonimo])

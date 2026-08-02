@@ -85,6 +85,32 @@ class ExportarCoorteCsvUseCaseTest {
     }
 
     /**
+     * Titulo de desafio e texto livre escrito por um aluno, e a planilha do pesquisador le
+     * {@code =}, {@code +}, {@code -} e {@code @} no inicio da celula como formula: sem o apostrofo
+     * a frente, um titulo {@code =1+1} chega ao artigo como {@code 2}, e um {@code #NAME?} ocupa o
+     * lugar do dado sem nenhum aviso. Aspar nao resolveria — o parser da planilha remove as aspas
+     * antes de decidir se a celula e formula.
+     */
+    @Test
+    void tituloIniciadoPorSinalDeFormulaEhNeutralizado() {
+        for (String titulo : List.of("=1+1", "+SOMA(A1)", "-Fibonacci", "@ARQUIVO")) {
+            coorte(linha(titulo));
+
+            assertThat(useCase.execute().conteudo())
+                    .as("titulo %s", titulo)
+                    .contains(",'" + titulo + ",");
+        }
+    }
+
+    /** A neutralizacao so vale para o primeiro caractere: titulo comum nao pode ganhar apostrofo. */
+    @Test
+    void tituloComumAtravessaIntacto() {
+        coorte(linha("Two Sum"));
+
+        assertThat(useCase.execute().conteudo()).contains(",Two Sum,");
+    }
+
+    /**
      * Celula vazia, e nao {@code 0} nem {@code null}: e o que permite a analise separar "sem
      * metrica" de {@code O(1)}, cuja ordem e zero.
      */
