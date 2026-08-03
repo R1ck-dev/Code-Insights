@@ -72,9 +72,13 @@ jobs:
 
     steps:
       - name: Instalar o cliente do PostgreSQL
-        # Versao explicita e a mais nova, nao a do runner: pg_dump recusa servidor MAIS NOVO que
-        # ele ("server version mismatch"), e o Neon atualiza a versao do Postgres sem nos avisar.
-        # Cliente novo dumpa servidor antigo sem problema; o contrario nao existe.
+        # pg_dump recusa servidor MAIS NOVO que ele ("server version mismatch"), e o Neon sobe de
+        # versao maior sem nos avisar — em 2026-08-02 ja estava em 18.4, enquanto o runner do Ubuntu
+        # traz 16. Cliente novo dumpa servidor antigo sem problema; o contrario nao existe.
+        #
+        # Por isso a versao NAO fica fixa aqui: fixar so adia a quebra para a proxima major do Neon,
+        # e a quebra apareceria como um X vermelho numa aba que ninguem olha. O passo pergunta ao
+        # repositorio do PGDG qual e a maior versao disponivel e instala essa.
         run: |
           set -euo pipefail
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
@@ -82,7 +86,14 @@ jobs:
           echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client-17
+          VERSAO=$(apt-cache search --names-only '^postgresql-client-[0-9]+$' \
+            | grep -oE 'postgresql-client-[0-9]+' | grep -oE '[0-9]+$' | sort -n | tail -1)
+          if [ -z "${VERSAO:-}" ]; then
+            echo "::error::Nao achei nenhum postgresql-client-N no repositorio do PGDG."
+            exit 1
+          fi
+          echo "instalando o cliente $VERSAO"
+          sudo apt-get install -y -qq "postgresql-client-$VERSAO"
           pg_dump --version
 
       - name: Gerar o dump
@@ -100,21 +111,28 @@ jobs:
           pg_dump "$DB_URL" --no-owner --format=custom --file="$ARQUIVO"
           echo "ARQUIVO=$ARQUIVO" >> "$GITHUB_ENV"
 
-      - name: Conferir que o dump nao esta vazio nem truncado
-        # Um dump de 0 linhas nao falha o pg_dump: conexao ok, resultado inutil. Sem esta checagem,
-        # meses de arquivos vazios pareceriam meses de backup, e a descoberta seria no pior dia.
+      - name: Conferir que o dump e o backup certo, e nao um arquivo qualquer
+        # pg_dump sai com codigo 0 em varios cenarios inuteis: banco vazio, banco errado, arquivo
+        # truncado por disco cheio. Sem estas checagens, meses de arquivos ruins pareceriam meses de
+        # backup, e a descoberta seria no pior dia possivel.
         run: |
           set -euo pipefail
-          TAMANHO=$(stat -c%s "$ARQUIVO")
-          echo "tamanho: $TAMANHO bytes"
-          if [ "$TAMANHO" -lt 4096 ]; then
-            echo "::error::Dump com $TAMANHO bytes — pequeno demais para ser um banco com dados."
-            exit 1
-          fi
-          # Le o indice interno do arquivo: falha aqui significa arquivo corrompido ou incompleto.
-          pg_restore --list "$ARQUIVO" > /dev/null
-          echo "tabelas no dump:"
-          pg_restore --list "$ARQUIVO" | grep -c 'TABLE DATA' || true
+          echo "tamanho: $(stat -c%s "$ARQUIVO") bytes"
+
+          # 1. O indice interno tem que ser legivel: falha aqui e arquivo corrompido ou incompleto.
+          pg_restore --list "$ARQUIVO" > indice.txt
+
+          # 2. As tabelas do CodeInsights tem que estar la. O teste de tamanho sozinho nao serve:
+          #    um dump so de schema, com zero linhas, passa de 15 kB. Isto pega o caso em que a
+          #    BACKUP_DB_URL aponta para um banco vazio, novo ou simplesmente errado.
+          for TABELA in usuarios resolucoes consentimentos_pesquisa; do
+            if ! grep -q "TABLE DATA public $TABELA " indice.txt; then
+              echo "::error::O dump nao tem a tabela '$TABELA'. A BACKUP_DB_URL aponta para o banco certo?"
+              exit 1
+            fi
+          done
+
+          echo "tabelas no dump: $(grep -c 'TABLE DATA' indice.txt)"
 
       - name: Cifrar
         env:
