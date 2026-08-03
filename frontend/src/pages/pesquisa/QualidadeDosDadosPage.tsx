@@ -1,8 +1,8 @@
 import {
   AlertTriangle,
-  CircleHelp,
   Clock,
   Database,
+  Grid3x3,
   TableProperties,
   TriangleAlert,
   UserRound,
@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
 import { QueryBoundary } from '@/components/page/states'
+import { Numero, Painel, Titulo, Trilho, percentual } from '@/components/pesquisa/primitivos'
 import { buttonClasses } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
@@ -44,13 +45,22 @@ export function QualidadeDosDadosPage() {
         title="Qualidade dos dados"
         subtitle="A saúde da amostra durante a coleta — cobertura da análise, distribuições e buracos."
         actions={
-          <Link
-            to="/app/pesquisa/coorte"
-            className={buttonClasses({ variant: 'secondary', size: 'sm' })}
-          >
-            <TableProperties size={14} strokeWidth={2} aria-hidden />
-            Ver dado bruto
-          </Link>
+          <div className="flex flex-wrap gap-[7px]">
+            <Link
+              to="/app/pesquisa/cruzamento"
+              className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+            >
+              <Grid3x3 size={14} strokeWidth={2} aria-hidden />
+              Autonomia × complexidade
+            </Link>
+            <Link
+              to="/app/pesquisa/coorte"
+              className={buttonClasses({ variant: 'secondary', size: 'sm' })}
+            >
+              <TableProperties size={14} strokeWidth={2} aria-hidden />
+              Ver dado bruto
+            </Link>
+          </div>
         }
       />
 
@@ -340,76 +350,5 @@ function Distribuicao({ itens }: { itens: ContagemDTO[] }) {
   )
 }
 
-/** Barra neutra: a única cor do sistema é o colormap, e aqui não há classe de complexidade. */
-function Trilho({ fracao, apagado }: { fracao: number; apagado?: boolean }) {
-  return (
-    <div aria-hidden className="h-[5px] w-full overflow-hidden rounded-ci-sm bg-recess">
-      <div
-        className={apagado ? 'h-full bg-line-strong' : 'h-full bg-ink'}
-        style={{ width: `${Math.max(fracao * 100, fracao > 0 ? 3 : 0)}%` }}
-      />
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------- primitivos --- */
-
-function Painel({
-  titulo,
-  nota,
-  children,
-}: {
-  titulo: string
-  nota?: string
-  children: React.ReactNode
-}) {
-  return (
-    <Card className="flex flex-col gap-[13px] p-[18px]">
-      <Titulo texto={titulo} />
-      {children}
-      {nota && <p className="text-[11.5px] leading-[1.5] text-soft">{nota}</p>}
-    </Card>
-  )
-}
-
-function Titulo({ texto }: { texto: string }) {
-  return (
-    <h2 className="font-mono text-[10.5px] font-semibold tracking-[.06em] text-mid uppercase">
-      {texto}
-    </h2>
-  )
-}
-
-function Numero({
-  rotulo,
-  valor,
-  nota,
-  icone: Icone = CircleHelp,
-  pequeno,
-}: {
-  rotulo: string
-  valor: string | number
-  nota?: string
-  icone?: typeof CircleHelp
-  pequeno?: boolean
-}) {
-  return (
-    <Card className="flex flex-col gap-[9px] px-[15px] py-3.5">
-      <div className="flex items-center gap-[7px]">
-        <Icone size={12} strokeWidth={2} aria-hidden className="shrink-0 text-soft" />
-        <span className="font-mono text-[10.5px] tracking-[.06em] text-mid uppercase">{rotulo}</span>
-      </div>
-      <span
-        className={`tabular font-mono leading-none font-semibold text-ink ${pequeno ? 'text-[17px]' : 'text-[31px]'}`}
-      >
-        {valor}
-      </span>
-      {nota && <span className="text-[11.5px] text-soft">{nota}</span>}
-    </Card>
-  )
-}
-
-function percentual(parte: number, total: number): string {
-  if (total === 0) return '0%'
-  return `${((parte / total) * 100).toFixed(1).replace('.', ',')}%`
-}
+/* Painel, Titulo, Numero, Trilho e percentual vivem em components/pesquisa/primitivos — a tela de
+ * cruzamento usa os mesmos, e duas cópias divergiriam. */

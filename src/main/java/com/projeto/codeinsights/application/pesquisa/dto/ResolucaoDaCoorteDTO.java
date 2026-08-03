@@ -30,5 +30,11 @@ public record ResolucaoDaCoorteDTO(
         Integer espacoOrdem,
         NivelConfianca confiancaEspaco,
         Integer ciclomatica,
-        OffsetDateTime submetidaEm) {
+        OffsetDateTime submetidaEm,
+        /**
+         * Quando o motor gravou esta metrica. Nulo quando nao ha metrica — mesmo conjunto de linhas
+         * em que {@code tempoOrdem} e nulo. E o carimbo que torna uma extracao reproduzivel: duas
+         * leituras da mesma resolucao com instantes diferentes provam que houve reanalise no meio.
+         */
+        OffsetDateTime analisadoEm) {
 }

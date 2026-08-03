@@ -26,12 +26,18 @@ public interface SpringDataCoorteRepository extends JpaRepository<ResolucaoJpaEn
     // e reordenar aqui sem reordenar la troca metrica por metrica em silencio.
     // Um left join por tipo: ha no maximo 1 resultado por (resolucao, tipo), garantido pela
     // UNIQUE (resolucao_id, tipo), entao as juncoes nao multiplicam linhas.
+    // mt.analisadoEm vai no FIM, e nao junto das outras colunas de tempo: a projecao e posicional, e
+    // inserir no meio deslocaria em silencio todos os indices seguintes do adapter.
+    // Serve de carimbo de reproducao da linha inteira porque AnalisarResolucaoUseCase remove e
+    // regrava as tres metricas na mesma transacao — as tres carregam o mesmo instante. Nulo quando
+    // nao houve metrica, exatamente nos mesmos casos em que mt.valor e nulo.
     @Query("""
             select r.id, r.autor.id, d.id, d.titulo, r.linguagem, r.indiceAutonomiaIA, r.analisada,
                    mt.rotulo, mt.valor, mt.confianca,
                    me.rotulo, me.valor, me.confianca,
                    mc.valor,
-                   r.submetidaEm
+                   r.submetidaEm,
+                   mt.analisadoEm
             from ResolucaoJpaEntity r
             join r.desafio d
             left join ResultadoMetricaJpaEntity mt on mt.resolucao = r and mt.tipo = :tipoTempo

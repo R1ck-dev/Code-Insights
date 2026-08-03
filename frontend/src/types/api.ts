@@ -294,6 +294,12 @@ export interface ResolucaoDaCoorteDTO {
   confiancaEspaco: NivelConfianca | null
   ciclomatica: number | null
   submetidaEm: string
+  /**
+   * Quando o motor gravou a métrica — não quando o aluno submeteu. `null` sempre que não há
+   * métrica. Duas extrações da mesma resolução com instantes diferentes provam que houve
+   * reanálise entre elas.
+   */
+  analisadoEm: string | null
 }
 
 export interface ContagemDTO {

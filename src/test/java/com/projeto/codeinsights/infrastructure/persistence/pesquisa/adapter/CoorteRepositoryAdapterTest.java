@@ -42,6 +42,8 @@ class CoorteRepositoryAdapterTest {
     private static final UUID AUTOR = UUID.fromString("00000000-0000-0000-0000-000000000002");
     private static final UUID DESAFIO = UUID.fromString("00000000-0000-0000-0000-000000000003");
     private static final OffsetDateTime SUBMETIDA = OffsetDateTime.parse("2026-08-01T10:00:00Z");
+    /** Distinto de SUBMETIDA de proposito: iguais esconderiam a troca entre as duas datas. */
+    private static final OffsetDateTime ANALISADA = OffsetDateTime.parse("2026-08-02T15:30:00Z");
 
     /** A testemunha de tipo evita que o varargs de {@code List.of} espalhe o array em varios itens. */
     private void retorna(Object[] linha) {
@@ -67,7 +69,7 @@ class CoorteRepositoryAdapterTest {
                 LinguagemProgramacao.PYTHON, 4, true,
                 "O(n^2)", 4, NivelConfianca.ALTA,
                 "O(log n)", 1, NivelConfianca.BAIXA,
-                7, SUBMETIDA });
+                7, SUBMETIDA, ANALISADA });
 
         ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 
@@ -87,6 +89,7 @@ class CoorteRepositoryAdapterTest {
         assertThat(resolucao.confiancaEspaco()).isEqualTo(NivelConfianca.BAIXA);
         assertThat(resolucao.ciclomatica()).isEqualTo(7);
         assertThat(resolucao.submetidaEm()).isEqualTo(SUBMETIDA);
+        assertThat(resolucao.analisadoEm()).isEqualTo(ANALISADA);
     }
 
     /**
@@ -101,7 +104,7 @@ class CoorteRepositoryAdapterTest {
                 LinguagemProgramacao.JAVA, 3, false,
                 null, null, null,
                 null, null, null,
-                null, SUBMETIDA });
+                null, SUBMETIDA, null });
 
         ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 
@@ -109,6 +112,9 @@ class CoorteRepositoryAdapterTest {
         assertThat(resolucao.espacoOrdem()).isNull();
         assertThat(resolucao.ciclomatica()).isNull();
         assertThat(resolucao.temMetrica()).isFalse();
+        // Sem metrica gravada nao ha instante de analise. E a invariante que o CSV publica: celula
+        // vazia em analisado_em significa "o motor nao produziu numero", nunca "produziu e esqueci".
+        assertThat(resolucao.analisadoEm()).isNull();
     }
 
     /**
@@ -122,7 +128,7 @@ class CoorteRepositoryAdapterTest {
                 LinguagemProgramacao.JAVA, 5L, true,
                 "O(n)", 2L, NivelConfianca.ALTA,
                 "O(1)", 0L, NivelConfianca.ALTA,
-                3L, SUBMETIDA });
+                3L, SUBMETIDA, ANALISADA });
 
         ResolucaoDaCoorte resolucao = adapter.listarCoorte(Set.of(AUTOR)).get(0);
 

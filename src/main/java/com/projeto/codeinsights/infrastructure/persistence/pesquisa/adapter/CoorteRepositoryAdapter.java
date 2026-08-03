@@ -70,6 +70,7 @@ public class CoorteRepositoryAdapter implements CoorteRepository {
                 linha[11] == null ? null : ((Number) linha[11]).intValue(),
                 (NivelConfianca) linha[12],
                 linha[13] == null ? null : ((Number) linha[13]).intValue(),
-                (OffsetDateTime) linha[14]);
+                (OffsetDateTime) linha[14],
+                (OffsetDateTime) linha[15]);
     }
 }

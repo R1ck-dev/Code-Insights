@@ -33,7 +33,11 @@ public class ExportarCoorteCsvUseCase {
     private static final List<String> CABECALHO = List.of(
             "pseudonimo", "resolucao_id", "desafio_id", "desafio", "linguagem", "autonomia_ia",
             "analisada", "tempo_rotulo", "tempo_ordem", "confianca_tempo",
-            "espaco_rotulo", "espaco_ordem", "confianca_espaco", "ciclomatica", "submetida_em");
+            "espaco_rotulo", "espaco_ordem", "confianca_espaco", "ciclomatica", "submetida_em",
+            // Duas extracoes da mesma resolucao com analisado_em diferente provam que passou uma
+            // reanalise entre elas. E a coluna que torna um recorte reproduzivel: sem ela, o mesmo
+            // arquivo, no mesmo dia, podia trazer classificacoes diferentes sem nada denunciando.
+            "analisado_em");
 
     private final ListarCoorteUseCase listarCoorteUseCase;
     private final TermoDeConsentimentoPort termoDeConsentimentoPort;
@@ -80,6 +84,7 @@ public class ExportarCoorteCsvUseCase {
         campos.add(texto(resolucao.confiancaEspaco()));
         campos.add(texto(resolucao.ciclomatica()));
         campos.add(texto(resolucao.submetidaEm()));
+        campos.add(texto(resolucao.analisadoEm()));
         return campos;
     }
 

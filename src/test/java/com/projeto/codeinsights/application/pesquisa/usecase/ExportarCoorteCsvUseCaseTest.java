@@ -47,14 +47,15 @@ class ExportarCoorteCsvUseCaseTest {
                 LinguagemProgramacao.JAVA, 4, true,
                 "O(n^2)", 4, NivelConfianca.ALTA,
                 "O(1)", 0, NivelConfianca.MEDIA,
-                7, OffsetDateTime.parse("2026-08-01T10:00:00Z"));
+                7, OffsetDateTime.parse("2026-08-01T10:00:00Z"),
+                OffsetDateTime.parse("2026-08-03T09:15:00Z"));
     }
 
     private ResolucaoDaCoorteDTO semMetrica() {
         return new ResolucaoDaCoorteDTO(UUID.randomUUID(), "A-7B21EE", UUID.randomUUID(), "Fibonacci",
                 LinguagemProgramacao.PYTHON, 2, true,
                 null, null, null, null, null, null, null,
-                OffsetDateTime.parse("2026-08-02T10:00:00Z"));
+                OffsetDateTime.parse("2026-08-02T10:00:00Z"), null);
     }
 
     private List<String> linhasDe(String csv) {
@@ -70,7 +71,21 @@ class ExportarCoorteCsvUseCaseTest {
         assertThat(linhasDe(csv).get(0))
                 .isEqualTo("\uFEFFpseudonimo,resolucao_id,desafio_id,desafio,linguagem,autonomia_ia,"
                         + "analisada,tempo_rotulo,tempo_ordem,confianca_tempo,espaco_rotulo,"
-                        + "espaco_ordem,confianca_espaco,ciclomatica,submetida_em");
+                        + "espaco_ordem,confianca_espaco,ciclomatica,submetida_em,analisado_em");
+    }
+
+    /**
+     * A coluna que torna uma extracao reproduzivel: a reanalise em massa apaga e regrava as metricas,
+     * e sem este carimbo dois arquivos com o mesmo nome podiam trazer classificacoes diferentes sem
+     * nada denunciando. E o instante da ANALISE, nunca o da submissao — trocar os dois no mapeamento
+     * compila e produz um numero errado.
+     */
+    @Test
+    void oInstanteDaAnaliseSaiSeparadoDoDaSubmissao() {
+        coorte(linha("Two Sum"));
+
+        assertThat(linhasDe(useCase.execute().conteudo()).get(1))
+                .endsWith("2026-08-01T10:00Z,2026-08-03T09:15Z");
     }
 
     /** Sem BOM o Excel exibe titulo acentuado como lixo, e o defeito passa despercebido. */
@@ -127,7 +142,8 @@ class ExportarCoorteCsvUseCaseTest {
 
         String linhaDeDados = linhasDe(useCase.execute().conteudo()).get(1);
 
-        assertThat(linhaDeDados).endsWith("PYTHON,2,true,,,,,,,,2026-08-02T10:00Z");
+        // A ultima celula tambem fica vazia: sem metrica nao ha instante de analise.
+        assertThat(linhaDeDados).endsWith("PYTHON,2,true,,,,,,,,2026-08-02T10:00Z,");
     }
 
     @Test

@@ -34,7 +34,17 @@ public record ResolucaoDaCoorte(
         Integer espacoOrdem,
         NivelConfianca confiancaEspaco,
         Integer ciclomatica,
-        OffsetDateTime submetidaEm) {
+        OffsetDateTime submetidaEm,
+        /**
+         * Quando o motor gravou a metrica desta linha — nao quando o aluno submeteu.
+         * <p>
+         * E o carimbo de reproducao do dado. A reanalise em massa apaga e regrava os resultados, e
+         * ate aqui nada registrava que uma passada tinha acontecido: dois exports com o mesmo nome
+         * podiam trazer numeros diferentes sem nada no arquivo denunciando. Com este campo, duas
+         * extracoes da mesma linha com {@code analisadoEm} distinto <b>provam</b> que houve
+         * reanalise no meio — por linha, e nao por um metadado de cabecalho em que se acredita.
+         */
+        OffsetDateTime analisadoEm) {
 
     /** A analise rodou e produziu numero — o unico estado em que a linha entra numa estatistica. */
     public boolean temMetrica() {

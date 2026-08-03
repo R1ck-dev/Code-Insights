@@ -87,6 +87,7 @@ public class ListarCoorteUseCase {
                 resolucao.espacoOrdem(),
                 resolucao.confiancaEspaco(),
                 resolucao.ciclomatica(),
-                resolucao.submetidaEm());
+                resolucao.submetidaEm(),
+                resolucao.analisadoEm());
     }
 }

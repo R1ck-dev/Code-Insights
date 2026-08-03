@@ -8,12 +8,14 @@ import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.domain.pesquisa.model.ResolucaoDaCoorte;
 
 /**
- * Fabrica de {@link ResolucaoDaCoorte} para os testes de pesquisa. Sao 15 componentes, e escrever
- * os 15 em cada caso esconderia o unico campo que o teste esta de fato exercitando.
+ * Fabrica de {@link ResolucaoDaCoorte} para os testes de pesquisa. Sao 16 componentes, e escrever
+ * os 16 em cada caso esconderia o unico campo que o teste esta de fato exercitando.
  */
 final class CoorteDeTeste {
 
     static final OffsetDateTime AGORA = OffsetDateTime.parse("2026-08-01T10:00:00Z");
+    /** Depois da submissao, e diferente dela: iguais esconderiam a troca entre as duas datas. */
+    static final OffsetDateTime ANALISADO_EM = OffsetDateTime.parse("2026-08-02T15:30:00Z");
 
     private CoorteDeTeste() {
     }
@@ -24,7 +26,7 @@ final class CoorteDeTeste {
                 LinguagemProgramacao.JAVA, autonomia, true,
                 "O(n^2)", 4, NivelConfianca.ALTA,
                 "O(1)", 0, NivelConfianca.MEDIA,
-                7, AGORA);
+                7, AGORA, ANALISADO_EM);
     }
 
     /** Submetida e ainda na fila do motor. */
@@ -47,6 +49,6 @@ final class CoorteDeTeste {
                 linguagem, 3, analisada,
                 null, null, null,
                 null, null, null,
-                null, AGORA);
+                null, AGORA, null);
     }
 }

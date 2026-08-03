@@ -36,6 +36,7 @@ import { AdministracaoPage } from '@/pages/admin/AdministracaoPage'
 // Pesquisa
 import { QualidadeDosDadosPage } from '@/pages/pesquisa/QualidadeDosDadosPage'
 import { CoortePage } from '@/pages/pesquisa/CoortePage'
+import { CruzamentoPage } from '@/pages/pesquisa/CruzamentoPage'
 
 export function App() {
   return (
@@ -87,6 +88,7 @@ export function App() {
               quem autoriza de verdade é o SecurityConfig em /api/pesquisa/**. */}
           <Route element={<RequireRole roles={['PESQUISADOR', 'ADMIN']} />}>
             <Route path="pesquisa" element={<QualidadeDosDadosPage />} />
+            <Route path="pesquisa/cruzamento" element={<CruzamentoPage />} />
             <Route path="pesquisa/coorte" element={<CoortePage />} />
           </Route>
 
