@@ -35,7 +35,7 @@
 import { useId } from 'react'
 import { InfoButton } from '@/components/ui/info-button'
 import { ErrorState } from '@/components/page/states'
-import { NOTA_METRICAS_SO_JAVA } from '@/domain/enums'
+import { NOTA_COMPLEXIDADE_SO_JAVA } from '@/domain/enums'
 import { useTheme } from '@/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 import type { InfoSecao } from '@/domain/metricas-explicacao'
@@ -279,7 +279,7 @@ export function PainelDeGraficos({
            * "3 sem métrica · métricas só para Java" — explicação falsa para número certo.
            */}
           {!carregando && dataset.semMetrica.semAnalisador > 0 && (
-            <span className="font-mono text-[10.5px] text-soft">· {NOTA_METRICAS_SO_JAVA}</span>
+            <span className="font-mono text-[10.5px] text-soft">· {NOTA_COMPLEXIDADE_SO_JAVA}</span>
           )}
         </footer>
       )}

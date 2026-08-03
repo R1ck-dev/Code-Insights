@@ -1,25 +1,28 @@
 package com.projeto.codeinsights.application.pesquisa.usecase;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.projeto.codeinsights.application.pesquisa.dto.ContagemDTO;
 import com.projeto.codeinsights.application.pesquisa.dto.QualidadeDaCoorteDTO;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
+import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
+import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
 import com.projeto.codeinsights.domain.knowledge.port.AnalisadorMetricas;
 import com.projeto.codeinsights.domain.pesquisa.enums.DecisaoDeConsentimento;
 import com.projeto.codeinsights.domain.pesquisa.model.ConsentimentoDePesquisa;
@@ -40,19 +43,45 @@ class ObterQualidadeDaCoorteUseCaseTest {
     private ObterParticipantesConsentidosUseCase obterParticipantesConsentidosUseCase;
     @Mock
     private TermoDeConsentimentoPort termoDeConsentimentoPort;
-    @Mock
-    private AnalisadorMetricas analisadorMetricas;
 
-    @InjectMocks
     private ObterQualidadeDaCoorteUseCase useCase;
 
     private final UUID ana = UUID.randomUUID();
     private final UUID bruno = UUID.randomUUID();
     private final UUID carla = UUID.randomUUID();
 
-    private void soJavaEhSuportado() {
-        when(analisadorMetricas.suporta(any())).thenAnswer(chamada ->
-                chamada.getArgument(0) == LinguagemProgramacao.JAVA);
+    /**
+     * Dublê escrito a mao, e nao mock: {@code suporta} e {@code produz} sao metodos <b>default</b> da
+     * porta, e um mock os devolveria como {@code false} sem executar a regra — o teste exercitaria o
+     * Mockito no lugar da porta. Aqui so {@code metricasSuportadas} e configurado, e o resto deriva
+     * de verdade, como em producao.
+     */
+    private record MotorFake(Map<LinguagemProgramacao, Set<TipoMetrica>> suportadas)
+            implements AnalisadorMetricas {
+
+        @Override
+        public Set<TipoMetrica> metricasSuportadas(LinguagemProgramacao linguagem) {
+            return suportadas.getOrDefault(linguagem, Set.of());
+        }
+
+        @Override
+        public List<ResultadoMetrica> analisar(Resolucao resolucao) {
+            return List.of();
+        }
+    }
+
+    /**
+     * O motor do piloto: Java com as tres metricas, C so com ciclomatica. O suporte parcial de C e
+     * justamente o caso que os baldes precisam classificar sem chamar de defeito.
+     */
+    @BeforeEach
+    void montarUseCase() {
+        useCase = new ObterQualidadeDaCoorteUseCase(coorteRepository,
+                obterParticipantesConsentidosUseCase, termoDeConsentimentoPort,
+                new MotorFake(Map.of(
+                        LinguagemProgramacao.JAVA, Set.of(TipoMetrica.BIG_O_TEMPO,
+                                TipoMetrica.COMPLEXIDADE_ESPACO, TipoMetrica.COMPLEXIDADE_CICLOMATICA),
+                        LinguagemProgramacao.C, Set.of(TipoMetrica.COMPLEXIDADE_CICLOMATICA))));
     }
 
     /** Cenario comum: todos os autores das linhas consentiram, e ninguem mais submeteu. */
@@ -93,7 +122,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
      */
     @Test
     void osQuatroBaldesDeCoberturaParticionamAAmostra() {
-        soJavaEhSuportado();
         coorte(
                 CoorteDeTeste.analisada(ana, 4),
                 CoorteDeTeste.aguardando(ana),
@@ -117,7 +145,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
      */
     @Test
     void linguagemSemAnalisadorNaoContaComoFalhaDeAnalise() {
-        soJavaEhSuportado();
         coorte(CoorteDeTeste.semAnalisador(ana, LinguagemProgramacao.CPP));
 
         QualidadeDaCoorteDTO qualidade = useCase.execute();
@@ -126,9 +153,31 @@ class ObterQualidadeDaCoorteUseCaseTest {
         assertThat(qualidade.falhaDeAnalise()).isZero();
     }
 
+    /**
+     * O caso que motivou a porta a responder por metrica. C tem analisador — de ciclomatica —, e
+     * mesmo assim nao produz classe de tempo. Com a pergunta antiga ({@code suporta(linguagem)}) esta
+     * linha cairia em "falha de analise", e num piloto majoritariamente em C a tela acusaria defeito
+     * do motor sobre quase a amostra inteira.
+     */
+    @Test
+    void linguagemComAnaliseParcialNaoContaComoFalha() {
+        coorte(CoorteDeTeste.semAnalisador(ana, LinguagemProgramacao.C));
+
+        QualidadeDaCoorteDTO qualidade = useCase.execute();
+
+        assertThat(qualidade.falhaDeAnalise()).isZero();
+        assertThat(qualidade.semAnalisadorDeLinguagem()).isEqualTo(1);
+        assertThat(qualidade.porLinguagem())
+                .singleElement()
+                .satisfies(contagem -> {
+                    assertThat(contagem.comAnalisador()).isTrue();
+                    assertThat(contagem.metricasSuportadas())
+                            .containsExactly(TipoMetrica.COMPLEXIDADE_CICLOMATICA);
+                });
+    }
+
     @Test
     void contaParticipantesDistintosEQuemSubmeteuUmaVezSo() {
-        soJavaEhSuportado();
         coorte(
                 CoorteDeTeste.analisada(ana, 4),
                 CoorteDeTeste.analisada(ana, 3),
@@ -146,7 +195,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
      */
     @Test
     void separaQuemConsentiuDeQuemRecusouEDeQuemNaoRespondeu() {
-        soJavaEhSuportado();
         cenario(Set.of(ana), Set.of(bruno), Set.of(ana, bruno, carla),
                 CoorteDeTeste.analisada(ana, 4));
 
@@ -164,7 +212,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
      */
     @Test
     void mostraQuantasResolucoesFicaramForaDaCoorte() {
-        soJavaEhSuportado();
         when(termoDeConsentimentoPort.vigente())
                 .thenReturn(new TermoDeConsentimento(VERSAO, "Termo", "texto", true));
         when(obterParticipantesConsentidosUseCase.historicoVigente())
@@ -180,7 +227,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
     /** A escala 1..5 aparece inteira: nivel sem nenhuma resolucao e informacao, nao ausencia. */
     @Test
     void aDistribuicaoDeAutonomiaCobreAEscalaInteira() {
-        soJavaEhSuportado();
         coorte(CoorteDeTeste.analisada(ana, 4), CoorteDeTeste.analisada(bruno, 4));
 
         List<ContagemDTO> autonomia = useCase.execute().porAutonomia();
@@ -193,7 +239,6 @@ class ObterQualidadeDaCoorteUseCaseTest {
 
     @Test
     void aLinguagemInformaSeExisteAnalisadorParaEla() {
-        soJavaEhSuportado();
         coorte(CoorteDeTeste.analisada(ana, 4), CoorteDeTeste.semAnalisador(bruno, LinguagemProgramacao.PYTHON));
 
         assertThat(useCase.execute().porLinguagem())

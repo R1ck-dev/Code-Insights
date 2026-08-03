@@ -1,29 +1,48 @@
 package com.projeto.codeinsights.domain.knowledge.port;
 
 import java.util.List;
+import java.util.Set;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
 
 /**
  * Porta de saida para o motor de analise estatica. O dominio define o contrato
  * ("dada uma resolucao, produza suas metricas") e a infraestrutura o implementa
- * com a analise da AST (via JavaParser), sem que o dominio conheca a biblioteca.
- * Retorna lista vazia quando a linguagem ainda nao e suportada ou o codigo nao
- * pode ser parseado.
+ * por analise da AST, sem que o dominio conheca a biblioteca de parsing.
+ * Retorna lista vazia quando a linguagem nao e suportada ou o codigo nao pode ser
+ * parseado.
  */
 public interface AnalisadorMetricas {
 
     /**
-     * Existe analisador para {@code linguagem}?
+     * Quais metricas o motor sabe calcular para {@code linguagem} — <b>conjunto vazio</b> quando nao
+     * ha analisador nenhum.
      * <p>
-     * Separa "nao sei analisar esta linguagem" de "sei, mas o codigo nao parseou" — os dois
-     * casos devolvem lista vazia em {@link #analisar(Resolucao)}, e a reanalise do corpus
-     * precisa distingui-los: o primeiro e uma resolucao <i>pulada</i> (esperado, ha apenas
-     * analisador de Java), o segundo e uma <i>falha</i> (o motor deveria ter dado conta).
+     * O suporte e <b>parcial por linguagem</b>, e nao um sim/nao: contar pontos de decisao
+     * (ciclomatica) e uma contagem lexica, enquanto inferir Big-O exige um modelo de custo sobre a
+     * AST inteira. Uma linguagem pode ter a primeira e nao a segunda — e foi por isso que este
+     * metodo substituiu um booleano. Com o booleano, uma resolucao analisada em parte caía no balde
+     * de <i>falha de analise</i> da tela de qualidade, que passaria a acusar defeito onde so falta
+     * instrumento.
      */
-    boolean suporta(LinguagemProgramacao linguagem);
+    Set<TipoMetrica> metricasSuportadas(LinguagemProgramacao linguagem);
+
+    /** Ha algum analisador para a linguagem, ainda que so para parte das metricas. */
+    default boolean suporta(LinguagemProgramacao linguagem) {
+        return !metricasSuportadas(linguagem).isEmpty();
+    }
+
+    /**
+     * O motor produz esta metrica para esta linguagem? E a pergunta que os baldes de cobertura
+     * precisam fazer: "sem dado" e escopo conhecido quando o motor nunca prometeu o numero, e
+     * defeito quando prometeu e nao entregou.
+     */
+    default boolean produz(TipoMetrica tipo, LinguagemProgramacao linguagem) {
+        return metricasSuportadas(linguagem).contains(tipo);
+    }
 
     List<ResultadoMetrica> analisar(Resolucao resolucao);
 }

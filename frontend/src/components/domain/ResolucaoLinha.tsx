@@ -27,7 +27,7 @@ import { BigOChip, LangChip, StatusChip, VisibilidadeToggle } from '@/components
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   CONFIANCA_BIG_O,
-  LINGUAGEM_COM_METRICAS,
+  temClasseDeTempo,
   ROTULO_SEM_METRICA,
   rotuloConfiancaMotor,
 } from '@/domain/enums'
@@ -98,7 +98,7 @@ export function MetricaSlot({
   compact,
 }: MetricaSlotProps) {
   // 1. Linguagem sem analisador: não haverá métrica, ponto final (§4.4).
-  if (linguagem !== LINGUAGEM_COM_METRICAS) return <SemMetrica />
+  if (!temClasseDeTempo(linguagem)) return <SemMetrica />
   // 2. Java, análise assíncrona em curso.
   if (!analisada) return <StatusChip status="calculando" compact={compact} />
   // 3. Java, analisada — mas o valor ainda está sendo buscado: esqueleto, jamais "sem métrica".

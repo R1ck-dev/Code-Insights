@@ -33,9 +33,9 @@ import { MetricTile } from '@/components/MetricTile'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
 import { LangChip, LanguageDot, StatusChip } from '@/components/domain/badges'
 import {
-  LINGUAGEM_COM_METRICAS,
+  temClasseDeTempo,
   LINGUAGEM_META,
-  NOTA_METRICAS_SO_JAVA,
+  NOTA_COMPLEXIDADE_SO_JAVA,
   ROTULO_SEM_METRICA,
   TIPO_METRICA_META,
   prettyBigO,
@@ -145,7 +145,7 @@ export function ResolucaoDetalhePage() {
           const metricas: ResultadoMetricaDTO[] = metricasQuery.data ?? []
           const porTipo = new Map(metricas.map((m) => [m.tipo, m]))
           const semMetricas = metricas.length === 0
-          const naoJava = resolucao.linguagem !== LINGUAGEM_COM_METRICAS
+          const naoJava = !temClasseDeTempo(resolucao.linguagem)
           const ehPublica = resolucao.visibilidade === 'PUBLICO'
           const submeterHref = `/app/desafios/${resolucao.desafioId}/submeter`
 
@@ -533,7 +533,7 @@ function NotaDeMetodo({
       <div className={caixa}>
         <Cpu size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-atencao" />
         <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-          {NOTA_METRICAS_SO_JAVA} O motor de AST hoje não lê{' '}
+          {NOTA_COMPLEXIDADE_SO_JAVA} O motor de AST hoje não lê{' '}
           {LINGUAGEM_META[linguagem].label}. O índice de autonomia é autodeclarado e continua
           valendo.
         </p>

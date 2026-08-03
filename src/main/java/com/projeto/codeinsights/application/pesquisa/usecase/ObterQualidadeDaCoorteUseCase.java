@@ -20,6 +20,7 @@ import com.projeto.codeinsights.application.pesquisa.dto.ContagemPorLinguagemDTO
 import com.projeto.codeinsights.application.pesquisa.dto.QualidadeDaCoorteDTO;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.port.AnalisadorMetricas;
 import com.projeto.codeinsights.domain.pesquisa.model.HistoricoDeConsentimento;
 import com.projeto.codeinsights.domain.pesquisa.model.ResolucaoDaCoorte;
@@ -94,11 +95,21 @@ public class ObterQualidadeDaCoorteUseCase {
     }
 
     // ------------------------------------------------------------------ cobertura
-    // Os quatro baldes particionam a coorte: toda resolucao cai em exatamente um.
+    // Os quatro baldes particionam a coorte: toda resolucao cai em exatamente um. Todos falam da
+    // CLASSE DE TEMPO — e ela que `temMetrica()` testa, e e ela que a Carta e a Matriz plotam.
 
-    /** Sem analisador para a linguagem — escopo conhecido, nao defeito. Domina os demais baldes. */
+    /**
+     * O motor nao produz classe de tempo para esta linguagem — escopo conhecido, nao defeito. Domina
+     * os demais baldes.
+     * <p>
+     * A pergunta e por METRICA, e nao por linguagem, porque o suporte e parcial: C tem analisador de
+     * ciclomatica e nao tem de Big-O. Com a pergunta antiga ({@code suporta(linguagem)}), toda
+     * resolucao em C passaria a cair em <i>falha de analise</i> — a tela acusaria defeito no motor
+     * onde so falta instrumento, e num piloto majoritariamente em C isso seria quase a amostra
+     * inteira.
+     */
     private boolean semAnalisadorDeLinguagem(ResolucaoDaCoorte resolucao) {
-        return !analisadorMetricas.suporta(resolucao.linguagem());
+        return !analisadorMetricas.produz(TipoMetrica.BIG_O_TEMPO, resolucao.linguagem());
     }
 
     private boolean comMetrica(ResolucaoDaCoorte resolucao) {
@@ -132,7 +143,7 @@ public class ObterQualidadeDaCoorteUseCase {
         return contagem.entrySet().stream()
                 .sorted(Map.Entry.<LinguagemProgramacao, Long>comparingByValue().reversed())
                 .map(entrada -> new ContagemPorLinguagemDTO(entrada.getKey(), entrada.getValue().intValue(),
-                        analisadorMetricas.suporta(entrada.getKey())))
+                        analisadorMetricas.metricasSuportadas(entrada.getKey())))
                 .toList();
     }
 

@@ -2,6 +2,8 @@ package com.projeto.codeinsights.infrastructure.metrica;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -10,24 +12,25 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
 import com.projeto.codeinsights.domain.knowledge.model.Resolucao;
 import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
-import com.projeto.codeinsights.domain.knowledge.port.AnalisadorMetricas;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Motor de analise estatica que implementa a porta de dominio {@link AnalisadorMetricas}.
- * Faz o parse do codigo uma unica vez e delega a cada {@link AnalisadorMetricaJava}
- * registrado como bean (a lista cresce por adicao). So a linguagem Java e suportada
- * por ora; para outras linguagens, ou quando o codigo nao parseia, retorna lista
- * vazia (a resolucao e marcada como analisada, sem metricas).
+ * O analisador de Java: as tres metricas, por analise da AST. Faz o parse do codigo uma unica vez e
+ * delega a cada {@link AnalisadorMetricaJava} registrado como bean.
+ * <p>
+ * Quando o codigo nao parseia, devolve lista vazia — e a resolucao fica <i>analisada e sem
+ * metrica</i>, que a tela de qualidade le como FALHA, e nao como escopo. A distincao importa: aqui o
+ * motor prometeu o numero e nao entregou.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class JavaParserAnalisadorMetricas implements AnalisadorMetricas {
+public class JavaParserAnalisadorMetricas implements AnalisadorDeLinguagem {
 
     /** Nivel de linguagem alvo: os alunos submetem Java moderno (switch com seta, records, etc.). */
     private static final ParserConfiguration CONFIGURACAO = new ParserConfiguration()
@@ -36,18 +39,19 @@ public class JavaParserAnalisadorMetricas implements AnalisadorMetricas {
     private final List<AnalisadorMetricaJava> analisadores;
 
     @Override
-    public boolean suporta(LinguagemProgramacao linguagem) {
-        return linguagem == LinguagemProgramacao.JAVA;
+    public LinguagemProgramacao linguagem() {
+        return LinguagemProgramacao.JAVA;
+    }
+
+    /** Derivado dos beans registrados, e nao de uma lista a parte que envelheceria em silencio. */
+    @Override
+    public Set<TipoMetrica> metricasSuportadas() {
+        return analisadores.stream().map(AnalisadorMetricaJava::tipo)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override
     public List<ResultadoMetrica> analisar(Resolucao resolucao) {
-        if (!suporta(resolucao.getLinguagem())) {
-            log.info("Linguagem {} ainda nao suportada para analise de metricas (resolucao {}).",
-                    resolucao.getLinguagem(), resolucao.getId());
-            return List.of();
-        }
-
         Optional<CompilationUnit> unidade = parsear(resolucao.getCodigoFonte());
         if (unidade.isEmpty()) {
             log.warn("Nao foi possivel parsear o codigo Java da resolucao {}; nenhuma metrica gerada.",

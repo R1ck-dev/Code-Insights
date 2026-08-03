@@ -18,7 +18,8 @@ import { toast } from '@/components/ui/toaster'
 import { useDesafioDetalhe } from '@/features/desafios/hooks'
 import { useSubmeterResolucao } from '@/features/resolucoes/hooks'
 import {
-  LINGUAGEM_COM_METRICAS,
+  NOTA_COMPLEXIDADE_SO_JAVA,
+  notaDeCobertura,
   LINGUAGEM_META,
   LINGUAGENS,
   ROTULO_SEM_METRICA,
@@ -49,7 +50,8 @@ export function SubmeterResolucaoPage() {
 
   const enviando = submeter.isPending
   const meta = LINGUAGEM_META[linguagem]
-  const semMetricas = linguagem !== LINGUAGEM_COM_METRICAS
+  const notaDaLinguagem = notaDeCobertura(linguagem)
+  const semMetricas = notaDaLinguagem !== ''
 
   // Roving tabindex do radiogroup de linguagem (WAI-ARIA): um tab stop, setas movem.
   const refsLinguagem = useRef<(HTMLButtonElement | null)[]>([])
@@ -204,11 +206,10 @@ export function SubmeterResolucaoPage() {
                             aria-hidden
                             className="mt-[1px] shrink-0 text-atencao"
                           />
-                          <span>
-                            Métricas de complexidade hoje só para{' '}
-                            <span className="font-semibold text-ink">Java</span>.
-                          </span>
+                          <span>{NOTA_COMPLEXIDADE_SO_JAVA}</span>
                         </span>
+                        {/* A nota é POR LINGUAGEM: dizer "nenhuma métrica" a quem escolhe C seria
+                            falso — C tem ciclomática — e assustaria sem motivo. */}
                         {semMetricas && (
                           <span className="flex items-start gap-[7px]">
                             <Info
@@ -218,11 +219,12 @@ export function SubmeterResolucaoPage() {
                               className="mt-[1px] shrink-0 text-soft"
                             />
                             <span>
-                              Em {meta.label}, tempo, espaço e ciclomática ficam como{' '}
+                              <span className="font-semibold text-ink">{meta.label}:</span>{' '}
+                              {notaDaLinguagem} O que não for medido aparece como{' '}
                               <span className="font-mono text-[10.5px] text-mid">
                                 {ROTULO_SEM_METRICA}
                               </span>
-                              . O Índice de Autonomia continua sendo registrado.
+                              , e o Índice de Autonomia continua sendo registrado.
                             </span>
                           </span>
                         )}

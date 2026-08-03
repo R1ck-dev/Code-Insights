@@ -95,11 +95,52 @@ export const LINGUAGEM_META: Record<LinguagemProgramacao, LinguagemMeta> = Objec
 /** Cor de linguagem desconhecida — token `steel`. */
 export const LINGUAGEM_COR_FALLBACK = '#8FA6C9'
 
-/** Só Java gera métricas de complexidade hoje (motor JavaParser). */
-export const LINGUAGEM_COM_METRICAS: LinguagemProgramacao = 'JAVA'
+/**
+ * O que o motor sabe medir em cada linguagem. **O suporte é parcial**, e não um sim/não: contar
+ * pontos de decisão é uma contagem léxica, enquanto inferir Big O exige um modelo de custo sobre a
+ * AST inteira — C tem a primeira e não tem a segunda.
+ *
+ * Espelha `AnalisadorMetricas.metricasSuportadas` no backend. Um dia isto deve vir de lá (o
+ * `ContagemPorLinguagemDTO` já traz o conjunto por linguagem); enquanto for constante, mudar o
+ * motor exige mudar esta tabela junto.
+ */
+export const METRICAS_POR_LINGUAGEM: Record<LinguagemProgramacao, TipoMetrica[]> = {
+  JAVA: ['BIG_O_TEMPO', 'COMPLEXIDADE_ESPACO', 'COMPLEXIDADE_CICLOMATICA'],
+  C: ['COMPLEXIDADE_CICLOMATICA'],
+  CPP: [],
+  PYTHON: [],
+  JAVASCRIPT: [],
+}
 
-/** Nota permanente onde a métrica não existe por causa da linguagem (§4.4). */
-export const NOTA_METRICAS_SO_JAVA = 'Métricas de complexidade hoje só para Java.'
+/** A linguagem produz classe de tempo — o que a Carta, a Linha e a Matriz plotam. */
+export function temClasseDeTempo(linguagem: LinguagemProgramacao): boolean {
+  return METRICAS_POR_LINGUAGEM[linguagem].includes('BIG_O_TEMPO')
+}
+
+/** A linguagem produz alguma métrica. Falso aqui é o único caso de "sem analisador" de verdade. */
+export function temAlgumaMetrica(linguagem: LinguagemProgramacao): boolean {
+  return METRICAS_POR_LINGUAGEM[linguagem].length > 0
+}
+
+/**
+ * Nota permanente ao lado dos gráficos, que plotam **classe de tempo** (§4.4).
+ *
+ * Dizia "Métricas de complexidade hoje só para Java", o que deixou de ser verdade quando C ganhou
+ * ciclomática: a frase apagaria da tela um número que a plataforma de fato mede. O recorte agora é
+ * a métrica, e não a linguagem.
+ */
+export const NOTA_COMPLEXIDADE_SO_JAVA = 'Big O e complexidade de espaço hoje só para Java.'
+
+/**
+ * Nota por linguagem, para as telas de uma resolução só. Separada da anterior porque aqui dá para
+ * ser específico: quem submeteu em C precisa saber que ganhou ciclomática e não ganhou Big O.
+ */
+export function notaDeCobertura(linguagem: LinguagemProgramacao): string {
+  if (temClasseDeTempo(linguagem)) return ''
+  return temAlgumaMetrica(linguagem)
+    ? 'Nesta linguagem o motor mede a complexidade ciclomática; Big O e espaço, ainda não.'
+    : 'O motor ainda não analisa esta linguagem.'
+}
 
 // ---- Categorias de snippet ----
 export interface CategoriaMeta {

@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Switch } from '@/components/ui/switch'
 import { corDaClasse, rotuloCanonico } from '@/domain/complexidade'
-import { LINGUAGEM_COM_METRICAS } from '@/domain/enums'
+import { NOTA_COMPLEXIDADE_SO_JAVA } from '@/domain/enums'
 import {
   type ColunaDeAutonomia,
   type FiltrosDeSensibilidade,
@@ -387,11 +387,10 @@ function LimitesDoDado() {
           sem segunda fonte que a valide e sem edição posterior.
         </li>
         <li>
-          <strong className="font-medium text-ink">
-            Só há analisador para {LINGUAGEM_COM_METRICAS}.
-          </strong>{' '}
-          Resolução em outra linguagem entra na coorte e no nível de autonomia, mas nunca ganha
-          classe — coluna alta sem classe nenhuma é falta de instrumento, não ausência de trabalho.
+          <strong className="font-medium text-ink">{NOTA_COMPLEXIDADE_SO_JAVA}</strong> Resolução em
+          outra linguagem entra na coorte e no nível de autonomia, mas nunca ganha classe — coluna
+          alta sem classe nenhuma é falta de instrumento, não ausência de trabalho. Em C o motor
+          mede a complexidade ciclomática, que não aparece neste cruzamento.
         </li>
       </ul>
     </Card>

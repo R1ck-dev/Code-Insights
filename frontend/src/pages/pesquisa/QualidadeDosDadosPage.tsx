@@ -19,7 +19,7 @@ import { LanguageDot } from '@/components/domain/badges'
 import { LINGUAGEM_META } from '@/domain/enums'
 import { useQualidadeDaCoorte } from '@/features/pesquisa/hooks'
 import { formatDate, pluralPt } from '@/lib/utils'
-import type { ContagemDTO, QualidadeDaCoorteDTO } from '@/types/api'
+import type { ContagemDTO, ContagemPorLinguagemDTO, QualidadeDaCoorteDTO } from '@/types/api'
 
 /*
  * P · Qualidade dos dados (área de pesquisa) — ÓRBITA.
@@ -308,11 +308,7 @@ function ListaDeLinguagens({ dados }: { dados: QualidadeDaCoorteDTO }) {
             <span className="text-[12.5px] text-body">
               {LINGUAGEM_META[item.linguagem]?.label ?? item.linguagem}
             </span>
-            {!item.comAnalisador && (
-              <span className="font-mono text-[10px] tracking-[.05em] text-soft uppercase">
-                sem analisador
-              </span>
-            )}
+            <CoberturaDaLinguagem item={item} />
             <span className="flex-1" />
             <span className="tabular font-mono text-[12.5px] font-semibold text-ink">
               {item.total}
@@ -323,6 +319,31 @@ function ListaDeLinguagens({ dados }: { dados: QualidadeDaCoorteDTO }) {
       ))}
     </ul>
   )
+}
+
+/**
+ * Três estados, e não dois. "Com analisador" sozinho seria contraditório para C: a linha diria que
+ * a linguagem é analisada enquanto a cobertura acima conta as mesmas resoluções como sem classe de
+ * tempo. Nomear o suporte parcial é o que reconcilia os dois números.
+ */
+function CoberturaDaLinguagem({ item }: { item: ContagemPorLinguagemDTO }) {
+  if (!item.comAnalisador) {
+    return (
+      <span className="font-mono text-[10px] tracking-[.05em] text-soft uppercase">
+        sem analisador
+      </span>
+    )
+  }
+
+  if (!item.metricasSuportadas.includes('BIG_O_TEMPO')) {
+    return (
+      <span className="font-mono text-[10px] tracking-[.05em] text-soft uppercase">
+        só ciclomática
+      </span>
+    )
+  }
+
+  return null
 }
 
 function Distribuicao({ itens }: { itens: ContagemDTO[] }) {

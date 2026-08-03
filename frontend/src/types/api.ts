@@ -312,6 +312,12 @@ export interface ContagemPorLinguagemDTO {
   total: number
   /** Vem do backend, e não de constante no front: só a porta `AnalisadorMetricas` sabe a resposta. */
   comAnalisador: boolean
+  /**
+   * O que o motor mede nesta linguagem. O suporte é parcial: C tem ciclomática e não tem Big O, e
+   * um booleano sozinho obrigaria a escolher entre dizer "sem analisador" para uma linguagem que é
+   * analisada ou "com analisador" ao lado de uma cobertura de classe de tempo igual a zero.
+   */
+  metricasSuportadas: TipoMetrica[]
 }
 
 /**

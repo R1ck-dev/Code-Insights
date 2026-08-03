@@ -18,7 +18,7 @@
 import type { PontoCartaDTO } from '@/types/api'
 import {
   type ClasseK,
-  LINGUAGEM_COM_METRICAS,
+  temClasseDeTempo,
   ehPlotavel,
   rotuloCanonico,
 } from '@/domain/enums'
@@ -76,7 +76,7 @@ export function ehPontoPlotavel(dto: PontoCartaDTO): boolean {
  * `!analisada` (senão uma resolução em Python ficaria eternamente "calculando").
  */
 function motivoDoDescarte(dto: PontoCartaDTO): keyof Omit<DescartesDataset, 'total'> {
-  if (dto.linguagem !== LINGUAGEM_COM_METRICAS) return 'semAnalisador'
+  if (!temClasseDeTempo(dto.linguagem)) return 'semAnalisador'
   if (!dto.analisada) return 'calculando'
   return 'naoClassificado'
 }
@@ -202,7 +202,7 @@ export function rotuloRodape(dataset: DatasetCarta): string {
 
   const partes: string[] = []
   if (semMetrica.calculando > 0) partes.push(`${semMetrica.calculando} calculando`)
-  if (semMetrica.semAnalisador > 0) partes.push(`${semMetrica.semAnalisador} sem analisador`)
+  if (semMetrica.semAnalisador > 0) partes.push(`${semMetrica.semAnalisador} sem classe de tempo`)
   if (semMetrica.naoClassificado > 0) {
     partes.push(pluralPt(semMetrica.naoClassificado, 'não classificada', 'não classificadas'))
   }

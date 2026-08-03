@@ -31,7 +31,7 @@ import { Folder } from 'lucide-react'
 import {
   CONFIANCA_BIG_O,
   LINGUAGEM_META,
-  NOTA_METRICAS_SO_JAVA,
+  NOTA_COMPLEXIDADE_SO_JAVA,
   comPrefixoEstimado,
   corDaClasse,
   rotuloCanonico,
@@ -808,7 +808,7 @@ function CalloutSolitaria({
 function CartaVazia({ total, semMetrica }: { total: number; semMetrica: number }) {
   const descricao =
     total > 0
-      ? `${pluralPt(semMetrica, 'resolução sem métrica', 'resoluções sem métrica')}. ${NOTA_METRICAS_SO_JAVA}`
+      ? `${pluralPt(semMetrica, 'resolução sem métrica', 'resoluções sem métrica')}. ${NOTA_COMPLEXIDADE_SO_JAVA}`
       : 'Submeta uma resolução em Java para ver sua primeira estrela.'
 
   return (

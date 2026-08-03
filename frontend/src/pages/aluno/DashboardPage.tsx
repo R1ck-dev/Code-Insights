@@ -51,7 +51,7 @@ import { useCartaCeleste, useResumoDashboard } from '@/features/metricas/hooks'
 import {
   type ClasseK,
   CONFIANCA_BIG_O,
-  NOTA_METRICAS_SO_JAVA,
+  NOTA_COMPLEXIDADE_SO_JAVA,
   ROTULO_DESCONHECIDO,
   comPrefixoEstimado,
   corDaClasse,
@@ -306,7 +306,7 @@ function ComplexidadeTipicaCard({
           <span className="font-mono text-[27px] font-semibold leading-none text-soft">—</span>
           <BarraColormap k={null} size="card" />
           <span className={cn(NOTA, 'leading-[1.5]')}>
-            Sem análises ainda. {NOTA_METRICAS_SO_JAVA}
+            Sem análises ainda. {NOTA_COMPLEXIDADE_SO_JAVA}
           </span>
         </>
       ) : (
@@ -432,7 +432,7 @@ function DistribuicaoCard({
               ]
                 .filter(Boolean)
                 .join(' · ')}
-              {semAnalisador > 0 ? ` · ${NOTA_METRICAS_SO_JAVA}` : ''}
+              {semAnalisador > 0 ? ` · ${NOTA_COMPLEXIDADE_SO_JAVA}` : ''}
             </span>
           )}
         </>

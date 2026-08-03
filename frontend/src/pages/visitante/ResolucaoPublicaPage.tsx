@@ -11,9 +11,9 @@ import { MetricTile } from '@/components/MetricTile'
 import { AutonomyMeter } from '@/components/AutonomyMeter'
 import { LangChip, LanguageDot, StatusChip } from '@/components/domain/badges'
 import {
-  LINGUAGEM_COM_METRICAS,
+  temClasseDeTempo,
   LINGUAGEM_META,
-  NOTA_METRICAS_SO_JAVA,
+  NOTA_COMPLEXIDADE_SO_JAVA,
   prettyBigO,
   TIPO_METRICA_META,
 } from '@/domain/enums'
@@ -106,7 +106,7 @@ export function ResolucaoPublicaPage() {
   const metricas: ResultadoMetricaDTO[] = metricasQuery.data ?? []
   const porTipo = new Map(metricas.map((m) => [m.tipo, m]))
   const semMetricas = metricas.length === 0
-  const naoJava = resolucao.linguagem !== LINGUAGEM_COM_METRICAS
+  const naoJava = !temClasseDeTempo(resolucao.linguagem)
   const linguagem = LINGUAGEM_META[resolucao.linguagem]
 
   // Mesma precedência de sempre — só o vestuário mudou.
@@ -230,7 +230,7 @@ export function ResolucaoPublicaPage() {
           <div className="flex items-start gap-[9px] rounded-ci border border-line bg-recess px-[13px] py-[11px]">
             <Cpu size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-atencao-ink" />
             <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-              {NOTA_METRICAS_SO_JAVA} Esta resolução está em {linguagem.label} — o retrato mostra só a
+              {NOTA_COMPLEXIDADE_SO_JAVA} Esta resolução está em {linguagem.label} — o retrato mostra só a
               autonomia autodeclarada.
             </p>
           </div>
