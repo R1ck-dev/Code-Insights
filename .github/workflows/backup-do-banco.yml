@@ -71,6 +71,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Conferir os secrets
+        # Antes de qualquer trabalho, e de uma so vez: reclamar de um secret por vez, tres passos
+        # adentro, esconde que talvez os quatro estejam faltando. Nada aqui imprime valor — so o
+        # tamanho, que ja distingue "nao configurado" de "configurado errado" sem vazar nada.
+        env:
+          DB_URL: ${{ secrets.BACKUP_DB_URL }}
+          SENHA: ${{ secrets.BACKUP_PASSPHRASE }}
+          REPO: ${{ secrets.BACKUP_REPO }}
+          TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+        run: |
+          set -uo pipefail
+          FALTANDO=0
+          for NOME in DB_URL:BACKUP_DB_URL SENHA:BACKUP_PASSPHRASE REPO:BACKUP_REPO TOKEN:BACKUP_REPO_TOKEN; do
+            VAR="${NOME%%:*}"
+            SECRET="${NOME##*:}"
+            VALOR="${!VAR:-}"
+            if [ -z "$VALOR" ]; then
+              echo "  FALTA    $SECRET"
+              FALTANDO=1
+            else
+              echo "  ok       $SECRET (${#VALOR} caracteres)"
+            fi
+          done
+          if [ "$FALTANDO" -eq 1 ]; then
+            echo "::error::Ha secrets faltando. Eles precisam estar em Settings -> Secrets and variables -> Actions -> aba 'Secrets' -> 'Repository secrets', NESTE repositorio. A aba 'Variables', os secrets de Environment, os de Codespaces e os do repositorio de backup nao chegam aqui."
+            exit 1
+          fi
+
       - name: Instalar o cliente do PostgreSQL
         # pg_dump recusa servidor MAIS NOVO que ele ("server version mismatch"), e o Neon sobe de
         # versao maior sem nos avisar — em 2026-08-02 ja estava em 18.4, enquanto o runner do Ubuntu
@@ -101,10 +129,6 @@ jobs:
           DB_URL: ${{ secrets.BACKUP_DB_URL }}
         run: |
           set -euo pipefail
-          if [ -z "${DB_URL:-}" ]; then
-            echo "::error::BACKUP_DB_URL nao esta configurado. Veja as instrucoes no topo deste arquivo."
-            exit 1
-          fi
           ARQUIVO="codeinsights-$(date -u +%Y-%m-%d).dump"
           # --format=custom leva schema e dados e permite restauracao seletiva.
           # --no-owner: o dono no Neon nao e o dono no destino da restauracao.
@@ -139,10 +163,6 @@ jobs:
           SENHA: ${{ secrets.BACKUP_PASSPHRASE }}
         run: |
           set -euo pipefail
-          if [ -z "${SENHA:-}" ]; then
-            echo "::error::BACKUP_PASSPHRASE nao esta configurado."
-            exit 1
-          fi
           # A senha vai por arquivo, e nao por --passphrase na linha de comando: argumento de
           # processo e legivel por qualquer outro processo da maquina.
           printf '%s' "$SENHA" > /tmp/senha
@@ -158,10 +178,6 @@ jobs:
           REPO: ${{ secrets.BACKUP_REPO }}
         run: |
           set -euo pipefail
-          if [ -z "${TOKEN:-}" ] || [ -z "${REPO:-}" ]; then
-            echo "::error::BACKUP_REPO e/ou BACKUP_REPO_TOKEN nao estao configurados."
-            exit 1
-          fi
           # --depth 1: o historico de backups cresce sem parar e nao serve para nada aqui.
           git clone --quiet --depth 1 "https://x-access-token:$TOKEN@github.com/$REPO.git" cofre
           ANO=$(date -u +%Y)
