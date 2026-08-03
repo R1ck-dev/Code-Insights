@@ -1,10 +1,21 @@
 import { useState } from 'react'
-import { Copy, FlaskConical, KeyRound, Search, ShieldCheck, UserCheck, Users } from 'lucide-react'
+import {
+  Copy,
+  FlaskConical,
+  KeyRound,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  UserCheck,
+  Users,
+} from 'lucide-react'
 import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
 import { QueryBoundary } from '@/components/page/states'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import {
   Dialog,
   DialogBody,
@@ -29,11 +40,16 @@ import {
   useAtivarConta,
   useGerarLinkDeRedefinicao,
   usePromoverParaPesquisador,
+  useReanalisarMetricas,
   useUsuariosAdmin,
 } from '@/features/admin/hooks'
 import { apiErrorMessage } from '@/lib/api'
 import { formatDate, formatDateTime, pluralPt } from '@/lib/utils'
-import type { LinkRedefinicaoResponse, UsuarioAdminDTO } from '@/types/api'
+import type {
+  LinkRedefinicaoResponse,
+  RelatorioReanaliseDTO,
+  UsuarioAdminDTO,
+} from '@/types/api'
 
 /*
  * A · Administração de contas — ÓRBITA.
@@ -45,9 +61,11 @@ import type { LinkRedefinicaoResponse, UsuarioAdminDTO } from '@/types/api'
  * As ações aparecem condicionadas ao estado da linha — ativar só para quem está pendente, promover
  * só para quem ainda não é pesquisador. Mostrar botão que a API vai recusar ensina a ignorar erro.
  *
- * O que NÃO está aqui: reanalisar métricas. É reescrita em massa de dado de pesquisa, e um botão
- * numa tela de rotina a torna fácil demais de apertar sem querer. Continua em POST
- * /api/admin/metricas/reanalisar, onde o esforço de chegar é proporcional ao estrago possível.
+ * A reanálise de métricas ficou de fora numa primeira versão, para não deixar uma reescrita em massa
+ * de dado de pesquisa a um clique de distância. Ela voltou porque a alternativa era pior: sem tela,
+ * a operação só acontecia colando JavaScript no console do navegador, e ensinar isso num sistema que
+ * guarda dado de pesquisa é um risco maior do que o botão. O perigo mora no automatismo, não no
+ * acesso — por isso ela mora numa seção separada, atrás de um diálogo que diz o que vai acontecer.
  */
 
 export function AdministracaoPage() {
@@ -113,8 +131,103 @@ export function AdministracaoPage() {
         }
       </QueryBoundary>
 
+      <SecaoDeMetricas />
+
       <DialogDoLink link={linkGerado} onFechar={() => setLinkGerado(null)} />
     </PageContainer>
+  )
+}
+
+/* -------------------------------------------------------------- métricas --- */
+
+/**
+ * Seção separada da tabela de contas de propósito: as ações de conta agem sobre uma pessoa e são
+ * reversíveis; esta reescreve o corpus inteiro e não é. Misturá-las na mesma faixa de leitura
+ * transformaria "reanalisar" em mais um botão de rotina.
+ */
+function SecaoDeMetricas() {
+  const [confirmando, setConfirmando] = useState(false)
+  const [relatorio, setRelatorio] = useState<RelatorioReanaliseDTO | null>(null)
+  const reanalisar = useReanalisarMetricas()
+
+  const executar = () =>
+    reanalisar.mutate(undefined, {
+      onSuccess: (resultado) => {
+        setRelatorio(resultado)
+        setConfirmando(false)
+      },
+      onError: (err) => {
+        setConfirmando(false)
+        toast.error(apiErrorMessage(err, 'Não foi possível reanalisar o corpus.'))
+      },
+    })
+
+  return (
+    <Card className="flex flex-col gap-[13px] p-[22px]">
+      <div className="flex flex-col gap-[6px]">
+        <h2 className="text-[15px] font-semibold text-ink">Métricas do corpus</h2>
+        <p className="max-w-[62ch] text-[12.5px] leading-[1.6] text-body">
+          Cada resolução guarda as métricas calculadas pelo motor em uso no dia da submissão. Quando o
+          motor evolui, o que já está gravado não muda sozinho — reanalisar recalcula tudo com o motor
+          atual, para que a plataforma não compare medições de versões diferentes.
+        </p>
+      </div>
+
+      <div>
+        <Button
+          variant="secondary"
+          icon={RefreshCw}
+          loading={reanalisar.isPending}
+          onClick={() => setConfirmando(true)}
+        >
+          Reanalisar o corpus
+        </Button>
+      </div>
+
+      {relatorio && <ResultadoDaReanalise relatorio={relatorio} />}
+
+      <ConfirmDialog
+        open={confirmando}
+        onOpenChange={setConfirmando}
+        icon={RefreshCw}
+        destructive
+        title="Reanalisar o corpus inteiro?"
+        description="As métricas de todas as resoluções da plataforma serão recalculadas e regravadas com o motor atual. Os valores antigos não ficam guardados, e não há como desfazer."
+        confirmLabel="Reanalisar"
+        loading={reanalisar.isPending}
+        onConfirm={executar}
+      />
+    </Card>
+  )
+}
+
+/**
+ * `comMudanca` é o número que importa: reprocessar tudo e não mudar nada é o resultado esperado
+ * quando o motor não mudou desde a última passada, e sem dizer isso o relatório parece um fracasso.
+ * As falhas aparecem sempre que existirem — resolução que o analisador não conseguiu ler continua
+ * com a métrica antiga, e isso precisa ser visível.
+ */
+function ResultadoDaReanalise({ relatorio }: { relatorio: RelatorioReanaliseDTO }) {
+  return (
+    <div className="flex flex-col gap-[6px] rounded-ci border border-line bg-recess p-[13px]">
+      <p className="font-mono text-[11.5px] text-ink">
+        {pluralPt(relatorio.total, 'resolução percorrida', 'resoluções percorridas')} ·{' '}
+        {relatorio.reprocessadas} reprocessada(s) · {relatorio.comMudanca} com mudança
+        {relatorio.puladas > 0 && ` · ${relatorio.puladas} pulada(s)`}
+      </p>
+
+      <p className="text-[12px] leading-[1.55] text-soft">
+        {relatorio.comMudanca === 0
+          ? 'Nenhuma classificação mudou: o motor atual concorda com o que já estava gravado.'
+          : 'As telas de métrica já refletem os novos valores.'}
+      </p>
+
+      {relatorio.falhas > 0 && (
+        <p className="text-[12px] leading-[1.55] text-erro-texto">
+          {relatorio.falhas} resolução(ões) falharam na análise e continuam com a métrica anterior.
+        </p>
+      )}
+    </div>
   )
 }
 

@@ -45,3 +45,17 @@ export function useGerarLinkDeRedefinicao() {
     mutationFn: (email: string) => adminApi.gerarLinkDeRedefinicao(email),
   })
 }
+
+/**
+ * Invalida **tudo**, e não uma chave escolhida a dedo: a reanálise reescreve as métricas de todas as
+ * resoluções, e elas aparecem no dashboard, na evolução, no detalhe de cada resolução e na coorte.
+ * Enumerar as chaves afetadas seria uma lista que envelhece a cada tela nova — e a consequência de
+ * esquecer uma é a plataforma mostrar a classificação antiga como se fosse a atual.
+ */
+export function useReanalisarMetricas() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => adminApi.reanalisarMetricas(),
+    onSuccess: () => queryClient.invalidateQueries(),
+  })
+}

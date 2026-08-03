@@ -374,6 +374,33 @@ export interface LinkRedefinicaoResponse {
   expiraEm: string
 }
 
+/** O "antes → depois" de uma métrica reprocessada. `*Antes` nulo = a métrica não existia. */
+export interface MudancaMetricaDTO {
+  tipo: TipoMetrica
+  rotuloAntes: string | null
+  rotuloDepois: string | null
+  confiancaAntes: NivelConfianca | null
+  confiancaDepois: NivelConfianca | null
+}
+
+export interface ResolucaoAlteradaDTO {
+  resolucaoId: string
+  mudancas: MudancaMetricaDTO[]
+}
+
+/**
+ * `total = reprocessadas + puladas + falhas`. `comMudanca` é o número que diz se a passada fez
+ * alguma coisa: reprocessar tudo e mudar nada é o resultado esperado quando o motor não mudou.
+ */
+export interface RelatorioReanaliseDTO {
+  total: number
+  reprocessadas: number
+  puladas: number
+  falhas: number
+  comMudanca: number
+  alteracoes: ResolucaoAlteradaDTO[]
+}
+
 export type DecisaoDeConsentimento = 'ACEITE' | 'RECUSA'
 
 /**
