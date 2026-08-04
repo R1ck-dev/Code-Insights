@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Switch } from '@/components/ui/switch'
 import { corDaClasse, rotuloCanonico } from '@/domain/complexidade'
-import { NOTA_COMPLEXIDADE_SO_JAVA } from '@/domain/enums'
+import { NOTA_LINGUAGENS_ANALISADAS, NOTA_TETO_DE_CONFIANCA } from '@/domain/enums'
 import {
   type ColunaDeAutonomia,
   type FiltrosDeSensibilidade,
@@ -20,6 +20,7 @@ import {
   PISO_PARA_PROPORCAO,
   SEM_FILTRO,
   aplicarFiltros,
+  excluidasPeloTetoDeConfianca,
   medirRecorte,
   montarColunas,
   paraPontoCarta,
@@ -47,9 +48,13 @@ import type { ResolucaoDaCoorteDTO } from '@/types/api'
  *    que revelar é ato deliberado e separado (é o que a tela de coorte faz, com diálogo).
  *
  * A assimetria dos dois eixos é o fato mais importante daqui: autonomia é autodeclarada e existe em
- * TODA resolução; classe de complexidade só existe onde há analisador — hoje, só Java. Por isso as
+ * TODA resolução; classe de complexidade só existe onde há analisador — hoje, Java e C. Por isso as
  * colunas trazem dois denominadores, e uma coluna sem classe nenhuma diz "sem analisador" em vez de
  * aparecer vazia, que se leria como "ninguém submeteu".
+ *
+ * A segunda assimetria é do filtro de confiança: C produz classe, mas nunca com confiança ALTA (o
+ * motor lê a estrutura por forma). Ligar o corte "só ALTA" descarta a linguagem inteira, e a tela
+ * diz isso em texto — um zero silencioso seria lido como ausência de dado.
  */
 
 export function CruzamentoPage() {
@@ -110,7 +115,13 @@ function Cruzamento({
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <Sensibilidade filtros={filtros} onFiltrar={onFiltrar} bruto={bruto} recorte={recorte} />
+      <Sensibilidade
+        filtros={filtros}
+        onFiltrar={onFiltrar}
+        bruto={bruto}
+        recorte={recorte}
+        excluidasPeloTeto={excluidasPeloTetoDeConfianca(coorte)}
+      />
 
       <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-2">
         <Painel
@@ -148,13 +159,16 @@ function Sensibilidade({
   onFiltrar,
   bruto,
   recorte,
+  excluidasPeloTeto,
 }: {
   filtros: FiltrosDeSensibilidade
   onFiltrar: (filtros: FiltrosDeSensibilidade) => void
   bruto: { resolucoes: number; participantes: number }
   recorte: { resolucoes: number; participantes: number }
+  excluidasPeloTeto: number
 }) {
   const mudou = recorte.resolucoes !== bruto.resolucoes
+  const tetoMorde = filtros.somenteConfiancaAlta && excluidasPeloTeto > 0
 
   return (
     <Card className="flex flex-col gap-[15px] p-[18px]">
@@ -164,7 +178,7 @@ function Sensibilidade({
           ligado={filtros.somenteConfiancaAlta}
           onMudar={(v) => onFiltrar({ ...filtros, somenteConfiancaAlta: v })}
           rotulo="Só confiança ALTA do motor"
-          nota="O motor tem confiança alta onde entende bem, e entende melhor o código simples — este filtro seleciona na direção do próprio desfecho."
+          nota={`O motor tem confiança alta onde entende bem, e entende melhor o código simples — este filtro seleciona na direção do próprio desfecho. ${NOTA_TETO_DE_CONFIANCA} Ligar este corte descarta a linguagem inteira.`}
         />
         <Interruptor
           id="minimo-por-participante"
@@ -176,6 +190,21 @@ function Sensibilidade({
           nota="Tira de cena quem submeteu uma vez só. Também tira a chance de o resultado descrever justamente quem persistiu."
         />
       </div>
+
+      {/*
+       * Sem esta linha, ligar o filtro num piloto majoritariamente em C mostraria uma tela vazia
+       * sem dizer por quê — e "0 resoluções" seria lido como ausência de dado, quando é o teto do
+       * instrumento excluindo uma linguagem inteira de propósito.
+       */}
+      {tetoMorde && (
+        <p className="rounded-ci border border-atencao-line bg-atencao-bg px-[13px] py-[9px] font-mono text-[11.5px] leading-[1.5] text-atencao-ink">
+          <strong className="font-semibold">
+            {pluralPt(excluidasPeloTeto, 'resolução saiu', 'resoluções saíram')} por causa da
+            linguagem, e não da solução.
+          </strong>{' '}
+          {NOTA_TETO_DE_CONFIANCA}
+        </p>
+      )}
 
       <p className="font-mono text-[11.5px] text-mid">
         {mudou ? (
@@ -387,10 +416,11 @@ function LimitesDoDado() {
           sem segunda fonte que a valide e sem edição posterior.
         </li>
         <li>
-          <strong className="font-medium text-ink">{NOTA_COMPLEXIDADE_SO_JAVA}</strong> Resolução em
+          <strong className="font-medium text-ink">{NOTA_LINGUAGENS_ANALISADAS}</strong> Resolução em
           outra linguagem entra na coorte e no nível de autonomia, mas nunca ganha classe — coluna
-          alta sem classe nenhuma é falta de instrumento, não ausência de trabalho. Em C o motor
-          mede a complexidade ciclomática, que não aparece neste cruzamento.
+          alta sem classe nenhuma é falta de instrumento, não ausência de trabalho.{' '}
+          {NOTA_TETO_DE_CONFIANCA} A classe de C entra neste cruzamento como qualquer outra; o que
+          ela não faz é sobreviver ao corte por confiança ALTA.
         </li>
       </ul>
     </Card>

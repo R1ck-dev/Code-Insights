@@ -21,6 +21,7 @@ import {
   corDaClasse,
   rgbaDeHex,
   rotuloCanonico,
+  rotulosDasLinguagensAnalisadas,
   tintaDaClasse,
 } from '@/domain/enums'
 import { cn, pluralPt } from '@/lib/utils'
@@ -342,7 +343,7 @@ export function Matriz({
               size="sm"
               icon={Folder}
               title="Nenhuma resolução analisada ainda."
-              description="Submeta uma resolução em Java para ver a matriz."
+              description={`Submeta uma resolução em ${rotulosDasLinguagensAnalisadas()} para ver a matriz.`}
             />
           </div>
         )}

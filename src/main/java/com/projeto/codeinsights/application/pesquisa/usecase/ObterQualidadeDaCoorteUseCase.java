@@ -102,11 +102,16 @@ public class ObterQualidadeDaCoorteUseCase {
      * O motor nao produz classe de tempo para esta linguagem — escopo conhecido, nao defeito. Domina
      * os demais baldes.
      * <p>
-     * A pergunta e por METRICA, e nao por linguagem, porque o suporte e parcial: C tem analisador de
-     * ciclomatica e nao tem de Big-O. Com a pergunta antiga ({@code suporta(linguagem)}), toda
-     * resolucao em C passaria a cair em <i>falha de analise</i> — a tela acusaria defeito no motor
-     * onde so falta instrumento, e num piloto majoritariamente em C isso seria quase a amostra
-     * inteira.
+     * A pergunta e por METRICA, e nao por linguagem, porque o suporte pode ser <b>parcial</b>: uma
+     * linguagem nova entra no motor pela ciclomatica — que e contagem — antes de ganhar as
+     * estimativas de Big-O e de espaco. Foi assim que C entrou. Com a pergunta antiga
+     * ({@code suporta(linguagem)}), toda resolucao numa linguagem nesse estagio cairia em <i>falha
+     * de analise</i>: a tela acusaria defeito no motor onde so falta instrumento, e num piloto
+     * concentrado nessa linguagem isso seria quase a amostra inteira.
+     * <p>
+     * Hoje C ja produz as tres, e este balde volta a valer so para linguagem sem analisador nenhum.
+     * A pergunta por metrica continua sendo a certa — e o que permite a proxima linguagem entrar
+     * pela porta estreita sem que a plataforma a trate como defeito.
      */
     private boolean semAnalisadorDeLinguagem(ResolucaoDaCoorte resolucao) {
         return !analisadorMetricas.produz(TipoMetrica.BIG_O_TEMPO, resolucao.linguagem());

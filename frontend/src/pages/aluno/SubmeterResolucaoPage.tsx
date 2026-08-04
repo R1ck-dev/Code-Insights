@@ -18,7 +18,7 @@ import { toast } from '@/components/ui/toaster'
 import { useDesafioDetalhe } from '@/features/desafios/hooks'
 import { useSubmeterResolucao } from '@/features/resolucoes/hooks'
 import {
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   notaDeCobertura,
   LINGUAGEM_META,
   LINGUAGENS,
@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils'
  *
  * Regra 4: o Índice de Autonomia é AUTODECLARADO, neutro (osso/tinta) e sem julgamento —
  * 1 = muito apoio de IA · 5 = autônomo (maior é mais autônomo, nunca inverter).
- * Regra 7 (§4.4 do contrato): métricas de complexidade hoje só existem para Java —
+ * Regra 7 (§4.4 do contrato): métricas de complexidade só existem onde há analisador — hoje Java e C —
  * a nota sob o seletor é PERMANENTE e a linguagem sem métrica é dita em voz alta.
  */
 export function SubmeterResolucaoPage() {
@@ -206,7 +206,7 @@ export function SubmeterResolucaoPage() {
                             aria-hidden
                             className="mt-[1px] shrink-0 text-atencao"
                           />
-                          <span>{NOTA_COMPLEXIDADE_SO_JAVA}</span>
+                          <span>{NOTA_LINGUAGENS_ANALISADAS}</span>
                         </span>
                         {/* A nota é POR LINGUAGEM: dizer "nenhuma métrica" a quem escolhe C seria
                             falso — C tem ciclomática — e assustaria sem motivo. */}

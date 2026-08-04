@@ -9,7 +9,7 @@ import { Starfield } from '@/components/Starfield'
 import {
   type ClasseK,
   type Confianca,
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   comPrefixoEstimado,
   corDaClasse,
   rotuloCanonico,
@@ -136,7 +136,7 @@ const FEATURES: { icon: LucideIcon; titulo: string; texto: string; nota?: string
     icon: Cpu,
     titulo: 'Métricas estáticas',
     texto: 'Big O de tempo e espaço, e ciclomática de McCabe por resolução.',
-    nota: NOTA_COMPLEXIDADE_SO_JAVA,
+    nota: NOTA_LINGUAGENS_ANALISADAS,
   },
   {
     icon: Gauge,

@@ -59,7 +59,7 @@ export const MIN_PONTOS_CONSTELACAO = 2
  * REGRA DE PLOTABILIDADE (contrato §6-A, Lacuna 2). Um ponto só existe se tem classe de
  * TEMPO válida: `tempoOrdem` inteiro entre 0 e 7.
  *
- *   - `tempoOrdem === null` → não analisada, ou linguagem sem analisador (só Java tem).
+ *   - `tempoOrdem === null` → não analisada, ou linguagem sem analisador (hoje: Java e C).
  *   - `tempoOrdem === -1`   → DESCONHECIDO: o motor rodou e não conseguiu classificar.
  *
  * Os dois casos NÃO plotam — e nenhum deles some em silêncio (entram em `semMetrica`,
@@ -192,7 +192,7 @@ export function montarDataset(pontos: PontoCartaDTO[]): DatasetCarta {
  *   "18 de 23 resoluções plotadas · 2 calculando · 3 sem analisador"
  * Quando tudo plotou, o sufixo some ("23 de 23 resoluções plotadas").
  *
- * O descarte NÃO é um balde só: dizer "5 sem métrica · métricas só para Java" quando as 5
+ * O descarte NÃO é um balde só: dizer "5 sem métrica · o motor analisa Java e C" quando as 5
  * são Java recém-submetidas é dar a explicação errada para um número certo.
  */
 export function rotuloRodape(dataset: DatasetCarta): string {

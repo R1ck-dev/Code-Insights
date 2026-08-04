@@ -8,7 +8,7 @@
  *  - 401 é um estado de produto, não um erro genérico: o desafio existe e pede conta ("Entre
  *    para ver este desafio"). 400/404 mostram a mensagem do backend + volta ao portfólio.
  *  - A métrica de cada resolução vive dentro da `ResolucaoLinha` (que já sabe distinguir
- *    MEDIDO × ≈ ESTIMADO, `calculando` e `sem métrica` — métrica só existe para Java).
+ *    MEDIDO × ≈ ESTIMADO, `calculando` e `sem métrica` — métrica só existe em Java e C).
  *  - Autonomia é neutra; a única cor da tela é o colormap dos chips Big-O.
  */
 import { useState } from 'react'
@@ -237,7 +237,7 @@ export function DesafioPublicoPage() {
                   {/*
                    * `tempoOrdem` vem do próprio `ResolucaoResumoDTO` — o visitante vê na lista o
                    * mesmo Big-O que veria ao abrir a resolução. `0..7` → chip ≈ ESTIMADO ·
-                   * `-1` → `?` (o motor não classificou) · `null` → sem métrica (não-Java).
+                   * `-1` → `?` (o motor não classificou) · `null` → sem métrica (linguagem sem analisador).
                    * ⚠ `0` é O(1), não "vazio".
                    */}
                   {dados.itens.map((r) => (

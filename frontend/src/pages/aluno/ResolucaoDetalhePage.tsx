@@ -35,7 +35,7 @@ import { LangChip, LanguageDot, StatusChip } from '@/components/domain/badges'
 import {
   temClasseDeTempo,
   LINGUAGEM_META,
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   ROTULO_SEM_METRICA,
   TIPO_METRICA_META,
   prettyBigO,
@@ -76,7 +76,7 @@ const EXTENSAO: Record<LinguagemProgramacao, string> = {
 
 /**
  * Estado da faixa de métricas.
- * `calculando` = motor rodando · `sem-metrica` = linguagem ≠ Java (§4.4) ·
+ * `calculando` = motor rodando · `sem-metrica` = linguagem sem analisador (§4.4) ·
  * `vazio` = analisou e não extraiu nada (parse falhou) · `erro` = a busca falhou.
  */
 type EstadoFaixa = 'calculando' | 'pronta' | 'sem-metrica' | 'vazio' | 'erro'
@@ -85,7 +85,7 @@ type EstadoFaixa = 'calculando' | 'pronta' | 'sem-metrica' | 'vazio' | 'erro'
  * D ★ · Resolução — a tela-assinatura.
  * Rota: /app/resolucoes/:resolucaoId (dentro do AppLayout).
  *
- * A análise de complexidade é assíncrona e só existe para Java: enquanto
+ * A análise de complexidade é assíncrona e só existe onde há analisador (Java e C): enquanto
  * `analisada` é false o hook refaz a busca a cada 4s e, ao virar true,
  * rebuscamos as métricas. A incerteza nunca é escondida — ciclomática é MEDIDO
  * (marcador cheio), tempo/espaço são ≈ ESTIMADO (marcador vazado).
@@ -145,7 +145,7 @@ export function ResolucaoDetalhePage() {
           const metricas: ResultadoMetricaDTO[] = metricasQuery.data ?? []
           const porTipo = new Map(metricas.map((m) => [m.tipo, m]))
           const semMetricas = metricas.length === 0
-          const naoJava = !temClasseDeTempo(resolucao.linguagem)
+          const semAnalisadorDeTempo = !temClasseDeTempo(resolucao.linguagem)
           const ehPublica = resolucao.visibilidade === 'PUBLICO'
           const submeterHref = `/app/desafios/${resolucao.desafioId}/submeter`
 
@@ -156,7 +156,7 @@ export function ResolucaoDetalhePage() {
                 (semMetricas && metricasQuery.isFetching)
               ? 'calculando'
               : semMetricas
-                ? naoJava
+                ? semAnalisadorDeTempo
                   ? 'sem-metrica'
                   : 'vazio'
                 : 'pronta'
@@ -533,9 +533,8 @@ function NotaDeMetodo({
       <div className={caixa}>
         <Cpu size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-atencao" />
         <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-          {NOTA_COMPLEXIDADE_SO_JAVA} O motor de AST hoje não lê{' '}
-          {LINGUAGEM_META[linguagem].label}. O índice de autonomia é autodeclarado e continua
-          valendo.
+          {NOTA_LINGUAGENS_ANALISADAS} Esta resolução está em {LINGUAGEM_META[linguagem].label}. O
+          índice de autonomia é autodeclarado e continua valendo.
         </p>
       </div>
     )

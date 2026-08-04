@@ -89,7 +89,7 @@ export interface DesafioDetalheDTO {
  *
  * Mesmas regras de leitura do `PontoCartaDTO` (ver abaixo), que valem para TODO campo de
  * métrica da API:
- *  - `null` = **não há dado** (`analisada === false`, ou linguagem sem analisador — hoje só Java).
+ *  - `null` = **não há dado** (`analisada === false`, ou linguagem sem analisador — hoje, Java e C).
  *  - `tempoOrdem === -1` = **DESCONHECIDO**: o motor rodou e não classificou (rótulo `"?"`).
  *    Semanticamente DIFERENTE de `null`.
  *  - ⚠ `0` é `O(1)` — complexidade legítima, nunca sentinela de vazio. Teste `== null` e
@@ -206,7 +206,7 @@ export interface ResumoDashboardDTO {
  * Regras de leitura dos campos de métrica (`tempo*`, `espaco*`, `ciclomatica`):
  *
  * - `null` = **não há dado**. É o estado enquanto `analisada === false`, e continua
- *   `null` para sempre quando a linguagem não tem analisador — hoje **só Java** produz
+ *   `null` para sempre quando a linguagem não tem analisador — hoje **Java e C** produzem
  *   métricas de complexidade (ver §4.4 do contrato de design). `null` ≠ "erro": é ausência.
  * - `tempoOrdem`/`espacoOrdem` são a **ordem** da classe (`k`) na escala de complexidade:
  *   `0 = O(1)`, `1 = O(log n)`, `2 = O(n)`, `3 = O(n log n)`, `4 = O(n²)`, `5 = O(n³)`,

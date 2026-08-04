@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.projeto.codeinsights.domain.knowledge.enums.ClasseComplexidade;
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 
 /**
  * Um caso do corpus de validacao: o codigo-fonte, a complexidade <b>correta</b> segundo a
@@ -29,6 +30,7 @@ import com.projeto.codeinsights.domain.knowledge.enums.ClasseComplexidade;
  */
 record CasoDeCorpus(
         String nome,
+        LinguagemProgramacao linguagem,
         Categoria categoria,
         String arquivo,
         String codigo,
@@ -84,9 +86,13 @@ record CasoDeCorpus(
         return espacoGabarito != null && espacoGabarito.equals(espacoEsperadoDoMotor);
     }
 
-    /** Nome exibido no relatorio do JUnit ({@code @ParameterizedTest(name = "...")}). */
+    /**
+     * Nome exibido no relatorio do JUnit ({@code @ParameterizedTest(name = "...")}). A linguagem
+     * entra no rotulo porque o corpus tem casos homonimos nas duas — {@code busca binaria
+     * iterativa} existe em Java e em C —, e sem ela duas linhas do relatorio ficariam identicas.
+     */
     @Override
     public String toString() {
-        return nome;
+        return "%s [%s]".formatted(nome, linguagem);
     }
 }

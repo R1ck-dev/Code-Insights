@@ -51,7 +51,7 @@ import { useCartaCeleste, useResumoDashboard } from '@/features/metricas/hooks'
 import {
   type ClasseK,
   CONFIANCA_BIG_O,
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   ROTULO_DESCONHECIDO,
   comPrefixoEstimado,
   corDaClasse,
@@ -129,7 +129,7 @@ const DASH_INFO = {
       {
         rotulo: '≈ Estimado, não medido',
         texto:
-          'A classe de tempo vem de análise estática da árvore sintática (AST) — é uma estimativa (determinar a complexidade exata de um código qualquer é indecidível no caso geral), e por isso o valor leva o prefixo ≈ e o marcador vazado. Só existe para Java. Confiança alta do motor não muda isso: continua sendo estimativa.',
+          'A classe de tempo vem de análise estática da árvore sintática (AST) — é uma estimativa (determinar a complexidade exata de um código qualquer é indecidível no caso geral), e por isso o valor leva o prefixo ≈ e o marcador vazado. Só existe onde há analisador (hoje, Java e C); em C a confiança do motor não passa de MÉDIA. Confiança alta do motor não muda isso: continua sendo estimativa.',
       },
       {
         rotulo: 'Difere do gráfico "Linha"',
@@ -306,7 +306,7 @@ function ComplexidadeTipicaCard({
           <span className="font-mono text-[27px] font-semibold leading-none text-soft">—</span>
           <BarraColormap k={null} size="card" />
           <span className={cn(NOTA, 'leading-[1.5]')}>
-            Sem análises ainda. {NOTA_COMPLEXIDADE_SO_JAVA}
+            Sem análises ainda. {NOTA_LINGUAGENS_ANALISADAS}
           </span>
         </>
       ) : (
@@ -398,7 +398,7 @@ function DistribuicaoCard({
         <BotaoTentarNovamente onClick={onTentarNovamente} />
       ) : dataset.total === 0 ? (
         <span className="text-[12.5px] leading-[1.5] text-soft">
-          Sem análises ainda — submeta resoluções em Java para ver a distribuição.
+          Sem análises ainda — {NOTA_LINGUAGENS_ANALISADAS}
         </span>
       ) : (
         <>
@@ -432,7 +432,7 @@ function DistribuicaoCard({
               ]
                 .filter(Boolean)
                 .join(' · ')}
-              {semAnalisador > 0 ? ` · ${NOTA_COMPLEXIDADE_SO_JAVA}` : ''}
+              {semAnalisador > 0 ? ` · ${NOTA_LINGUAGENS_ANALISADAS}` : ''}
             </span>
           )}
         </>

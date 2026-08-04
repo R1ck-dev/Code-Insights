@@ -35,7 +35,7 @@
 import { useId } from 'react'
 import { InfoButton } from '@/components/ui/info-button'
 import { ErrorState } from '@/components/page/states'
-import { NOTA_COMPLEXIDADE_SO_JAVA } from '@/domain/enums'
+import { NOTA_LINGUAGENS_ANALISADAS } from '@/domain/enums'
 import { useTheme } from '@/theme/ThemeProvider'
 import { cn } from '@/lib/utils'
 import type { InfoSecao } from '@/domain/metricas-explicacao'
@@ -68,7 +68,7 @@ const SECOES_COMUNS: readonly InfoSecao[] = [
   {
     rotulo: 'O que não está no gráfico',
     texto:
-      'Resoluções sem classe de complexidade não viram ponto: a análise ainda pode estar rodando, a linguagem pode não ter analisador (hoje só Java tem) ou o motor pode não ter conseguido classificar o código. O rodapé diz quantas ficaram de fora e por quê; nenhuma some em silêncio. A autonomia, essa, é autodeclarada e continua valendo em qualquer linguagem.',
+      'Resoluções sem classe de complexidade não viram ponto: a análise ainda pode estar rodando, a linguagem pode não ter analisador (hoje, Java e C) ou o motor pode não ter conseguido classificar o código. O rodapé diz quantas ficaram de fora e por quê; nenhuma some em silêncio. A autonomia, essa, é autodeclarada e continua valendo em qualquer linguagem.',
   },
 ]
 
@@ -116,7 +116,7 @@ const META: Record<TipoGrafico, MetaGrafico> = {
       {
         rotulo: 'Complexidade típica do mês',
         texto:
-          'É a média das classes Big O de tempo das resoluções analisadas naquele mês, arredondada para uma classe real. Como toda classe Big O aqui, vem de análise estática da AST — é uma estimativa (marcador vazado, prefixo ≈), não uma medição, e só existe para Java. Difere da "complexidade típica" do card ao lado, que é a MEDIANA de todo o histórico: são estatísticas diferentes do mesmo dado, e podem apontar classes diferentes.',
+          'É a média das classes Big O de tempo das resoluções analisadas naquele mês, arredondada para uma classe real. Como toda classe Big O aqui, vem de análise estática da AST — é uma estimativa (marcador vazado, prefixo ≈), não uma medição, e só existe onde há analisador (hoje, Java e C). Difere da "complexidade típica" do card ao lado, que é a MEDIANA de todo o histórico: são estatísticas diferentes do mesmo dado, e podem apontar classes diferentes.',
       },
       {
         rotulo: 'Traço sólido × traço tracejado',
@@ -274,12 +274,12 @@ export function PainelDeGraficos({
             {carregando ? 'carregando resoluções…' : rotuloRodape(dataset)}
           </span>
           {/*
-           * A nota só-Java explica UM dos três motivos de descarte. Colá-la em qualquer
+           * A nota de linguagem explica UM dos três motivos de descarte. Colá-la em qualquer
            * descarte faria o aluno que acabou de submeter 3 resoluções EM JAVA ler
-           * "3 sem métrica · métricas só para Java" — explicação falsa para número certo.
+           * "3 sem métrica · o motor analisa Java e C" — explicação falsa para número certo.
            */}
           {!carregando && dataset.semMetrica.semAnalisador > 0 && (
-            <span className="font-mono text-[10.5px] text-soft">· {NOTA_COMPLEXIDADE_SO_JAVA}</span>
+            <span className="font-mono text-[10.5px] text-soft">· {NOTA_LINGUAGENS_ANALISADAS}</span>
           )}
         </footer>
       )}

@@ -1,7 +1,6 @@
 package com.projeto.codeinsights.infrastructure.metrica;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
@@ -16,7 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.github.javaparser.ast.CompilationUnit;
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.domain.knowledge.enums.TipoMetrica;
+import com.projeto.codeinsights.infrastructure.metrica.MedidorDoCorpus.Medicao;
+import com.projeto.codeinsights.infrastructure.metrica.c.CodigoDeC;
 
 /**
  * Rede de regressao do motor: cada caso do corpus assere contra o que o motor
@@ -36,8 +38,7 @@ class MotorDeMetricasCorpusTest {
 
     private static final Path RAIZ_DO_CORPUS = Path.of("src", "test", "resources", "corpus");
 
-    private final BigOTempoAnalisador tempo = new BigOTempoAnalisador();
-    private final EspacoAnalisador espaco = new EspacoAnalisador();
+    private static final Set<String> EXTENSOES = Set.of(".java", ".c");
 
     static List<CasoDeCorpus> casos() {
         return CorpusDeAlgoritmos.casos();
@@ -46,11 +47,10 @@ class MotorDeMetricasCorpusTest {
     @ParameterizedTest(name = "tempo: {0}")
     @MethodSource("casos")
     void tempoBateComOComportamentoAtualDoMotor(CasoDeCorpus caso) {
-        CompilationUnit unidade = AnalisadorTestSupport.parse(caso.codigo());
-        MetricaCalculada calculada = tempo.analisar(unidade);
+        Medicao medicao = MedidorDoCorpus.medir(caso);
 
-        assertThat(calculada.rotulo())
-                .as("%s (gabarito %s) -> %s", caso.nome(), caso.tempoGabarito(), calculada.detalhe())
+        assertThat(medicao.tempo())
+                .as("%s (gabarito %s)", caso, caso.tempoGabarito())
                 .isEqualTo(caso.tempoEsperadoDoMotor());
     }
 
@@ -59,18 +59,29 @@ class MotorDeMetricasCorpusTest {
     void espacoBateComOComportamentoAtualDoMotor(CasoDeCorpus caso) {
         assumeTrue(caso.espacoEsperadoDoMotor() != null, "caso sem gabarito de espaco");
 
-        CompilationUnit unidade = AnalisadorTestSupport.parse(caso.codigo());
-        MetricaCalculada calculada = espaco.analisar(unidade);
+        Medicao medicao = MedidorDoCorpus.medir(caso);
 
-        assertThat(calculada.rotulo())
-                .as("%s (gabarito %s) -> %s", caso.nome(), caso.espacoGabarito(), calculada.detalhe())
+        assertThat(medicao.espaco())
+                .as("%s (gabarito %s)", caso, caso.espacoGabarito())
                 .isEqualTo(caso.espacoEsperadoDoMotor());
     }
 
-    @Test
-    void todoCasoDoCorpusParseia() {
-        assertThatCode(() -> casos().forEach(caso -> AnalisadorTestSupport.parse(caso.codigo())))
-                .doesNotThrowAnyException();
+    /**
+     * Todo caso precisa ser <b>lido</b> pelo motor da sua linguagem. Um caso que o parser recusa
+     * ainda produz um rotulo ({@code ?}) e passaria pelos testes acima sem que ninguem notasse que
+     * o corpus deixou de exercitar o avaliador de custo.
+     */
+    @ParameterizedTest(name = "estrutura lida: {0}")
+    @MethodSource("casos")
+    void todoCasoDoCorpusEhLidoPeloMotor(CasoDeCorpus caso) {
+        if (caso.linguagem() == LinguagemProgramacao.C) {
+            CodigoDeC codigo = CodigoDeC.de(caso.codigo());
+            assertThat(codigo.programa().integro())
+                    .as("o parser estrutural de C desistiu de %s: %s", caso.arquivo(), codigo.programa().motivo())
+                    .isTrue();
+            return;
+        }
+        assertThat(AnalisadorTestSupport.parse(caso.codigo())).isNotNull();
     }
 
     /**
@@ -84,11 +95,22 @@ class MotorDeMetricasCorpusTest {
 
         try (Stream<Path> arquivos = Files.walk(RAIZ_DO_CORPUS)) {
             Set<String> noDisco = arquivos
-                    .filter(caminho -> caminho.toString().endsWith(".java"))
                     .map(caminho -> RAIZ_DO_CORPUS.relativize(caminho).toString().replace('\\', '/'))
+                    .filter(caminho -> EXTENSOES.stream().anyMatch(caminho::endsWith))
                     .collect(Collectors.toSet());
 
             assertThat(noDisco).isEqualTo(noManifesto);
         }
+    }
+
+    /**
+     * O corpus so mede o que o analisador entrega. Se uma metrica for acrescentada a C — ou
+     * retirada —, {@link MedidorDoCorpus} precisa ser revisto junto, e este teste e o que avisa.
+     */
+    @Test
+    void oAnalisadorDeCEntregaAsTresMetricasDoProjeto() {
+        assertThat(MedidorDoCorpus.analisadorDe(LinguagemProgramacao.C).metricasSuportadas())
+                .containsExactlyInAnyOrder(TipoMetrica.BIG_O_TEMPO, TipoMetrica.COMPLEXIDADE_ESPACO,
+                        TipoMetrica.COMPLEXIDADE_CICLOMATICA);
     }
 }

@@ -13,7 +13,7 @@ import { LangChip, LanguageDot, StatusChip } from '@/components/domain/badges'
 import {
   temClasseDeTempo,
   LINGUAGEM_META,
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   prettyBigO,
   TIPO_METRICA_META,
 } from '@/domain/enums'
@@ -43,7 +43,7 @@ const EXTENSAO: Record<CodeLang, string> = {
 /** Colunas dos tiles 1–3 quando o lugar deles é ocupado por um estado. */
 const VAO_DOS_TILES = 'sm:col-span-2 lg:col-span-3'
 
-type EstadoMetricas = 'calculando' | 'erro' | 'sem-java' | 'vazio' | 'ok'
+type EstadoMetricas = 'calculando' | 'erro' | 'sem-analisador' | 'vazio' | 'ok'
 
 /**
  * Visitante — resolução pública em MODO LEITURA (00-INDICE §6-A, Lacuna 4:
@@ -106,7 +106,7 @@ export function ResolucaoPublicaPage() {
   const metricas: ResultadoMetricaDTO[] = metricasQuery.data ?? []
   const porTipo = new Map(metricas.map((m) => [m.tipo, m]))
   const semMetricas = metricas.length === 0
-  const naoJava = !temClasseDeTempo(resolucao.linguagem)
+  const semAnalisadorDeTempo = !temClasseDeTempo(resolucao.linguagem)
   const linguagem = LINGUAGEM_META[resolucao.linguagem]
 
   // Mesma precedência de sempre — só o vestuário mudou.
@@ -116,8 +116,8 @@ export function ResolucaoPublicaPage() {
       ? 'erro'
       : semMetricas && metricasQuery.isFetching
         ? 'calculando'
-        : semMetricas && naoJava
-          ? 'sem-java'
+        : semMetricas && semAnalisadorDeTempo
+          ? 'sem-analisador'
           : semMetricas
             ? 'vazio'
             : 'ok'
@@ -226,12 +226,12 @@ export function ResolucaoPublicaPage() {
         </div>
 
         {/* Nota de método (rodapé da faixa) */}
-        {estado === 'sem-java' ? (
+        {estado === 'sem-analisador' ? (
           <div className="flex items-start gap-[9px] rounded-ci border border-line bg-recess px-[13px] py-[11px]">
             <Cpu size={15} strokeWidth={2} aria-hidden className="mt-px shrink-0 text-atencao-ink" />
             <p className="font-mono text-[10.5px] leading-[1.55] text-soft">
-              {NOTA_COMPLEXIDADE_SO_JAVA} Esta resolução está em {linguagem.label} — o retrato mostra só a
-              autonomia autodeclarada.
+              {NOTA_LINGUAGENS_ANALISADAS} Esta resolução está em {linguagem.label} — o retrato
+              mostra só a autonomia autodeclarada.
             </p>
           </div>
         ) : (

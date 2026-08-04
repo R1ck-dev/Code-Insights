@@ -31,12 +31,13 @@ import { Folder } from 'lucide-react'
 import {
   CONFIANCA_BIG_O,
   LINGUAGEM_META,
-  NOTA_COMPLEXIDADE_SO_JAVA,
+  NOTA_LINGUAGENS_ANALISADAS,
   comPrefixoEstimado,
   corDaClasse,
   rotuloCanonico,
   rotuloConfiancaMotor,
   rotuloCurto,
+  rotulosDasLinguagensAnalisadas,
   tintaDaClasse,
 } from '@/domain/enums'
 import { cn, pluralPt } from '@/lib/utils'
@@ -803,13 +804,13 @@ function CalloutSolitaria({
 /**
  * O céu continua lá (grade + colormap + estrelas cenográficas): o vazio da Carta é a ausência
  * de estrelas, não a ausência de gráfico. E o motivo do vazio é dito — se há resoluções mas
- * nenhuma virou ponto, o problema é a métrica (só Java), não a falta de trabalho.
+ * nenhuma virou ponto, o problema é a linguagem que o motor ainda não lê, não a falta de trabalho.
  */
 function CartaVazia({ total, semMetrica }: { total: number; semMetrica: number }) {
   const descricao =
     total > 0
-      ? `${pluralPt(semMetrica, 'resolução sem métrica', 'resoluções sem métrica')}. ${NOTA_COMPLEXIDADE_SO_JAVA}`
-      : 'Submeta uma resolução em Java para ver sua primeira estrela.'
+      ? `${pluralPt(semMetrica, 'resolução sem métrica', 'resoluções sem métrica')}. ${NOTA_LINGUAGENS_ANALISADAS}`
+      : `Submeta uma resolução em ${rotulosDasLinguagensAnalisadas()} para ver sua primeira estrela.`
 
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-[9px] px-5 text-center">

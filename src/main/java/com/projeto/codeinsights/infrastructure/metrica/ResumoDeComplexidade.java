@@ -11,12 +11,17 @@ import com.projeto.codeinsights.infrastructure.metrica.custo.CustoAvaliado;
  * para o banco: a classe de complexidade, a confianca e um {@code detalhe} auditavel,
  * que expoe a forma simbolica exata e todas as suposicoes feitas no caminho.
  */
-final class ResumoDeComplexidade {
+public final class ResumoDeComplexidade {
 
     private ResumoDeComplexidade() {
     }
 
-    static MetricaCalculada de(CustoAvaliado avaliado) {
+    /**
+     * Publico porque os motores de Java e de C partilham esta traducao. Se cada linguagem
+     * escrevesse o proprio {@code detalhe}, o mesmo custo simbolico apareceria com redacoes
+     * diferentes conforme a linguagem, e o campo deixaria de ser comparavel entre resolucoes.
+     */
+    public static MetricaCalculada de(CustoAvaliado avaliado) {
         ClasseComplexidade classe = avaliado.custo().classe();
         return new MetricaCalculada(classe.getOrdem(), classe.getRotulo(), detalhe(avaliado, classe),
                 avaliado.confianca());

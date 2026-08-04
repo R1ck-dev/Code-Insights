@@ -14,7 +14,9 @@ package com.projeto.codeinsights.domain.knowledge.enums;
  *   <li>{@link #BAIXA} - o motor nao conseguiu classificar (resultado
  *       {@code DESCONHECIDO}); use para filtrar a amostra, nao para agregar.</li>
  * </ul>
- * Metricas exatas (ex.: ciclomatica) sao sempre {@link #ALTA}.
+ * Uma metrica exata declara {@link #ALTA} — mas o nivel tambem depende de <b>como o codigo foi
+ * lido</b>: a ciclomatica de Java sai de uma AST e e ALTA, enquanto a de C sai de uma leitura por
+ * forma e nao passa de {@link #MEDIA}, mesmo sendo a mesma contagem.
  */
 public enum NivelConfianca {
     ALTA,

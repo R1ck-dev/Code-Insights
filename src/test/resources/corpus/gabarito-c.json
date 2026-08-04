@@ -1,0 +1,178 @@
+{
+  "casos": [
+    {
+      "arquivo": "canonico/busca-linear.c",
+      "nome": "busca linear",
+      "origem": "Cormen et al., Introduction to Algorithms, cap. 2.1 (LINEAR-SEARCH, exercicio 2.1-3)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/busca-binaria-iterativa.c",
+      "nome": "busca binaria iterativa",
+      "origem": "Cormen et al., Introduction to Algorithms, exercicio 2.3-5; Knuth, TAOCP vol. 3, sec. 6.2.1 (Algoritmo B)",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/ordenacao-bolha.c",
+      "nome": "ordenacao bolha",
+      "origem": "Knuth, TAOCP vol. 3, sec. 5.2.2 (Algoritmo B, bubble sort)",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/ordenacao-insercao.c",
+      "nome": "ordenacao insercao",
+      "origem": "Cormen et al., Introduction to Algorithms, cap. 2.1 (INSERTION-SORT)",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/fatorial-recursivo.c",
+      "nome": "fatorial recursivo",
+      "origem": "Deitel e Deitel, C: How to Program, cap. 5 (Funcoes), secao de recursao - exemplo do fatorial; recorrencia linear T(n) = T(n-1) + O(1)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/fibonacci-ingenuo.c",
+      "nome": "fibonacci ingenuo",
+      "origem": "Deitel e Deitel, C: How to Program, cap. 5 - serie de Fibonacci por recursao; Cormen et al., cap. 15.1 (recorrencia T(n) = T(n-1) + T(n-2))",
+      "tempoGabarito": "O(2^n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/busca-binaria-recursiva.c",
+      "nome": "busca binaria recursiva",
+      "origem": "Cormen et al., Introduction to Algorithms, exercicio 2.3-5 (busca binaria recursiva)",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(log n)"
+    },
+    {
+      "arquivo": "canonico/merge-sort.c",
+      "nome": "merge sort",
+      "origem": "Cormen et al., Introduction to Algorithms, cap. 2.3 (merge sort e a recorrencia 2T(n/2) + Theta(n))",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "aluno/soma-de-vetor-com-scanf.c",
+      "nome": "soma de vetor com scanf",
+      "origem": "sintetico — exercita o padrao mais comum do iniciante: ler n pelo scanf, preencher um vetor de tamanho fixo e percorrer de novo para acumular; dois lacos sequenciais que NAO devem virar O(n^2)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/tabuada-completa.c",
+      "nome": "tabuada completa",
+      "origem": "sintetico — exercita a armadilha do laco aninhado com limites literais: visualmente parece O(n^2), mas nao ha entrada nenhuma, o trabalho e constante",
+      "tempoGabarito": "O(1)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/maior-elemento-no-main.c",
+      "nome": "maior elemento no main",
+      "origem": "sintetico — exercita a busca do maximo escrita inteira dentro do main, com vetor de tamanho fixo e sem funcao auxiliar; e o formato tipico do publico do piloto",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/conta-pares-com-dois-lacos.c",
+      "nome": "conta pares com dois lacos",
+      "origem": "sintetico — exercita o laco aninhado triangular (j comeca em i+1) escrito por iniciante: metade das combinacoes, mas ainda quadratico",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/palindromo-com-strlen.c",
+      "nome": "palindromo com strlen",
+      "origem": "sintetico — estilo de aluno iniciante em C: tudo no main, buffer de tamanho fixo, strlen chamado uma unica vez fora do laco (contraste com a variante que chama strlen na condicao do laco)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/multiplicacao-de-matrizes.c",
+      "nome": "multiplicacao de matrizes",
+      "origem": "Cormen et al., Introduction to Algorithms, sec. 4.2 (SQUARE-MATRIX-MULTIPLY) — algoritmo classico, aqui escrito em estilo de aluno iniciante: tudo no main, scanf e matrizes de tamanho fixo",
+      "tempoGabarito": "O(n^3)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/piramide-de-asteriscos.c",
+      "nome": "piramide de asteriscos",
+      "origem": "sintetico — estilo de aluno iniciante: laco interno cujo limite e o indice do laco externo, exercitando a soma triangular 1+2+...+n",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/primo-testando-todos-os-divisores.c",
+      "nome": "primo testando todos os divisores",
+      "origem": "sintetico — estilo de aluno iniciante: divisao por tentativa de 2 ate n-1, sem parar na raiz e sem break; contraste deliberado com a versao que para em sqrt(n)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/ordena-com-qsort.c",
+      "nome": "ordena com qsort da stdlib",
+      "origem": "biblioteca padrao C — qsort (ISO/IEC 9899:1999, 7.20.5.2); custo de ordenacao por comparacao em Cormen et al., cap. 7-8",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/strlen-dentro-do-laco.c",
+      "nome": "strlen dentro da condicao do laco",
+      "origem": "sintetico — chamada de custo linear reavaliada na condicao do laco (armadilha classica de C com strlen)",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/dois-ponteiros-soma-alvo.c",
+      "nome": "dois ponteiros para soma alvo",
+      "origem": "arquetipo de programacao competitiva — two pointers; Cormen et al., Introduction to Algorithms, exercicio 2.3-7 (par com soma dada em vetor ordenado)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/concatena-com-strcat-em-laco.c",
+      "nome": "concatenacao com strcat dentro do laco",
+      "origem": "Joel Spolsky, \"Back to Basics\" (2001) — Schlemiel the Painter's algorithm, cujo exemplo canonico e justamente strcat repetido em laco",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/preenchimento-por-inundacao.c",
+      "nome": "preenchimento por inundacao",
+      "origem": "Cormen et al., Introduction to Algorithms, cap. 22.3 (busca em profundidade) aplicado a uma grade n x n — flood fill / seed fill de 4 vizinhos",
+      "tempoGabarito": "O(n^2)",
+      "tempoMotor": "O(2^n)",
+      "espacoGabarito": "O(n^2)",
+      "nota": "O motor de C nao detecta marcacao de visitados, entao le as quatro auto-chamadas como busca exponencial. A deteccao existe no lado Java, mas em C o cache costuma ser um vetor linearizado (grade[lin * n + col]) e contar dimensoes por colchetes daria 1 estado onde ha n^2 -- o motor passaria a SUBESTIMAR, que e o erro perigoso. Preferiu-se errar para cima."
+    },
+    {
+      "arquivo": "adversarial/permutacoes-por-backtracking.c",
+      "nome": "permutacoes por backtracking",
+      "origem": "Sedgewick, \"Permutation Generation Methods\", ACM Computing Surveys 9(2), 1977 — metodo de geracao por troca (exchange)",
+      "tempoGabarito": "O(n!)",
+      "tempoMotor": "O(2^n)",
+      "espacoGabarito": "O(n)",
+      "nota": "Mesma resposta que o motor da ao caso equivalente em Java: auto-chamada dentro de laco vira \"busca exaustiva\" e cai em O(2^n). Contar o trabalho por folha daria O(n * n!), tambem fora da escala. A coincidencia entre as duas linguagens e o sinal de que as regras sao as mesmas."
+    },
+    {
+      "arquivo": "adversarial/exponenciacao-rapida.c",
+      "nome": "exponenciacao rapida",
+      "origem": "Knuth, TAOCP vol. 2, sec. 4.6.3 — evaluation of powers, metodo binario",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/mdc-euclidiano.c",
+      "nome": "MDC euclidiano",
+      "origem": "Knuth, TAOCP vol. 2, sec. 4.5.2 — algoritmo de Euclides; contagem de voltas pelo teorema de Lame",
+      "tempoGabarito": "O(log n)",
+      "tempoMotor": "O(n)",
+      "espacoGabarito": "O(1)",
+      "nota": "A reducao por resto (a % b) e reconhecida na RECURSAO, espelhando o AnalisadorDeRecursao do lado Java -- mas este caso e a forma ITERATIVA, e a heuristica de laco nao tem regra de resto. Nao foi acrescentada de proposito: o lado Java tambem nao tem, e uma regra so em C faria o mesmo algoritmo mudar de classe conforme a linguagem, quebrando a comparacao entre participantes que e o objetivo do eixo de complexidade."
+    }
+  ]
+}

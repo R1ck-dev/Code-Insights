@@ -503,7 +503,7 @@ export function Linha({
               )}
 
               {/* ── série AUTONOMIA: NEUTRA (regra 4) ────────────────────────────────
-                   Ela ATRAVESSA sólida os buckets que só têm resolução não-Java: autonomia é
+                   Ela ATRAVESSA sólida os buckets que só têm resolução sem analisador: autonomia é
                    autodeclarada e independe da linguagem (§4.4). Só vira tracejado no bucket em
                    que NADA foi enviado — ali, de fato, não houve medição de coisa alguma. */}
               {temSerie && (

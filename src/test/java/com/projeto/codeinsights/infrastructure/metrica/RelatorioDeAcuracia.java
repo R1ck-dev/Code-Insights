@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import com.projeto.codeinsights.domain.knowledge.enums.ClasseComplexidade;
+import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
 import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 import com.projeto.codeinsights.infrastructure.metrica.CasoDeCorpus.Categoria;
 
@@ -100,11 +101,33 @@ final class RelatorioDeAcuracia {
 
     // ---------------------------------------------------------------- resumo
 
+    /**
+     * Uma linha por linguagem, e nunca um numero so somando as duas: Java e C sao motores
+     * diferentes, medidos por corpora diferentes, e um total agregado esconderia qual dos dois
+     * esta errando — alem de se mover sozinho quando um dos corpora crescesse.
+     */
     static String resumoDeUmaLinha(List<Medida> medidas) {
-        return "Acuracia do motor sobre %d casos: tempo %s, espaco %s.".formatted(
-                medidas.size(),
-                percentual(medidas, RelatorioDeAcuracia::mensuravelNoTempo, RelatorioDeAcuracia::direcaoDoTempo),
-                percentual(medidas, RelatorioDeAcuracia::mensuravelNoEspaco, RelatorioDeAcuracia::direcaoDoEspaco));
+        List<String> porLinguagem = new ArrayList<>();
+        for (LinguagemProgramacao linguagem : linguagensPresentes(medidas)) {
+            List<Medida> daLinguagem = daLinguagem(medidas, linguagem);
+            porLinguagem.add("%s %d casos: tempo %s, espaco %s".formatted(
+                    linguagem, daLinguagem.size(),
+                    percentual(daLinguagem, RelatorioDeAcuracia::mensuravelNoTempo,
+                            RelatorioDeAcuracia::direcaoDoTempo),
+                    percentual(daLinguagem, RelatorioDeAcuracia::mensuravelNoEspaco,
+                            RelatorioDeAcuracia::direcaoDoEspaco)));
+        }
+        return "Acuracia do motor - " + String.join(" | ", porLinguagem) + ".";
+    }
+
+    private static List<LinguagemProgramacao> linguagensPresentes(List<Medida> medidas) {
+        return Arrays.stream(LinguagemProgramacao.values())
+                .filter(linguagem -> medidas.stream().anyMatch(m -> m.caso().linguagem() == linguagem))
+                .toList();
+    }
+
+    private static List<Medida> daLinguagem(List<Medida> medidas, LinguagemProgramacao linguagem) {
+        return medidas.stream().filter(m -> m.caso().linguagem() == linguagem).toList();
     }
 
     private static String percentual(List<Medida> medidas, Predicate<Medida> mensuravel,
@@ -161,42 +184,46 @@ final class RelatorioDeAcuracia {
     }
 
     private static void resumoGeral(StringBuilder md, List<Medida> medidas) {
-        md.append("## Resumo\n\n");
-        md.append("| Metrica | Casos mensuraveis | Acertos | Taxa |\n");
+        md.append("## Resumo por linguagem\n\n");
+        md.append("Cada linguagem tem o seu motor e o seu corpus. Nao ha total somado de proposito: ");
+        md.append("uma taxa unica misturaria dois analisadores e mudaria sozinha se um dos corpora ");
+        md.append("crescesse mais que o outro.\n\n");
+        md.append("| Linguagem | Casos | Big O de tempo | Complexidade de espaco |\n");
         md.append("|---|---:|---:|---:|\n");
-        linhaDeResumo(md, "Big O de tempo", medidas,
-                RelatorioDeAcuracia::mensuravelNoTempo, RelatorioDeAcuracia::direcaoDoTempo);
-        linhaDeResumo(md, "Complexidade de espaco", medidas,
-                RelatorioDeAcuracia::mensuravelNoEspaco, RelatorioDeAcuracia::direcaoDoEspaco);
+        for (LinguagemProgramacao linguagem : linguagensPresentes(medidas)) {
+            List<Medida> daLinguagem = daLinguagem(medidas, linguagem);
+            md.append("| **%s** | %d | %s | %s |\n".formatted(
+                    linguagem, daLinguagem.size(),
+                    percentual(daLinguagem, RelatorioDeAcuracia::mensuravelNoTempo,
+                            RelatorioDeAcuracia::direcaoDoTempo),
+                    percentual(daLinguagem, RelatorioDeAcuracia::mensuravelNoEspaco,
+                            RelatorioDeAcuracia::direcaoDoEspaco)));
+        }
         md.append('\n');
-    }
-
-    private static void linhaDeResumo(StringBuilder md, String nome, List<Medida> medidas,
-            Predicate<Medida> mensuravel, Function<Medida, Direcao> direcao) {
-        long total = medidas.stream().filter(mensuravel).count();
-        long acertos = medidas.stream().filter(mensuravel).filter(m -> direcao.apply(m) == Direcao.ACERTO).count();
-        md.append("| %s | %d | %d | %s |\n".formatted(nome, total, acertos, taxa(acertos, total)));
     }
 
     private static void porCategoria(StringBuilder md, List<Medida> medidas) {
         md.append("## Acuracia por categoria\n\n");
-        md.append("| Categoria | Casos | Tempo | Espaco |\n");
-        md.append("|---|---:|---:|---:|\n");
+        md.append("| Linguagem | Categoria | Casos | Tempo | Espaco |\n");
+        md.append("|---|---|---:|---:|---:|\n");
 
-        for (Categoria categoria : Categoria.values()) {
-            List<Medida> daCategoria = medidas.stream()
-                    .filter(m -> m.caso().categoria() == categoria)
-                    .toList();
-            if (daCategoria.isEmpty()) {
-                continue;
+        for (LinguagemProgramacao linguagem : linguagensPresentes(medidas)) {
+            for (Categoria categoria : Categoria.values()) {
+                List<Medida> daCategoria = daLinguagem(medidas, linguagem).stream()
+                        .filter(m -> m.caso().categoria() == categoria)
+                        .toList();
+                if (daCategoria.isEmpty()) {
+                    continue;
+                }
+                md.append("| %s | `%s` | %d | %s | %s |\n".formatted(
+                        linguagem,
+                        categoria,
+                        daCategoria.size(),
+                        percentual(daCategoria, RelatorioDeAcuracia::mensuravelNoTempo,
+                                RelatorioDeAcuracia::direcaoDoTempo),
+                        percentual(daCategoria, RelatorioDeAcuracia::mensuravelNoEspaco,
+                                RelatorioDeAcuracia::direcaoDoEspaco)));
             }
-            md.append("| `%s` | %d | %s | %s |\n".formatted(
-                    categoria,
-                    daCategoria.size(),
-                    percentual(daCategoria, RelatorioDeAcuracia::mensuravelNoTempo,
-                            RelatorioDeAcuracia::direcaoDoTempo),
-                    percentual(daCategoria, RelatorioDeAcuracia::mensuravelNoEspaco,
-                            RelatorioDeAcuracia::direcaoDoEspaco)));
         }
         md.append('\n');
     }
@@ -204,14 +231,20 @@ final class RelatorioDeAcuracia {
     private static void direcaoDoErro(StringBuilder md, List<Medida> medidas) {
         md.append("## Direcao do erro (Big O de tempo)\n\n");
         md.append("Subestimar e o erro perigoso: diz ao aluno que a solucao custa menos do que custa.\n\n");
-        md.append("| Direcao | Casos |\n|---|---:|\n");
+        md.append("| Direcao |");
+        linguagensPresentes(medidas).forEach(linguagem -> md.append(" %s |".formatted(linguagem)));
+        md.append("\n|---|");
+        linguagensPresentes(medidas).forEach(linguagem -> md.append("---:|"));
+        md.append('\n');
 
-        Map<Direcao, Long> contagem = new LinkedHashMap<>();
         for (Direcao direcao : Direcao.values()) {
-            contagem.put(direcao, medidas.stream().filter(m -> direcaoDoTempo(m) == direcao).count());
+            md.append("| %s |".formatted(direcao.rotulo));
+            for (LinguagemProgramacao linguagem : linguagensPresentes(medidas)) {
+                md.append(" %d |".formatted(daLinguagem(medidas, linguagem).stream()
+                        .filter(m -> direcaoDoTempo(m) == direcao).count()));
+            }
+            md.append('\n');
         }
-        contagem.forEach((direcao, quantidade) ->
-                md.append("| %s | %d |\n".formatted(direcao.rotulo, quantidade)));
         md.append('\n');
     }
 
@@ -225,17 +258,22 @@ final class RelatorioDeAcuracia {
         md.append("Se a taxa cai de `ALTA` para `BAIXA`, a confianca declarada pelo motor e **informativa** ");
         md.append("e pode ser usada para filtrar a amostra na analise da pesquisa. Se a coluna for plana, ");
         md.append("o campo nao carrega informacao e nao deve pesar em nenhum corte.\n\n");
-        md.append("| Confianca | Casos mensuraveis | Acertos | Taxa |\n");
-        md.append("|---|---:|---:|---:|\n");
+        md.append("Em C a confianca **nunca chega a ALTA**: a estrutura do codigo e reconhecida por ");
+        md.append("forma, sem parse completo da linguagem, e o teto fica em `MEDIA`. A linha `ALTA` ");
+        md.append("vazia para C nao e falta de dado — e o teto funcionando.\n\n");
+        md.append("| Linguagem | Confianca | Casos mensuraveis | Acertos | Taxa |\n");
+        md.append("|---|---|---:|---:|---:|\n");
 
-        for (NivelConfianca nivel : NivelConfianca.values()) {
-            List<Medida> doNivel = medidas.stream()
-                    .filter(RelatorioDeAcuracia::mensuravelNoTempo)
-                    .filter(m -> m.confiancaTempo() == nivel)
-                    .toList();
-            long acertos = doNivel.stream().filter(m -> direcaoDoTempo(m) == Direcao.ACERTO).count();
-            md.append("| %s | %d | %d | %s |\n".formatted(nivel, doNivel.size(), acertos,
-                    taxa(acertos, doNivel.size())));
+        for (LinguagemProgramacao linguagem : linguagensPresentes(medidas)) {
+            for (NivelConfianca nivel : NivelConfianca.values()) {
+                List<Medida> doNivel = daLinguagem(medidas, linguagem).stream()
+                        .filter(RelatorioDeAcuracia::mensuravelNoTempo)
+                        .filter(m -> m.confiancaTempo() == nivel)
+                        .toList();
+                long acertos = doNivel.stream().filter(m -> direcaoDoTempo(m) == Direcao.ACERTO).count();
+                md.append("| %s | %s | %d | %d | %s |\n".formatted(linguagem, nivel, doNivel.size(),
+                        acertos, taxa(acertos, doNivel.size())));
+            }
         }
         md.append('\n');
     }
@@ -252,8 +290,8 @@ final class RelatorioDeAcuracia {
             return;
         }
 
-        md.append("| Caso | Categoria | Metrica | Gabarito | Motor | Direcao | Confianca |\n");
-        md.append("|---|---|---|---|---|---|---|\n");
+        md.append("| Caso | Linguagem | Categoria | Metrica | Gabarito | Motor | Direcao | Confianca |\n");
+        md.append("|---|---|---|---|---|---|---|---|\n");
         for (Medida medida : divergentes) {
             if (mensuravelNoTempo(medida) && direcaoDoTempo(medida) != Direcao.ACERTO) {
                 linhaDeDivergencia(md, medida, "tempo", medida.caso().tempoGabarito(),
@@ -270,8 +308,8 @@ final class RelatorioDeAcuracia {
 
     private static void linhaDeDivergencia(StringBuilder md, Medida medida, String metrica,
             String gabarito, String obtido, Direcao direcao, NivelConfianca confianca) {
-        md.append("| %s | %s | %s | `%s` | `%s` | %s | %s |\n".formatted(
-                medida.caso().nome(), medida.caso().categoria(), metrica,
+        md.append("| %s | %s | %s | %s | `%s` | `%s` | %s | %s |\n".formatted(
+                medida.caso().nome(), medida.caso().linguagem(), medida.caso().categoria(), metrica,
                 gabarito, obtido, direcao.rotulo, confianca));
     }
 
@@ -288,11 +326,11 @@ final class RelatorioDeAcuracia {
 
         md.append("Casos cuja complexidade correta o motor **nao consegue expressar** — nao e erro de ");
         md.append("estimativa, e limite da escala de 8 classes. Ficam fora do denominador da acuracia.\n\n");
-        md.append("| Caso | Categoria | Gabarito | Resposta do motor |\n");
-        md.append("|---|---|---|---|\n");
+        md.append("| Caso | Linguagem | Categoria | Gabarito | Resposta do motor |\n");
+        md.append("|---|---|---|---|---|\n");
         for (Medida medida : fora) {
-            md.append("| %s | %s | `%s` | `%s` |\n".formatted(
-                    medida.caso().nome(), medida.caso().categoria(),
+            md.append("| %s | %s | %s | `%s` | `%s` |\n".formatted(
+                    medida.caso().nome(), medida.caso().linguagem(), medida.caso().categoria(),
                     medida.caso().tempoGabarito(), medida.tempoObtido()));
         }
         md.append('\n');

@@ -96,9 +96,10 @@ export const LINGUAGEM_META: Record<LinguagemProgramacao, LinguagemMeta> = Objec
 export const LINGUAGEM_COR_FALLBACK = '#8FA6C9'
 
 /**
- * O que o motor sabe medir em cada linguagem. **O suporte é parcial**, e não um sim/não: contar
- * pontos de decisão é uma contagem léxica, enquanto inferir Big O exige um modelo de custo sobre a
- * AST inteira — C tem a primeira e não tem a segunda.
+ * O que o motor sabe medir em cada linguagem. **O suporte pode ser parcial**, e não um sim/não:
+ * contar pontos de decisão é contagem, enquanto inferir Big O exige um modelo de custo sobre a
+ * estrutura inteira — uma linguagem nova entra pela primeira antes de ganhar a segunda, e foi assim
+ * que C entrou. Hoje Java e C produzem as três.
  *
  * Espelha `AnalisadorMetricas.metricasSuportadas` no backend. Um dia isto deve vir de lá (o
  * `ContagemPorLinguagemDTO` já traz o conjunto por linguagem); enquanto for constante, mudar o
@@ -106,7 +107,7 @@ export const LINGUAGEM_COR_FALLBACK = '#8FA6C9'
  */
 export const METRICAS_POR_LINGUAGEM: Record<LinguagemProgramacao, TipoMetrica[]> = {
   JAVA: ['BIG_O_TEMPO', 'COMPLEXIDADE_ESPACO', 'COMPLEXIDADE_CICLOMATICA'],
-  C: ['COMPLEXIDADE_CICLOMATICA'],
+  C: ['BIG_O_TEMPO', 'COMPLEXIDADE_ESPACO', 'COMPLEXIDADE_CICLOMATICA'],
   CPP: [],
   PYTHON: [],
   JAVASCRIPT: [],
@@ -122,24 +123,60 @@ export function temAlgumaMetrica(linguagem: LinguagemProgramacao): boolean {
   return METRICAS_POR_LINGUAGEM[linguagem].length > 0
 }
 
+/** As linguagens que o motor de fato analisa, derivadas da tabela — nunca uma lista à parte. */
+export const LINGUAGENS_ANALISADAS = (
+  Object.keys(METRICAS_POR_LINGUAGEM) as LinguagemProgramacao[]
+).filter(temAlgumaMetrica)
+
+/** `[A]` → "A" · `[A, B]` → "A e B" · `[A, B, C]` → "A, B e C". */
+export function listaEmPortugues(itens: string[]): string {
+  if (itens.length <= 1) return itens[0] ?? ''
+  return `${itens.slice(0, -1).join(', ')} e ${itens[itens.length - 1]}`
+}
+
+/** Os rótulos das linguagens analisadas, prontos para entrar numa frase. */
+export function rotulosDasLinguagensAnalisadas(): string {
+  return listaEmPortugues(LINGUAGENS_ANALISADAS.map((linguagem) => LINGUAGEM_META[linguagem].label))
+}
+
 /**
  * Nota permanente ao lado dos gráficos, que plotam **classe de tempo** (§4.4).
  *
- * Dizia "Métricas de complexidade hoje só para Java", o que deixou de ser verdade quando C ganhou
- * ciclomática: a frase apagaria da tela um número que a plataforma de fato mede. O recorte agora é
- * a métrica, e não a linguagem.
+ * O texto é **derivado da tabela**, e não escrito à mão. Já disse "só para Java" duas vezes na vida
+ * deste arquivo, e as duas vezes envelheceu no mesmo commit em que uma linguagem entrou no motor —
+ * apagando da tela um número que a plataforma tinha passado a medir. Agora não tem como envelhecer:
+ * acrescentar uma linguagem à tabela reescreve a frase.
  */
-export const NOTA_COMPLEXIDADE_SO_JAVA = 'Big O e complexidade de espaço hoje só para Java.'
+export const NOTA_LINGUAGENS_ANALISADAS = `O motor analisa ${rotulosDasLinguagensAnalisadas()}; nas demais linguagens, ainda não.`
+
+/**
+ * Teto de confiança do motor por linguagem. Em C a estrutura do código é reconhecida por forma, sem
+ * parse completo da linguagem, e o backend nunca grava `ALTA` — ver `AnalisadorDeC`.
+ *
+ * A tela precisa saber disto porque existe um filtro "só confiança ALTA": sem o aviso, um
+ * pesquisador ligaria o filtro num piloto majoritariamente em C e leria um zero como "não há dado",
+ * quando na verdade é "este corte exclui esta linguagem inteira, por construção".
+ */
+export const TETO_DE_CONFIANCA: Partial<Record<LinguagemProgramacao, NivelConfianca>> = {
+  C: 'MEDIA',
+}
+
+export function nuncaAtingeConfiancaAlta(linguagem: LinguagemProgramacao): boolean {
+  return TETO_DE_CONFIANCA[linguagem] !== undefined
+}
+
+export const NOTA_TETO_DE_CONFIANCA =
+  'Em C o motor lê a estrutura por forma, sem parse completo da linguagem: a confiança não passa de MÉDIA.'
 
 /**
  * Nota por linguagem, para as telas de uma resolução só. Separada da anterior porque aqui dá para
- * ser específico: quem submeteu em C precisa saber que ganhou ciclomática e não ganhou Big O.
+ * ser específico sobre o que aquela linguagem ganha e o que não ganha.
  */
 export function notaDeCobertura(linguagem: LinguagemProgramacao): string {
-  if (temClasseDeTempo(linguagem)) return ''
-  return temAlgumaMetrica(linguagem)
-    ? 'Nesta linguagem o motor mede a complexidade ciclomática; Big O e espaço, ainda não.'
-    : 'O motor ainda não analisa esta linguagem.'
+  if (!temAlgumaMetrica(linguagem)) return 'O motor ainda não analisa esta linguagem.'
+  if (!temClasseDeTempo(linguagem))
+    return 'Nesta linguagem o motor mede a complexidade ciclomática; Big O e espaço, ainda não.'
+  return nuncaAtingeConfiancaAlta(linguagem) ? NOTA_TETO_DE_CONFIANCA : ''
 }
 
 // ---- Categorias de snippet ----

@@ -9,7 +9,7 @@
  *  - Editar o DESAFIO existe (o enunciado não é dado de medição). Editar RESOLUÇÃO não
  *    existe (00-INDICE §4.1): a linha de resolução leva ao detalhe, e a evolução se faz
  *    submetendo uma NOVA resolução ao mesmo desafio.
- *  - Métrica só existe para Java (§4.4). O slot de métrica da linha resolve os 3 estados
+ *  - Métrica só existe onde há analisador — hoje Java e C (§4.4). O slot da linha resolve os 3 estados
  *    (Big-O · calculando · sem métrica) — a incerteza (≈ ESTIMADO) nunca é escondida.
  *  - O `k` do colormap vem do próprio `ResolucaoResumoDTO` (`tempoOrdem`): é aqui que o aluno
  *    compara suas tentativas lado a lado, então o chip de Big-O tem de estar na LISTA, não só

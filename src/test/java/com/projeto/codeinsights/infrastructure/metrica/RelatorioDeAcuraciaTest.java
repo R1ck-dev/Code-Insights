@@ -11,7 +11,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.github.javaparser.ast.CompilationUnit;
+import com.projeto.codeinsights.infrastructure.metrica.MedidorDoCorpus.Medicao;
 import com.projeto.codeinsights.infrastructure.metrica.RelatorioDeAcuracia.Medida;
 
 /**
@@ -26,9 +26,6 @@ import com.projeto.codeinsights.infrastructure.metrica.RelatorioDeAcuracia.Medid
 class RelatorioDeAcuraciaTest {
 
     private static final Path DESTINO = Path.of("docs", "notas-tecnicas", "acuracia-do-motor.md");
-
-    private final BigOTempoAnalisador tempo = new BigOTempoAnalisador();
-    private final EspacoAnalisador espaco = new EspacoAnalisador();
 
     @Test
     void mediaOCorpusEGravaORelatorio() throws IOException {
@@ -52,10 +49,8 @@ class RelatorioDeAcuraciaTest {
     }
 
     private Medida medir(CasoDeCorpus caso) {
-        CompilationUnit unidade = AnalisadorTestSupport.parse(caso.codigo());
-        MetricaCalculada porTempo = tempo.analisar(unidade);
-        MetricaCalculada porEspaco = espaco.analisar(unidade);
-        return new Medida(caso, porTempo.rotulo(), porTempo.confianca(),
-                porEspaco.rotulo(), porEspaco.confianca());
+        Medicao medicao = MedidorDoCorpus.medir(caso);
+        return new Medida(caso, medicao.tempo(), medicao.confiancaTempo(),
+                medicao.espaco(), medicao.confiancaEspaco());
     }
 }

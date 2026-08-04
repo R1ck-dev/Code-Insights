@@ -13,7 +13,7 @@ export interface MetricTileProps {
   /**
    * Valor CRU, sem o `≈` (o tile prefixa quando `confianca === 'ESTIMADO'`):
    * `M = 4`, `O(n²)`, `O(1)`. `null`/`undefined` → `—` em `soft` ("sem métrica":
-   * linguagem ≠ Java ou classe DESCONHECIDO).
+   * linguagem sem analisador ou classe DESCONHECIDO).
    */
   valor: string | number | null | undefined
   confianca: Confianca

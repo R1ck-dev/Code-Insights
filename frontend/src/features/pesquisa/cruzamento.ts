@@ -1,4 +1,5 @@
 import { AUTONOMIA_MAX, AUTONOMIA_MIN } from '@/components/charts/tipos'
+import { nuncaAtingeConfiancaAlta } from '@/domain/enums'
 import type { NivelConfianca, PontoCartaDTO, ResolucaoDaCoorteDTO } from '@/types/api'
 
 /*
@@ -163,6 +164,19 @@ export function aplicarFiltros(
   return porConfianca.filter(
     (l) => (contagem.get(l.pseudonimo) ?? 0) >= filtros.minimoDeResolucoesPorParticipante,
   )
+}
+
+/**
+ * Resoluções que o filtro de confiança ALTA descarta **por construção da linguagem**, e não por
+ * defeito da solução: em C o motor lê a estrutura por forma e nunca declara ALTA (ver
+ * `AnalisadorDeC` no backend).
+ *
+ * Existe para a tela poder dizer isso em vez de mostrar um zero mudo. Num piloto majoritariamente
+ * em C, ligar o filtro esvazia a amostra inteira — e quem lê precisa saber que está vendo o teto
+ * do instrumento, não a ausência de dado.
+ */
+export function excluidasPeloTetoDeConfianca(coorte: ResolucaoDaCoorteDTO[]): number {
+  return coorte.filter((l) => nuncaAtingeConfiancaAlta(l.linguagem)).length
 }
 
 /** O instante da análise mais recente do recorte — a safra do dado que está na tela. */
