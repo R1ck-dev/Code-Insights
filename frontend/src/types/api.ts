@@ -453,6 +453,14 @@ export interface AtualizarMeuPerfilRequest {
   username: string
 }
 
+/**
+ * A senha viaja no CORPO de um DELETE, e não na query string: em query ela apareceria no log do
+ * servidor e no histórico do navegador.
+ */
+export interface ExcluirMinhaContaRequest {
+  senhaAtual: string
+}
+
 export interface AlterarVisibilidadePerfilRequest {
   publico: boolean
 }

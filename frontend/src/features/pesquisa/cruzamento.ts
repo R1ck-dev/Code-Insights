@@ -1,5 +1,4 @@
 import { AUTONOMIA_MAX, AUTONOMIA_MIN } from '@/components/charts/tipos'
-import { nuncaAtingeConfiancaAlta } from '@/domain/enums'
 import type { NivelConfianca, PontoCartaDTO, ResolucaoDaCoorteDTO } from '@/types/api'
 
 /*
@@ -128,16 +127,27 @@ export function medirRecorte(coorte: ResolucaoDaCoorteDTO[]): Recorte {
 }
 
 export interface FiltrosDeSensibilidade {
-  somenteConfiancaAlta: boolean
+  descartarConfiancaBaixa: boolean
   minimoDeResolucoesPorParticipante: number
 }
 
 export const SEM_FILTRO: FiltrosDeSensibilidade = {
-  somenteConfiancaAlta: false,
+  descartarConfiancaBaixa: false,
   minimoDeResolucoesPorParticipante: 1,
 }
 
-const ALTA: NivelConfianca = 'ALTA'
+/**
+ * O corte de confiança aceita `ALTA` **e** `MEDIA`.
+ *
+ * Antes ele era "só ALTA", e isso tornava o filtro inútil na pesquisa que ele deveria servir: C
+ * nunca declara ALTA (o motor lê a estrutura por forma), então num piloto majoritariamente em C
+ * ligar o corte esvaziava a amostra inteira — descartava a linguagem, não as medições ruins.
+ *
+ * Aceitar MEDIA não é afrouxar por conveniência: na faixa MEDIA o motor de C acerta 92,3% do Big O
+ * de tempo, **acima** dos 85,7% do Java na mesma faixa (ver `acuracia-do-motor.md`). O que o corte
+ * remove é `BAIXA` — onde o motor declara que não entendeu o código.
+ */
+const CONFIANCA_UTIL: NivelConfianca[] = ['ALTA', 'MEDIA']
 
 /**
  * Os dois cortes de sensibilidade. Não "limpam" o dado — apertam a amostra, e a tela existe para
@@ -150,8 +160,8 @@ export function aplicarFiltros(
   coorte: ResolucaoDaCoorteDTO[],
   filtros: FiltrosDeSensibilidade,
 ): ResolucaoDaCoorteDTO[] {
-  const porConfianca = filtros.somenteConfiancaAlta
-    ? coorte.filter((l) => l.confiancaTempo === ALTA)
+  const porConfianca = filtros.descartarConfiancaBaixa
+    ? coorte.filter((l) => l.confiancaTempo !== null && CONFIANCA_UTIL.includes(l.confiancaTempo))
     : coorte
 
   if (filtros.minimoDeResolucoesPorParticipante <= 1) return porConfianca
@@ -164,19 +174,6 @@ export function aplicarFiltros(
   return porConfianca.filter(
     (l) => (contagem.get(l.pseudonimo) ?? 0) >= filtros.minimoDeResolucoesPorParticipante,
   )
-}
-
-/**
- * Resoluções que o filtro de confiança ALTA descarta **por construção da linguagem**, e não por
- * defeito da solução: em C o motor lê a estrutura por forma e nunca declara ALTA (ver
- * `AnalisadorDeC` no backend).
- *
- * Existe para a tela poder dizer isso em vez de mostrar um zero mudo. Num piloto majoritariamente
- * em C, ligar o filtro esvazia a amostra inteira — e quem lê precisa saber que está vendo o teto
- * do instrumento, não a ausência de dado.
- */
-export function excluidasPeloTetoDeConfianca(coorte: ResolucaoDaCoorteDTO[]): number {
-  return coorte.filter((l) => nuncaAtingeConfiancaAlta(l.linguagem)).length
 }
 
 /** O instante da análise mais recente do recorte — a safra do dado que está na tela. */

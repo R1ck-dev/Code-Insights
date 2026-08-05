@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.projeto.codeinsights.application.identity.dto.AlterarVisibilidadePerfilInput;
 import com.projeto.codeinsights.application.identity.dto.AtualizarMeuPerfilInput;
+import com.projeto.codeinsights.application.identity.dto.ExcluirMinhaContaInput;
 import com.projeto.codeinsights.application.identity.dto.MeuPerfilDTO;
 import com.projeto.codeinsights.application.identity.dto.ReenviarAtivacaoInput;
 import com.projeto.codeinsights.application.identity.dto.RegistrarUsuarioInput;
@@ -26,6 +28,7 @@ import com.projeto.codeinsights.application.identity.usecase.AtivarContaUseCase;
 import com.projeto.codeinsights.application.identity.usecase.AtualizarMeuPerfilUseCase;
 import com.projeto.codeinsights.application.identity.usecase.BuscarMeuPerfilUseCase;
 import com.projeto.codeinsights.application.identity.usecase.BuscarUsuarioPublicoUseCase;
+import com.projeto.codeinsights.application.identity.usecase.ExcluirMinhaContaUseCase;
 import com.projeto.codeinsights.application.identity.usecase.ListarUsuariosPublicosUseCase;
 import com.projeto.codeinsights.application.identity.usecase.ReenviarAtivacaoUseCase;
 import com.projeto.codeinsights.application.identity.usecase.RegistrarUsuarioUseCase;
@@ -33,6 +36,7 @@ import com.projeto.codeinsights.domain.shared.Pagina;
 import com.projeto.codeinsights.infrastructure.config.security.CurrentUserId;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.AlterarVisibilidadePerfilRequest;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.AtualizarMeuPerfilRequest;
+import com.projeto.codeinsights.infrastructure.web.identity.dto.ExcluirMinhaContaRequest;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.ReenviarAtivacaoRequest;
 import com.projeto.codeinsights.infrastructure.web.identity.dto.RegistrarUsuarioRequest;
 
@@ -52,6 +56,7 @@ public class UsuarioController {
     private final AlterarVisibilidadePerfilUseCase alterarVisibilidadePerfilUseCase;
     private final BuscarUsuarioPublicoUseCase buscarUsuarioPublicoUseCase;
     private final ListarUsuariosPublicosUseCase listarUsuariosPublicosUseCase;
+    private final ExcluirMinhaContaUseCase excluirMinhaContaUseCase;
 
     /**
      * A resposta diz se ainda falta ativar a conta por e-mail. Sem provedor configurado a conta ja
@@ -91,6 +96,20 @@ public class UsuarioController {
     public ResponseEntity<Void> atualizarMeuPerfil(@CurrentUserId UUID usuarioId,
             @RequestBody @Valid AtualizarMeuPerfilRequest request) {
         atualizarMeuPerfilUseCase.execute(new AtualizarMeuPerfilInput(usuarioId, request.username()));
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Exclusao definitiva da propria conta. Leva junto desafios, resolucoes, metricas, snippets e o
+     * consentimento de pesquisa — nao ha anonimizacao nem copia.
+     * <p>
+     * Usa {@code DELETE} com corpo porque a confirmacao de senha precisa viajar fora da URL: em
+     * query string ela apareceria em log de servidor e historico de navegador.
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> excluirMinhaConta(@CurrentUserId UUID usuarioId,
+            @RequestBody @Valid ExcluirMinhaContaRequest request) {
+        excluirMinhaContaUseCase.execute(new ExcluirMinhaContaInput(usuarioId, request.senhaAtual()));
         return ResponseEntity.noContent().build();
     }
 

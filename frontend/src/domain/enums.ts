@@ -153,9 +153,12 @@ export const NOTA_LINGUAGENS_ANALISADAS = `O motor analisa ${rotulosDasLinguagen
  * Teto de confiança do motor por linguagem. Em C a estrutura do código é reconhecida por forma, sem
  * parse completo da linguagem, e o backend nunca grava `ALTA` — ver `AnalisadorDeC`.
  *
- * A tela precisa saber disto porque existe um filtro "só confiança ALTA": sem o aviso, um
- * pesquisador ligaria o filtro num piloto majoritariamente em C e leria um zero como "não há dado",
- * quando na verdade é "este corte exclui esta linguagem inteira, por construção".
+ * As telas de uma resolução só usam isto para dizer, ali mesmo, que aquele número não é medição —
+ * ver `notaDeCobertura`.
+ *
+ * O cruzamento da pesquisa **não** filtra mais por `ALTA`: o corte aceita `MEDIA`, senão descartaria
+ * a coorte inteira de um piloto em C. A decisão se apoia na acurácia medida, não em otimismo — em
+ * `MEDIA` o motor de C acerta 92,3% do Big O de tempo, acima dos 85,7% do Java na mesma faixa.
  */
 export const TETO_DE_CONFIANCA: Partial<Record<LinguagemProgramacao, NivelConfianca>> = {
   C: 'MEDIA',

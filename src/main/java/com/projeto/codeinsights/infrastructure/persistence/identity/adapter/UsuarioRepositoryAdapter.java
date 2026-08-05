@@ -41,6 +41,11 @@ public class UsuarioRepositoryAdapter implements UsuarioRepository {
     }
 
     @Override
+    public void remover(UUID id) {
+        springDataUsuarioRepository.deleteById(id);
+    }
+
+    @Override
     public Optional<Usuario> buscarPorEmail(String email) {
         return springDataUsuarioRepository.findByEmail(normalizarEmail(email)).map(usuarioMapper::toDomain);
     }

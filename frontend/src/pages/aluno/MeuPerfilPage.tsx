@@ -10,12 +10,19 @@
  */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Compass, ExternalLink, LogOut } from 'lucide-react'
+import { Compass, ExternalLink, LogOut, Trash2 } from 'lucide-react'
 import { useAuth } from '@/auth/useAuth'
 import { PageContainer } from '@/components/page/PageContainer'
 import { PageHeader } from '@/components/page/PageHeader'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogIconTile,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input, Mensagem } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -28,6 +35,7 @@ import { apiErrorMessage } from '@/lib/api'
 import {
   useAlterarVisibilidadePerfil,
   useAtualizarPerfil,
+  useExcluirMinhaConta,
 } from '@/features/identity/hooks'
 
 const USERNAME_RE = /^[A-Za-z0-9._-]+$/
@@ -60,6 +68,7 @@ export function MeuPerfilPage() {
   const alterarVisibilidade = useAlterarVisibilidadePerfil()
   const [username, setUsername] = useState(user?.username ?? '')
   const [erroServidor, setErroServidor] = useState<string | null>(null)
+  const [excluindo, setExcluindo] = useState(false)
 
   // O guard de rota garante um usuário autenticado nesta página.
   if (!user) return null
@@ -264,9 +273,123 @@ export function MeuPerfilPage() {
             <Button variant="secondary" icon={LogOut} onClick={sair} fullWidth>
               Sair da conta
             </Button>
+
+            <div className="flex flex-col gap-[9px] border-t border-line-soft pt-[13px]">
+              <p className="text-[12.5px] leading-[1.55] text-soft">
+                Excluir a conta apaga também seus desafios, resoluções, métricas, snippets e o
+                consentimento de pesquisa. Não há como desfazer.
+              </p>
+              <Button
+                variant="destructive"
+                icon={Trash2}
+                onClick={() => setExcluindo(true)}
+                fullWidth
+              >
+                Excluir minha conta
+              </Button>
+            </div>
           </Card>
         </div>
       </div>
+
+      <DialogoDeExclusao
+        aberto={excluindo}
+        onFechar={() => setExcluindo(false)}
+        username={user.username}
+      />
     </PageContainer>
+  )
+}
+
+/**
+ * Exclusão definitiva. Pede a senha em vez de um "tem certeza?": o JWT prova quem é, mas não prova
+ * quem está diante do teclado, e o ato não tem volta — não há anonimização nem cópia.
+ *
+ * O texto lista o que some junto porque ninguém associa "excluir conta" a "perder as métricas da
+ * pesquisa". Quem clica precisa saber o tamanho do que está apagando antes de digitar a senha.
+ */
+function DialogoDeExclusao({
+  aberto,
+  onFechar,
+  username,
+}: {
+  aberto: boolean
+  onFechar: () => void
+  username: string
+}) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+  const excluir = useExcluirMinhaConta()
+  const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+
+  function fechar(proximo: boolean) {
+    if (proximo) return
+    setSenha('')
+    setErro(null)
+    onFechar()
+  }
+
+  async function confirmar() {
+    try {
+      await excluir.mutateAsync(senha)
+      // logout antes de navegar: a rota de destino é pública, e um token de conta inexistente
+      // faria a próxima chamada autenticada devolver 401 numa tela que não sabe tratar isso.
+      logout()
+      navigate('/')
+      toast.success('Conta excluída. Seus dados foram removidos.')
+    } catch (err) {
+      setErro(apiErrorMessage(err, 'Não foi possível excluir a conta.'))
+    }
+  }
+
+  return (
+    <Dialog open={aberto} onOpenChange={fechar}>
+      <DialogContent width={440} className="gap-3.5 p-6">
+        <DialogIconTile icon={Trash2} variant="destructive" />
+        <div className="flex flex-col gap-[7px]">
+          <DialogTitle className="text-[18px]">Excluir a conta @{username}?</DialogTitle>
+          <DialogDescription>
+            Isto apaga definitivamente seus desafios, resoluções, métricas, snippets e o
+            consentimento de pesquisa. Não há como desfazer e não guardamos cópia.
+          </DialogDescription>
+        </div>
+
+        <div className="flex flex-col gap-[6px]">
+          <Label htmlFor="senha-exclusao">Confirme com sua senha</Label>
+          <Input
+            id="senha-exclusao"
+            type="password"
+            value={senha}
+            onChange={(e) => {
+              setSenha(e.target.value)
+              setErro(null)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && senha && !excluir.isPending) void confirmar()
+            }}
+            autoComplete="current-password"
+            disabled={excluir.isPending}
+            aria-invalid={erro ? true : undefined}
+            aria-describedby={erro ? 'senha-exclusao-erro' : undefined}
+          />
+          <Mensagem id="senha-exclusao" error={erro} />
+        </div>
+
+        <div className="mt-1 flex justify-end gap-2.5">
+          <Button variant="secondary" onClick={() => fechar(false)} disabled={excluir.isPending}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive-solid"
+            onClick={confirmar}
+            disabled={!senha || excluir.isPending}
+            loading={excluir.isPending}
+          >
+            Excluir definitivamente
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

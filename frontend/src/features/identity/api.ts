@@ -2,6 +2,7 @@ import { api } from '@/lib/api'
 import type {
   AlterarVisibilidadePerfilRequest,
   AtualizarMeuPerfilRequest,
+  ExcluirMinhaContaRequest,
   LoginRequest,
   MeuPerfilDTO,
   Pagina,
@@ -30,6 +31,10 @@ export const identityApi = {
 
   alterarVisibilidade: (body: AlterarVisibilidadePerfilRequest) =>
     api.patch<void>('/api/usuarios/me/visibilidade', body).then((r) => r.data),
+
+  // `data` dentro da config porque axios.delete não aceita corpo como 2º argumento.
+  excluirMinhaConta: (body: ExcluirMinhaContaRequest) =>
+    api.delete<void>('/api/usuarios/me', { data: body }).then((r) => r.data),
 
   esqueciSenha: (email: string) =>
     api.post<{ mensagem: string }>('/api/auth/esqueci-senha', { email }).then((r) => r.data),

@@ -57,6 +57,16 @@ export function useAlterarVisibilidadePerfil() {
   })
 }
 
+/**
+ * Sem `onSuccess` que invalide cache: depois de excluir não há conta para recarregar, e qualquer
+ * refetch dispararia 401. Quem chama faz logout e sai da área autenticada.
+ */
+export function useExcluirMinhaConta() {
+  return useMutation({
+    mutationFn: (senhaAtual: string) => identityApi.excluirMinhaConta({ senhaAtual }),
+  })
+}
+
 export function useEsqueciSenha() {
   return useMutation({ mutationFn: (email: string) => identityApi.esqueciSenha(email) })
 }

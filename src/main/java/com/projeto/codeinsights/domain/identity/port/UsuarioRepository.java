@@ -13,6 +13,17 @@ public interface UsuarioRepository {
 
     Optional<Usuario> buscarPorId(UUID id);
 
+    /**
+     * Apaga a conta e, <b>por cascata do schema</b>, tudo que pende dela: tokens de verificacao,
+     * desafios, resolucoes, resultados de metrica, snippets e o consentimento de pesquisa. Todas as
+     * chaves estrangeiras que apontam para {@code usuarios} sao {@code ON DELETE CASCADE} desde a
+     * V1, e o teste {@code ExcluirMinhaContaUseCaseTest} guarda essa expectativa.
+     * <p>
+     * E irreversivel e nao ha copia: a reprodutibilidade de uma analise depende do CSV exportado na
+     * data do corte, nao de manter a conta viva.
+     */
+    void remover(UUID id);
+
     Optional<Usuario> buscarPorEmail(String email);
 
     boolean existePorEmail(String email);

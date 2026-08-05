@@ -20,7 +20,6 @@ import {
   PISO_PARA_PROPORCAO,
   SEM_FILTRO,
   aplicarFiltros,
-  excluidasPeloTetoDeConfianca,
   medirRecorte,
   montarColunas,
   paraPontoCarta,
@@ -52,9 +51,9 @@ import type { ResolucaoDaCoorteDTO } from '@/types/api'
  * colunas trazem dois denominadores, e uma coluna sem classe nenhuma diz "sem analisador" em vez de
  * aparecer vazia, que se leria como "ninguém submeteu".
  *
- * A segunda assimetria é do filtro de confiança: C produz classe, mas nunca com confiança ALTA (o
- * motor lê a estrutura por forma). Ligar o corte "só ALTA" descarta a linguagem inteira, e a tela
- * diz isso em texto — um zero silencioso seria lido como ausência de dado.
+ * O corte de confiança aceita ALTA e MEDIA, e remove só BAIXA. A versão anterior era "só ALTA" e
+ * descartava a coorte inteira de um piloto em C, que nunca declara ALTA — o filtro removia a
+ * linguagem, não as medições ruins. Ver `CONFIANCA_UTIL` em features/pesquisa/cruzamento.ts.
  */
 
 export function CruzamentoPage() {
@@ -115,13 +114,7 @@ function Cruzamento({
 
   return (
     <div className="flex flex-col gap-[18px]">
-      <Sensibilidade
-        filtros={filtros}
-        onFiltrar={onFiltrar}
-        bruto={bruto}
-        recorte={recorte}
-        excluidasPeloTeto={excluidasPeloTetoDeConfianca(coorte)}
-      />
+      <Sensibilidade filtros={filtros} onFiltrar={onFiltrar} bruto={bruto} recorte={recorte} />
 
       <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-2">
         <Painel
@@ -159,26 +152,23 @@ function Sensibilidade({
   onFiltrar,
   bruto,
   recorte,
-  excluidasPeloTeto,
 }: {
   filtros: FiltrosDeSensibilidade
   onFiltrar: (filtros: FiltrosDeSensibilidade) => void
   bruto: { resolucoes: number; participantes: number }
   recorte: { resolucoes: number; participantes: number }
-  excluidasPeloTeto: number
 }) {
   const mudou = recorte.resolucoes !== bruto.resolucoes
-  const tetoMorde = filtros.somenteConfiancaAlta && excluidasPeloTeto > 0
 
   return (
     <Card className="flex flex-col gap-[15px] p-[18px]">
       <div className="flex flex-col gap-[13px] md:flex-row md:items-start md:gap-[28px]">
         <Interruptor
-          id="confianca-alta"
-          ligado={filtros.somenteConfiancaAlta}
-          onMudar={(v) => onFiltrar({ ...filtros, somenteConfiancaAlta: v })}
-          rotulo="Só confiança ALTA do motor"
-          nota={`O motor tem confiança alta onde entende bem, e entende melhor o código simples — este filtro seleciona na direção do próprio desfecho. ${NOTA_TETO_DE_CONFIANCA} Ligar este corte descarta a linguagem inteira.`}
+          id="descartar-confianca-baixa"
+          ligado={filtros.descartarConfiancaBaixa}
+          onMudar={(v) => onFiltrar({ ...filtros, descartarConfiancaBaixa: v })}
+          rotulo="Descartar confiança BAIXA do motor"
+          nota={`Mantém ALTA e MÉDIA, e tira só onde o motor declara que não entendeu o código. ${NOTA_TETO_DE_CONFIANCA} Aceitar MÉDIA é o que mantém C na amostra — e nessa faixa o motor de C acerta mais que o de Java.`}
         />
         <Interruptor
           id="minimo-por-participante"
@@ -190,21 +180,6 @@ function Sensibilidade({
           nota="Tira de cena quem submeteu uma vez só. Também tira a chance de o resultado descrever justamente quem persistiu."
         />
       </div>
-
-      {/*
-       * Sem esta linha, ligar o filtro num piloto majoritariamente em C mostraria uma tela vazia
-       * sem dizer por quê — e "0 resoluções" seria lido como ausência de dado, quando é o teto do
-       * instrumento excluindo uma linguagem inteira de propósito.
-       */}
-      {tetoMorde && (
-        <p className="rounded-ci border border-atencao-line bg-atencao-bg px-[13px] py-[9px] font-mono text-[11.5px] leading-[1.5] text-atencao-ink">
-          <strong className="font-semibold">
-            {pluralPt(excluidasPeloTeto, 'resolução saiu', 'resoluções saíram')} por causa da
-            linguagem, e não da solução.
-          </strong>{' '}
-          {NOTA_TETO_DE_CONFIANCA}
-        </p>
-      )}
 
       <p className="font-mono text-[11.5px] text-mid">
         {mudou ? (
@@ -419,8 +394,8 @@ function LimitesDoDado() {
           <strong className="font-medium text-ink">{NOTA_LINGUAGENS_ANALISADAS}</strong> Resolução em
           outra linguagem entra na coorte e no nível de autonomia, mas nunca ganha classe — coluna
           alta sem classe nenhuma é falta de instrumento, não ausência de trabalho.{' '}
-          {NOTA_TETO_DE_CONFIANCA} A classe de C entra neste cruzamento como qualquer outra; o que
-          ela não faz é sobreviver ao corte por confiança ALTA.
+          {NOTA_TETO_DE_CONFIANCA} A classe de C entra neste cruzamento como qualquer outra e
+          sobrevive ao corte de confiança, que aceita MÉDIA.
         </li>
       </ul>
     </Card>
