@@ -173,6 +173,120 @@
       "tempoMotor": "O(n)",
       "espacoGabarito": "O(1)",
       "nota": "A reducao por resto (a % b) e reconhecida na RECURSAO, espelhando o AnalisadorDeRecursao do lado Java -- mas este caso e a forma ITERATIVA, e a heuristica de laco nao tem regra de resto. Nao foi acrescentada de proposito: o lado Java tambem nao tem, e uma regra so em C faria o mesmo algoritmo mudar de classe conforme a linguagem, quebrando a comparacao entre participantes que e o objetivo do eixo de complexidade."
+    },
+    {
+      "arquivo": "aluno/contar-vogais.c",
+      "nome": "contar vogais",
+      "origem": "sintetico — estilo de aluno iniciante: strlen guardado numa variavel ANTES do laco, contraste direto com o caso adversarial que chama strlen na condicao",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/inverter-vetor.c",
+      "nome": "inverter vetor no lugar",
+      "origem": "sintetico — estilo de aluno iniciante: dois indices caminhando um para o outro; o laco anda n/2 vezes, que continua linear",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/media-e-desvio.c",
+      "nome": "media e desvio com dois lacos",
+      "origem": "sintetico — estilo de aluno iniciante: dois lacos SEQUENCIAIS sobre a mesma entrada (um para somar, outro para acumular a diferenca); nao pode virar O(n^2)",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/fatorial-iterativo.c",
+      "nome": "fatorial iterativo",
+      "origem": "sintetico — contraste deliberado com fatorial-recursivo.c: mesmo resultado, mesmo custo de tempo, mas sem pilha de recursao (espaco O(1) em vez de O(n))",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/fibonacci-iterativo.c",
+      "nome": "fibonacci iterativo",
+      "origem": "sintetico — contraste deliberado com fibonacci-ingenuo.c: o mesmo problema cai de O(2^n) para O(n) ao trocar recursao por dois acumuladores; e o par que mostra amadurecimento algoritmico do aluno",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/contar-digitos.c",
+      "nome": "contar digitos com vetor de dez",
+      "origem": "sintetico — estilo de aluno iniciante: laco sobre a entrada mais um laco de limite LITERAL (dez digitos) que nao pode ser confundido com dependencia da entrada",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/soma-de-matriz.c",
+      "nome": "soma de matriz lida",
+      "origem": "sintetico — estilo de aluno iniciante: matriz de tamanho FIXO percorrida por dois lacos dependentes da entrada; quadratico no tempo, constante no espaco",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "aluno/ordenacao-bolha-com-flag.c",
+      "nome": "ordenacao bolha com flag de troca",
+      "origem": "sintetico — estilo de aluno iniciante: bolha com flag de parada antecipada. O melhor caso cai para O(n), mas a analise de PIOR caso, que e a convencao do motor, continua quadratica",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/goto-para-sair-de-laco-aninhado.c",
+      "nome": "goto para sair de laco aninhado",
+      "origem": "idioma corrente de C (Kernighan e Ritchie, The C Programming Language, sec. 3.8 — goto e rotulos, cujo exemplo canonico e justamente a saida de lacos aninhados)",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/vetor-de-tamanho-variavel.c",
+      "nome": "vetor de tamanho variavel",
+      "origem": "ISO/IEC 9899:1999, 6.7.5.2 — arrays de tamanho variavel (VLA); alocacao na pilha cujo tamanho so se conhece em execucao",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/calloc-em-vez-de-malloc.c",
+      "nome": "calloc em vez de malloc",
+      "origem": "ISO/IEC 9899:1999, 7.20.3.1 — calloc zera a memoria devolvida, ao contrario de malloc (7.20.3.3). Sem nenhum laco no programa, o custo de tempo vem so da alocacao",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "adversarial/deslocamento-de-bits.c",
+      "nome": "laco por deslocamento de bits",
+      "origem": "Warren, Hacker's Delight, cap. 5 — contagem de bits; o laco divide por dois a cada volta usando >>= em vez de /=",
+      "tempoGabarito": "O(log n)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "adversarial/recursao-mutua-par-impar.c",
+      "nome": "recursao mutua par e impar",
+      "origem": "exemplo classico de recursao mutua (Abelson e Sussman, SICP, exercicio 1.15 e variantes): duas funcoes que se chamam alternadamente, sem auto-chamada direta",
+      "tempoGabarito": "O(n)",
+      "espacoGabarito": "O(n)",
+      "tempoMotor": "?",
+      "nota": "Recursao MUTUA: ehPar chama ehImpar e vice-versa, sem auto-chamada direta. O motor conta auto-chamadas por caminho e nao monta o ciclo do grafo de chamadas, entao nao encontra recorrencia para resolver. Responde ? em vez de chutar -- a mesma escolha do lado Java, onde a limitacao ja estava documentada. Confessar ignorancia e preferivel a inventar uma classe: o espaco, esse sim, sai O(n) porque a profundidade da pilha e visivel sem resolver a recorrencia."
+    },
+    {
+      "arquivo": "canonico/ordenacao-selecao.c",
+      "nome": "ordenacao por selecao",
+      "origem": "Cormen et al., Introduction to Algorithms, exercicio 2.2-2 (selection sort); Knuth, TAOCP vol. 3, sec. 5.2.3",
+      "tempoGabarito": "O(n^2)",
+      "espacoGabarito": "O(1)"
+    },
+    {
+      "arquivo": "canonico/torre-de-hanoi.c",
+      "nome": "torre de hanoi",
+      "origem": "Graham, Knuth e Patashnik, Concrete Mathematics, cap. 1.1 — a recorrencia T(n) = 2T(n-1) + 1, cuja solucao e 2^n - 1",
+      "tempoGabarito": "O(2^n)",
+      "espacoGabarito": "O(n)"
+    },
+    {
+      "arquivo": "canonico/quick-sort.c",
+      "nome": "quick sort",
+      "origem": "Hoare, \"Quicksort\", The Computer Journal 5(1), 1962; Cormen et al., cap. 7 — caso medio Theta(n log n), pior caso Theta(n^2)",
+      "tempoGabarito": "O(n log n)",
+      "espacoGabarito": "O(log n)"
     }
   ]
 }

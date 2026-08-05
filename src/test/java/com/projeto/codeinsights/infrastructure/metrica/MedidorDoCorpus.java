@@ -45,8 +45,13 @@ final class MedidorDoCorpus {
     }
 
     static Medicao medir(CasoDeCorpus caso) {
+        return medir(caso.codigo(), caso.linguagem());
+    }
+
+    /** Mede codigo avulso — usado pelos pares casados de {@link EquivalenciaEntreLinguagensTest}. */
+    static Medicao medir(String codigo, LinguagemProgramacao linguagem) {
         Map<TipoMetrica, ResultadoMetrica> porTipo = new EnumMap<>(TipoMetrica.class);
-        analisadorDe(caso.linguagem()).analisar(resolucaoDe(caso))
+        analisadorDe(linguagem).analisar(resolucaoDe(codigo, linguagem))
                 .forEach(resultado -> porTipo.put(resultado.getTipo(), resultado));
 
         ResultadoMetrica tempo = porTipo.get(TipoMetrica.BIG_O_TEMPO);
@@ -58,8 +63,8 @@ final class MedidorDoCorpus {
         return linguagem == LinguagemProgramacao.C ? C : JAVA;
     }
 
-    private static Resolucao resolucaoDe(CasoDeCorpus caso) {
-        return new Resolucao(UUID.randomUUID(), AUTOR, DESAFIO, caso.codigo(), caso.linguagem(), 1, null);
+    private static Resolucao resolucaoDe(String codigo, LinguagemProgramacao linguagem) {
+        return new Resolucao(UUID.randomUUID(), AUTOR, DESAFIO, codigo, linguagem, 1, null);
     }
 
     private static String rotuloDe(ResultadoMetrica resultado) {

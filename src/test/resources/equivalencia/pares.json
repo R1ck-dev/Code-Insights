@@ -1,0 +1,143 @@
+{
+  "pares": [
+    {
+      "base": "soma-de-vetor",
+      "nome": "soma de vetor",
+      "regra": "laco unico sobre a entrada",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "lacos-aninhados",
+      "nome": "lacos aninhados",
+      "regra": "produto de dois lacos sobre a mesma entrada",
+      "tempo": "O(n^2)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "laco-triangular",
+      "nome": "laco triangular",
+      "regra": "laco interno que comeca em i+1 continua quadratico",
+      "tempo": "O(n^2)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "laco-logaritmico",
+      "nome": "laco logaritmico",
+      "regra": "passo multiplicativo",
+      "tempo": "O(log n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "laco-de-limite-constante",
+      "nome": "laco de limite constante",
+      "regra": "limite literal nao depende da entrada",
+      "tempo": "O(1)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "sequencia-de-lacos",
+      "nome": "sequencia de lacos",
+      "regra": "lacos em sequencia somam, nao multiplicam",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "recursao-linear",
+      "nome": "recursao linear",
+      "regra": "T(n) = T(n-1) + O(1), com pilha de profundidade n",
+      "tempo": "O(n)",
+      "espaco": "O(n)"
+    },
+    {
+      "base": "recursao-binaria",
+      "nome": "recursao binaria",
+      "regra": "duas auto-chamadas no mesmo caminho",
+      "tempo": "O(2^n)",
+      "espaco": "O(n)"
+    },
+    {
+      "base": "reducao-pela-metade",
+      "nome": "reducao pela metade",
+      "regra": "T(n) = T(n/2) + O(1) pelo Teorema Mestre",
+      "tempo": "O(log n)",
+      "espaco": "O(log n)"
+    },
+    {
+      "base": "alocacao-linear",
+      "nome": "alocacao linear",
+      "regra": "vetor de n posicoes; new int[n] contra malloc(n * sizeof(int))",
+      "tempo": "O(n)",
+      "espaco": "O(n)"
+    },
+    {
+      "base": "alocacao-quadratica",
+      "nome": "alocacao quadratica",
+      "regra": "grade n x n; new int[n][n] contra vetor LINEARIZADO malloc(n * n * sizeof(int))",
+      "tempo": "O(n^2)",
+      "espaco": "O(n^2)"
+    },
+    {
+      "base": "chamada-encadeada",
+      "nome": "chamada encadeada",
+      "regra": "funcao linear chamada dentro de um laco: o custo atravessa a fronteira da funcao",
+      "tempo": "O(n^2)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "laco-decrescente",
+      "nome": "laco decrescente",
+      "regra": "contagem regressiva ate zero",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "faca-enquanto",
+      "nome": "faca enquanto",
+      "regra": "do/while conta como laco igual ao while",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "condicional-no-laco",
+      "nome": "condicional no laco",
+      "regra": "ramificacao dentro do corpo nao muda a classe",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "recursao-ramificada-por-switch",
+      "nome": "recursao ramificada por switch",
+      "regra": "auto-chamadas em cases diferentes precisam somar nas duas linguagens",
+      "tempo": "O(2^n)",
+      "espaco": "O(n)"
+    },
+    {
+      "base": "ordenacao-da-biblioteca",
+      "nome": "ordenacao da biblioteca",
+      "regra": "Arrays.sort contra qsort: a tabela de custo de biblioteca precisa concordar. Espaco nao declarado -- o auxiliar de uma ordenacao de biblioteca depende da implementacao; exige-se apenas que as duas linguagens digam a MESMA coisa (ambas dizem O(1)).",
+      "tempo": "O(n log n)",
+      "espaco": null
+    }
+  ],
+  "divergencias": [
+    {
+      "base": "memoizacao",
+      "nome": "memoizacao por vetor",
+      "motivo": "Java reconhece a guarda de memoizacao e passa a contar estados distintos; C nao. A deteccao NAO foi portada de proposito: em C o cache costuma ser vetor linearizado e contar dimensoes por colchetes daria 1 estado onde ha n^2, fazendo o motor SUBESTIMAR. Preferiu-se errar para cima. Esta e a maior assimetria conhecida entre as duas linguagens.",
+      "tempoJava": "O(n)",
+      "tempoC": "O(2^n)",
+      "espacoJava": "O(n)",
+      "espacoC": "O(n)"
+    },
+    {
+      "base": "alocacao-dentro-do-laco",
+      "nome": "alocacao dentro do laco",
+      "motivo": "Diferenca REAL das linguagens, e nao defeito do motor: new int[n] em Java zera o vetor e custa O(n), enquanto malloc em C entrega memoria nao inicializada em O(1) (calloc, esse sim, custa O(n)). O mesmo algoritmo escrito nas duas linguagens tem custo de tempo genuinamente diferente, e o motor esta certo nas duas.",
+      "tempoJava": "O(n^2)",
+      "tempoC": "O(n)",
+      "espacoJava": "O(n)",
+      "espacoC": "O(n)"
+    }
+  ]
+}
