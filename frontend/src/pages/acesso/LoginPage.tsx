@@ -18,12 +18,29 @@ import { apiErrorMessage } from '@/lib/api'
 /**
  * Contas semeadas no banco para a fase de desenvolvimento. O bloco de "acesso rápido"
  * que as usa só é renderizado em dev (`import.meta.env.DEV`) — não vai para o build de produção.
+ *
+ * Precisa espelhar `scripts/seed/personas.mjs`: estas credenciais são as que o `scripts/semear.ps1`
+ * cria. Se o elenco do seed mudar, este bloco vira um atalho para uma tela de erro.
  */
-const SENHA_TESTE = 'senha12345'
+const SENHA_TESTE = 'Senha@2026'
 const CONTAS_TESTE = [
-  { nome: 'Ana Souza', email: 'ana@codeinsights.dev', descricao: 'Aluna · portfólio público completo' },
-  { nome: 'Bruno Lima', email: 'bruno@codeinsights.dev', descricao: 'Aluno · portfólio público enxuto' },
-  { nome: 'Carla Mendes', email: 'carla@codeinsights.dev', descricao: 'Aluna · perfil privado' },
+  {
+    nome: 'Henrique Marangoni',
+    email: 'henriquemarangoni@codeinsights.dev',
+    descricao: 'Aluno · portfólio público completo',
+  },
+  {
+    nome: 'Bruno Antunes',
+    email: 'brunoantunes@codeinsights.dev',
+    descricao: 'Aluno · perfil privado',
+  },
+  {
+    nome: 'Pesquisadora IC',
+    email: 'pesquisa@codeinsights.dev',
+    // O aviso de dashboard vazio não é redundante: o dashboard é o portfólio PESSOAL de quem
+    // entrou, e a pesquisadora não submete nada. Sem isso, cair nela parece banco não semeado.
+    descricao: 'Pesquisadora · só a aba Pesquisa (dashboard vazio)',
+  },
 ]
 
 export function LoginPage() {
