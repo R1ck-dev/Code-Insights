@@ -48,11 +48,18 @@ CLAUDE.md
 secrets/
 
 ### Documentação interna IFSP (não versionar) ###
-docs/
+# A regra exclui docs/ por padrão, mas dois arquivos são de repositório, não de
+# entendimento: o diagrama de arquitetura e a coleção do Postman. Eles já estavam
+# rastreados; as exceções abaixo só tornam a intenção explícita.
+docs/*
+!docs/arquitetura-e-diagramas-v2.md
+!docs/postman/
 
 ### OS ###
 .DS_Store
 Thumbs.db
 
 ### Arquivos PDF ###
+# Exceção: o PDF do projeto é citado pelo README e pelo CLAUDE.md, então é versionado.
 *.pdf
+!/Modelo de Projeto - CodeInsights.pdf
