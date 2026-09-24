@@ -1,0 +1,186 @@
+{
+  "descricao": "Segunda revisao adversarial do motor de Java (F1.2, 24/09/2026). Cada caso afirma o GABARITO. 'aberto: true' = o motor hoje erra (teste fora do build, tag defeito-aberto); 'aberto: false' = controle que o motor acerta hoje, e que a correcao nao pode quebrar. Corrigir um defeito = trocar os seus 'aberto' para false.",
+  "casos": [
+    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "esq.altura() e recursao no mesmo metodo por outro receptor; ehAutoChamada so aceita chamada sem escopo ou com this" },
+    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "arvore degenerada: a pilha desce n quadros; o motor responde O(1) com ALTA" },
+    { "defeito": "C-3", "arquivo": "c3-altura-estatica.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
+      "nota": "controle: a mesma altura escrita como metodo estatico" },
+    { "defeito": "C-3", "arquivo": "c3-fib-qualificado.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+      "nota": "Main.fib(n - 1): recursao qualificada pelo nome da classe" },
+    { "defeito": "C-3", "arquivo": "r1-abb-por-receptor.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "n insercoes numa ABB degenerada (entrada ordenada), insere por esq.insere(x)" },
+
+    { "defeito": "C-4", "arquivo": "c4-receptor-this.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "this.nomes.contains perde o tipo ArrayList e vira chamada externa O(1)" },
+    { "defeito": "C-4", "arquivo": "c4-receptor-nome.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
+      "nota": "controle: o mesmo codigo sem this." },
+    { "defeito": "C-4", "arquivo": "c4-receptor-chamada.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "adj.get(u).contains(v): receptor que e resultado de chamada" },
+
+    { "defeito": "C-7", "arquivo": "c7-leitor-rapido-estatico.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "next() so le linha nova quando o tokenizador (campo) esvazia: o custo e amortizado entre as chamadas" },
+
+    { "defeito": "C-8", "arquivo": "c8-metodo-morto.java", "metrica": "espaco", "gabarito": "O(1)", "aberto": true,
+      "nota": "fibRecursivo nunca e chamado; o espaco varre o arquivo inteiro e conta a pilha dele" },
+    { "defeito": "C-8", "arquivo": "c8-metodo-morto.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
+      "nota": "controle: o tempo parte do main e ja ignora o metodo morto" },
+    { "defeito": "C-8", "arquivo": "c8-raiz-morta-sem-main.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "sem main, o privado que ninguem chama vira raiz e domina o custo" },
+
+    { "defeito": "C-9", "arquivo": "c9-sem-classe-com-import.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "codigo sem classe com import: o embrulho poe o import dentro da classe e nada parseia" },
+    { "defeito": "C-9", "arquivo": "c9-sem-classe-sem-import.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
+      "nota": "controle: o mesmo codigo sem a linha de import" },
+
+    { "defeito": "L-2", "arquivo": "l2-fatoracao-um-laco.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "uma divisao num ramo do corpo declara o laco logaritmico; com n primo, divisor sobe ate n" },
+
+    { "defeito": "L-3", "arquivo": "l3-mascara-de-bits.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+      "nota": "limite (1 << n) nunca e examinado: 2^n mascaras contadas como n voltas" },
+    { "defeito": "L-3", "arquivo": "l3-subconjuntos-recursivo.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
+      "nota": "controle: os mesmos subconjuntos por recursao" },
+    { "defeito": "L-3", "arquivo": "l3-grade-achatada.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "k < n * n com passo unitario: n^2 voltas contadas como n" },
+
+    { "defeito": "L-4", "arquivo": "l4-reinicia-varredura.java", "metrica": "tempo", "gabarito": "O(n^3)", "aberto": true,
+      "nota": "i = -1 depois de cada troca recomeca a varredura: Theta(n^2) trocas, O(n) cada" },
+    { "defeito": "L-4", "arquivo": "l4-gnome-sort.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "gnome sort: i-- no corpo, ignorado porque existe um i++" },
+
+    { "defeito": "L-6", "arquivo": "l6-campo-minado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "for (di = -1; di <= 1; di++): -1 e UnaryExpr, nao literal inteiro; 9 vizinhos viram n^2" },
+    { "defeito": "L-6", "arquivo": "l6-frequencia-por-letra.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "for (char c = 'a'; c <= 'z'; c++): 26 voltas lidas como n" },
+
+    { "defeito": "L-7", "arquivo": "l7-vogais-foreach.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "for-each sobre vetor literal de 5 posicoes contado como n voltas" },
+
+    { "defeito": "L-8", "arquivo": "l8-remove-e-break.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "o ramo que termina em break executa uma vez so, mas e multiplicado pelo laco" },
+
+    { "defeito": "L-9", "arquivo": "l9-fenwick.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "i += i & -i tratado como passo unitario" },
+    { "defeito": "L-9", "arquivo": "l9-crivo-harmonico.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "j += i: soma harmonica n/1 + n/2 + ... = n log n" },
+
+    { "defeito": "L-10", "arquivo": "l10-mdc-iterativo.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": true,
+      "nota": "Euclides iterativo (Lame); a versao recursiva ja sai O(log n)" },
+    { "defeito": "L-10", "arquivo": "l10-descida-de-heap.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": true,
+      "nota": "i = filho com filho = 2 * i + 1: progressao geometrica sem operador multiplicativo no topo" },
+
+    { "defeito": "R-2", "arquivo": "r2-troco-foreach.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+      "nota": "for-each sobre as moedas (opcoes) lido como recursao estrutural sobre filhos" },
+    { "defeito": "R-2", "arquivo": "r2-troco-for-indexado.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
+      "nota": "controle: o mesmo troco com for indexado" },
+    { "defeito": "R-2", "arquivo": "r2-soma-arvore-for-indexado.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "for indexado sobre os filhos lido como backtracking; cada no e visitado uma vez" },
+
+    { "defeito": "R-5", "arquivo": "r5-subsequencias-substring.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+      "nota": "s.substring(1) passado a duas chamadas: ESTRUTURAL ignora o numero de chamadas" },
+
+    { "defeito": "R-6", "arquivo": "r6-memo-hashmap-chave-composta.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "Map com chave \"lin,col\" guarda n*m estados, mas conta 1 dimensao" },
+    { "defeito": "R-6", "arquivo": "r6-memo-matriz.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
+      "nota": "controle: o mesmo memo em long[][]" },
+    { "defeito": "R-6", "arquivo": "e4-memo-n-por-2.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "long[n][2]: 2n estados; o grau vem do tipo declarado (2), e nao da alocacao (1)" },
+    { "defeito": "R-6", "arquivo": "e4-memo-n-por-2.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "a mesma tabela 2n eleva a pilha limitada pelos estados a n^2" },
+
+    { "defeito": "R-7", "arquivo": "r7-merge-aux-inteiro.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "new int[v.length] em cada intercalacao: custo fixo em N por chamada, n-1 chamadas" },
+
+    { "defeito": "R-8", "arquivo": "r8-reducao-mista.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+      "nota": "T(n) = T(n-1) + T(n/2): superpolinomial, arredondado para a classe acima; o motor diz O(n)" },
+    { "defeito": "R-8", "arquivo": "r8-reducao-mista.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "a cadeia n, n-1, ..., 1 tem profundidade n; o motor diz O(log n)" },
+
+    { "defeito": "R-9", "arquivo": "r9-fib-calcula-se-ausente.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "if (memo[n] == 0) memo[n] = ...; return memo[n];: memo sem guarda que retorna" },
+    { "defeito": "R-9", "arquivo": "r9-dfs-checa-antes.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "DFS em matriz de adjacencia que testa !visitado antes de chamar" },
+    { "defeito": "R-9", "arquivo": "e8-ilhas-testa-antes.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "inundacao que testa antes de chamar: cada celula uma vez" },
+    { "defeito": "R-9", "arquivo": "e8-ilhas-testa-antes.java", "metrica": "espaco", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "ilha em serpentina: a pilha desce ate n*m quadros" },
+
+    { "defeito": "R-10", "arquivo": "r10-contar-ilhas.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "o custo total da inundacao (n*m) e cobrado por chamada e multiplicado pelo laco que chama" },
+
+    { "defeito": "R-11", "arquivo": "r11-busca-binaria-sem-else.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": true,
+      "nota": "dois if exclusivos (v[meio] < x, v[meio] > x) sem else somam as chamadas" },
+
+    { "defeito": "R-12", "arquivo": "r12-segment-tree.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "consulta em segment tree e O(log n): as guardas de intervalo podam a arvore de recursao" },
+
+    { "defeito": "R-13", "arquivo": "r13-soma-indice-crescente.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "soma(v, i + 1) ate v.length: reducao por indice crescente nao reconhecida, responde ?" },
+    { "defeito": "R-13", "arquivo": "r13-soma-indice-decrescente.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
+      "nota": "controle: a mesma soma com n - 1" },
+
+    { "defeito": "E-2", "arquivo": "e2-bfs-fila-de-pares.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "Queue<int[]> com pares de tamanho 2: o int[] do tipo conta como mais uma dimensao" },
+    { "defeito": "E-2", "arquivo": "e2-bfs-fila-de-inteiros.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": false,
+      "nota": "controle: a mesma BFS com Queue<Integer> e dist[]" },
+
+    { "defeito": "E-3", "arquivo": "e3-constante-nomeada.java", "metrica": "espaco", "gabarito": "O(1)", "aberto": true,
+      "nota": "new int[ALFABETO] com static final int ALFABETO = 26" },
+    { "defeito": "E-3", "arquivo": "e3-literal.java", "metrica": "espaco", "gabarito": "O(1)", "aberto": false,
+      "nota": "controle: new int[26]" },
+
+    { "defeito": "E-5", "arquivo": "e5-fizzbuzz.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "saida += \"Fizz\" numa String recriada a cada volta, que nunca passa de 8 caracteres" },
+    { "defeito": "E-5", "arquivo": "e5-fizzbuzz.java", "metrica": "espaco", "gabarito": "O(1)", "aberto": true,
+      "nota": "a mesma String recriada nao cresce com a entrada" },
+
+    { "defeito": "E-6", "arquivo": "e6-inverte-substring.java", "metrica": "espaco", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "cada quadro guarda sua copia de tamanho n-k (substring copia); os n quadros vivem juntos" },
+
+    { "defeito": "E-7", "arquivo": "e7-collect.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "collect(Collectors.toList()) cria uma lista nova de ate n elementos" },
+
+    { "defeito": "E-13", "arquivo": "e13-interface.java", "metrica": "ciclomatica", "gabarito": "8", "aberto": true,
+      "nota": "7 corpos executaveis + 1 decisao; metodo abstrato de interface nao tem grafo de controle" },
+
+    { "defeito": "T-1", "arquivo": "t1-treeset-de-copia.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "new TreeSet<>(lista) insere elemento a elemento; construtor de copia custa O(1) para o motor" },
+    { "defeito": "T-1", "arquivo": "t1-hashset-de-copia-por-consulta.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "new HashSet<>(numeros) dentro do laco de consultas copia a lista inteira a cada consulta" },
+
+    { "defeito": "T-2", "arquivo": "t2-treemap-merge.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "TreeMap.merge fora da tabela de um tipo conhecido vale O(1) com ALTA" },
+    { "defeito": "T-2", "arquivo": "t2-lastindexof.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "String.lastIndexOf fora da tabela TEXTO" },
+
+    { "defeito": "T-6", "arquivo": "t6-vogais-literal.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "\"aeiouAEIOU\".indexOf(c): receptor literal de 10 caracteres cobrado como String de tamanho n" },
+    { "defeito": "T-6", "arquivo": "t6-comandos-equals.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "comando.equals(\"empilha\"): comparar com literal e O(1)" },
+    { "defeito": "T-6", "arquivo": "t6-comandos-switch.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
+      "nota": "controle: os mesmos comandos com switch" },
+
+    { "defeito": "T-7", "arquivo": "t7-pilha-arraylist.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "pilha.remove(pilha.size() - 1) remove o ultimo: O(1), cobrado pelo nome como O(n)" },
+    { "defeito": "T-7", "arquivo": "t7-fila-linkedlist.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "LinkedList.remove() sem argumento e removeFirst(), O(1)" },
+
+    { "defeito": "T-8", "arquivo": "t8-tres-soma.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "Arrays.asList(a, b, c) embrulha 3 elementos em O(1); cobrado O(n), iguala dois ponteiros a forca bruta" },
+
+    { "defeito": "T-11", "arquivo": "t11-println-builder.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "println(sb) chama toString() e copia o buffer a cada volta" },
+
+    { "defeito": "T-12", "arquivo": "t12-var.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "var resultado = \"\": o tipo registrado e \"var\", e a concatenacao some" },
+    { "defeito": "T-12", "arquivo": "t12-heap-no-construtor.java", "metrica": "tempo", "gabarito": "O(n log n)", "aberto": true,
+      "nota": "heap = new PriorityQueue<>() no construtor: so o tipo da declaracao (Queue) e lido" },
+
+    { "defeito": "T-13", "arquivo": "t13-acumulo-ternario.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "saida = cond ? ... : saida + x: acumulo com ternario no topo nao e reconhecido" },
+
+    { "defeito": "T-14", "arquivo": "t14-join-em-laco.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "String.join fora da tabela: chamada estatica em String vira externa O(1)" }
+  ]
+}
