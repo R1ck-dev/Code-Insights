@@ -1,22 +1,22 @@
 {
   "descricao": "Segunda revisao adversarial do motor de Java (F1.2, 24/09/2026). Cada caso afirma o GABARITO. 'aberto: true' = o motor hoje erra (teste fora do build, tag defeito-aberto); 'aberto: false' = controle que o motor acerta hoje, e que a correcao nao pode quebrar. Corrigir um defeito = trocar os seus 'aberto' para false.",
   "casos": [
-    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "esq.altura() e recursao no mesmo metodo por outro receptor; ehAutoChamada so aceita chamada sem escopo ou com this" },
-    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+    { "defeito": "C-3", "arquivo": "c3-altura-por-receptor.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": false,
       "nota": "arvore degenerada: a pilha desce n quadros; o motor responde O(1) com ALTA" },
     { "defeito": "C-3", "arquivo": "c3-altura-estatica.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "controle: a mesma altura escrita como metodo estatico" },
-    { "defeito": "C-3", "arquivo": "c3-fib-qualificado.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
+    { "defeito": "C-3", "arquivo": "c3-fib-qualificado.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
       "nota": "Main.fib(n - 1): recursao qualificada pelo nome da classe" },
-    { "defeito": "C-3", "arquivo": "r1-abb-por-receptor.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-3", "arquivo": "r1-abb-por-receptor.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "n insercoes numa ABB degenerada (entrada ordenada), insere por esq.insere(x)" },
 
-    { "defeito": "C-4", "arquivo": "c4-receptor-this.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-4", "arquivo": "c4-receptor-this.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "this.nomes.contains perde o tipo ArrayList e vira chamada externa O(1)" },
     { "defeito": "C-4", "arquivo": "c4-receptor-nome.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "controle: o mesmo codigo sem this." },
-    { "defeito": "C-4", "arquivo": "c4-receptor-chamada.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-4", "arquivo": "c4-receptor-chamada.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "adj.get(u).contains(v): receptor que e resultado de chamada" },
 
     { "defeito": "C-7", "arquivo": "c7-leitor-rapido-estatico.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
@@ -76,6 +76,8 @@
       "nota": "controle: o mesmo troco com for indexado" },
     { "defeito": "R-2", "arquivo": "r2-soma-arvore-for-indexado.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
       "nota": "for indexado sobre os filhos lido como backtracking; cada no e visitado uma vez" },
+    { "defeito": "R-2", "arquivo": "r2-soma-arvore-por-receptor-indexado.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+      "nota": "achado em 01/10 ao corrigir C-3: a mesma soma, com o receptor em vez do argumento. Antes da resolucao por receptor filhos.get(i).soma() nem era recursao e O(n) saia certo por acidente; agora a recursao e reconhecida e cai no mesmo R-2 da forma por argumento" },
 
     { "defeito": "R-5", "arquivo": "r5-subsequencias-substring.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
       "nota": "s.substring(1) passado a duas chamadas: ESTRUTURAL ignora o numero de chamadas" },
@@ -181,6 +183,9 @@
       "nota": "saida = cond ? ... : saida + x: acumulo com ternario no topo nao e reconhecido" },
 
     { "defeito": "T-14", "arquivo": "t14-join-em-laco.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
-      "nota": "String.join fora da tabela: chamada estatica em String vira externa O(1)" }
+      "nota": "String.join fora da tabela: chamada estatica em String vira externa O(1)" },
+
+    { "defeito": "D6", "arquivo": "d6-recursao-mutua-campo-homonimo.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,
+      "nota": "achado em 01/10 ao corrigir C-3/C-4: dois campos 'outro' de tipos diferentes em classes diferentes; a tabela de tipos e plana e o ultimo vence, entao outro.ehImpar() nao resolve e a recursao mutua some. Com campos de nomes distintos o motor responde O(n)" }
   ]
 }

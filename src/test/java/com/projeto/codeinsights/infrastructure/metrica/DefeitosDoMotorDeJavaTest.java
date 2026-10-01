@@ -56,7 +56,6 @@ class DefeitosDoMotorDeJavaTest {
          * caia em "chamada externa desconhecida, assumida O(1)" e o bubble sort sumia do custo.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("chamada qualificada a um metodo do proprio arquivo entra no custo")
         void chamadaQualificadaNaoViraConstante() {
             assertThat(tempo("""
@@ -78,7 +77,6 @@ class DefeitosDoMotorDeJavaTest {
         }
 
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("chamada estatica qualificada pelo nome da classe entra no custo")
         void chamadaEstaticaQualificadaNaoViraConstante() {
             assertThat(tempo("""
@@ -111,7 +109,6 @@ class DefeitosDoMotorDeJavaTest {
          * algoritmo mudava de classe conforme o aluno escreveu ou nao um {@code main}.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("ter ou nao um main nao muda a classe do mesmo algoritmo")
         void presencaDoMainNaoMudaAClasse() {
             String semMain = ORDENADOR;
