@@ -191,6 +191,14 @@ Swagger UI: `http://localhost:8080/swagger-ui.html`.
   (`feat`, `fix`, `chore`, `docs`, `refactor`, `perf`, `test`).
 - **Nunca** adicione trailer `Co-Authored-By` (nem qualquer co-autor automático) — regra global do usuário.
 
+## Fechamento de etapas do plano
+
+Toda tarefa do plano da reta final (`docs/ifsp-documentacao/plano-metas-7-8.md`: F1.1, F1.2, F2.0…)
+fecha com a skill de projeto **`resumo-de-etapa`**, por iniciativa própria, logo que o trabalho da
+tarefa termina: um `RESUMO-<tarefa>.md` curto e factual na pasta de material da etapa em
+`docs/notas-tecnicas/`, e uma nota didática no vault (via `/documentar` + `/explicar`). O resumo
+registra; a nota explica — nunca a mesma explicação nos dois.
+
 ## Referências
 
 - Visão e metodologia: [`Modelo de Projeto - CodeInsights.pdf`](Modelo%20de%20Projeto%20-%20CodeInsights.pdf).
