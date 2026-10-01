@@ -1,9 +1,6 @@
 package com.projeto.codeinsights.infrastructure.metrica.custo;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,15 +42,14 @@ import com.github.javaparser.ast.stmt.WhileStmt;
  */
 public final class AvaliadorDeCusto {
 
+    private final ResolvedorDeChamadas resolvedor;
     private final TiposDeVariavel tipos;
-    private final Map<String, MethodDeclaration> metodos = new HashMap<>();
-    private final Map<String, CustoAvaliado> memo = new HashMap<>();
-    private final Deque<String> emAvaliacao = new ArrayDeque<>();
+    private final Map<MethodDeclaration, CustoAvaliado> memo = new IdentityHashMap<>();
+    private final Set<MethodDeclaration> emAvaliacao = ResolvedorDeChamadas.conjuntoPorIdentidade();
 
     private AvaliadorDeCusto(CompilationUnit unidade) {
-        this.tipos = TiposDeVariavel.de(unidade);
-        unidade.findAll(MethodDeclaration.class)
-                .forEach(metodo -> metodos.put(AstUtils.chaveDoMetodo(metodo), metodo));
+        this.resolvedor = ResolvedorDeChamadas.de(unidade);
+        this.tipos = resolvedor.tipos();
     }
 
     public static CustoAvaliado doPrograma(CompilationUnit unidade) {
@@ -64,54 +60,49 @@ public final class AvaliadorDeCusto {
     }
 
     private List<MethodDeclaration> pontosDeEntrada() {
-        Optional<MethodDeclaration> principal = metodos.values().stream()
+        List<MethodDeclaration> metodos = resolvedor.metodos();
+        Optional<MethodDeclaration> principal = metodos.stream()
                 .filter(metodo -> metodo.getNameAsString().equals("main"))
                 .findFirst();
         if (principal.isPresent()) {
             return List.of(principal.get());
         }
-        Set<String> chamados = metodosChamados();
-        List<MethodDeclaration> raizes = metodos.values().stream()
-                .filter(metodo -> !chamados.contains(AstUtils.chaveDoMetodo(metodo)))
+        Set<MethodDeclaration> chamados = metodosChamados();
+        List<MethodDeclaration> raizes = metodos.stream()
+                .filter(metodo -> !chamados.contains(metodo))
                 .toList();
-        return raizes.isEmpty() ? List.copyOf(metodos.values()) : raizes;
+        return raizes.isEmpty() ? metodos : raizes;
     }
 
     /** Metodos chamados por <b>outro</b> metodo; auto-chamadas nao tiram um metodo da raiz. */
-    private Set<String> metodosChamados() {
-        Set<String> chamados = new HashSet<>();
-        for (MethodDeclaration metodo : metodos.values()) {
-            metodo.findAll(MethodCallExpr.class).stream()
-                    .filter(this::ehChamadaLocal)
-                    .filter(chamada -> !AstUtils.ehAutoChamada(chamada, metodo))
-                    .forEach(chamada -> chamados.add(chaveDaChamada(chamada)));
-        }
+    private Set<MethodDeclaration> metodosChamados() {
+        Set<MethodDeclaration> chamados = ResolvedorDeChamadas.conjuntoPorIdentidade();
+        resolvedor.metodos().forEach(metodo -> chamados.addAll(resolvedor.chamadosPor(metodo)));
         return chamados;
     }
 
     private CustoAvaliado custoDoMetodo(MethodDeclaration metodo) {
-        String chave = AstUtils.chaveDoMetodo(metodo);
-        CustoAvaliado memorizado = memo.get(chave);
+        CustoAvaliado memorizado = memo.get(metodo);
         if (memorizado != null) {
             return memorizado;
         }
-        if (emAvaliacao.contains(chave)) {
+        if (emAvaliacao.contains(metodo)) {
             return CustoAvaliado.desconhecido(
                     "recursao mutua envolvendo `%s`: nao ha recorrencia de um metodo so a resolver"
                             .formatted(metodo.getNameAsString()));
         }
-        emAvaliacao.push(chave);
+        emAvaliacao.add(metodo);
         try {
             CustoAvaliado corpo = metodo.getBody()
                     .map(bloco -> custoDoNo(bloco, metodo))
                     .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
-            CustoAvaliado resultado = AnalisadorDeRecursao.ehRecursivo(metodo)
-                    ? SolucionadorDeRecorrencia.resolver(AnalisadorDeRecursao.analisar(metodo), corpo)
+            CustoAvaliado resultado = AnalisadorDeRecursao.ehRecursivo(metodo, resolvedor)
+                    ? SolucionadorDeRecorrencia.resolver(AnalisadorDeRecursao.analisar(metodo, resolvedor), corpo)
                     : corpo;
-            memo.put(chave, resultado);
+            memo.put(metodo, resultado);
             return resultado;
         } finally {
-            emAvaliacao.pop();
+            emAvaliacao.remove(metodo);
         }
     }
 
@@ -204,29 +195,34 @@ public final class AvaliadorDeCusto {
     }
 
     private CustoAvaliado custoDaChamada(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
-        if (!ehChamadaLocal(chamada)) {
-            return TabelaDeCustoApi.custo(chamada, tipos)
-                    .orElseGet(() -> CustoAvaliado.estimado(Custo.CONSTANTE,
-                            "chamada externa `%s` desconhecida; assumida O(1)".formatted(chamada.getNameAsString())));
+        Optional<MethodDeclaration> alvo = resolvedor.alvo(chamada);
+        if (alvo.isEmpty()) {
+            return ehChamadaLocal(chamada) ? naoResolvida(chamada) : daBiblioteca(chamada);
         }
-        String chave = chaveDaChamada(chamada);
-        if (metodoAtual != null && chave.equals(AstUtils.chaveDoMetodo(metodoAtual))) {
+        if (alvo.get() == metodoAtual) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
-        MethodDeclaration alvo = metodos.get(chave);
-        if (alvo != null) {
-            return custoDoMetodo(alvo);
+        if (alvo.get().getBody().isEmpty()) {
+            return CustoAvaliado.estimado(Custo.CONSTANTE,
+                    "metodo abstrato `%s`: o custo das implementacoes nao e considerado"
+                            .formatted(chamada.getNameAsString()));
         }
+        return custoDoMetodo(alvo.get());
+    }
+
+    private CustoAvaliado daBiblioteca(MethodCallExpr chamada) {
+        return TabelaDeCustoApi.custo(chamada, resolvedor)
+                .orElseGet(() -> CustoAvaliado.estimado(Custo.CONSTANTE,
+                        "chamada externa `%s` desconhecida; assumida O(1)".formatted(chamada.getNameAsString())));
+    }
+
+    private CustoAvaliado naoResolvida(MethodCallExpr chamada) {
         return CustoAvaliado.estimado(Custo.CONSTANTE,
                 "chamada a `%s` nao resolvida nesta unidade; assumida O(1)".formatted(chamada.getNameAsString()));
     }
 
     private boolean ehChamadaLocal(MethodCallExpr chamada) {
         return chamada.getScope().map(escopo -> escopo instanceof ThisExpr).orElse(true);
-    }
-
-    private String chaveDaChamada(MethodCallExpr chamada) {
-        return chamada.getNameAsString() + "/" + chamada.getArguments().size();
     }
 
     private CustoAvaliado maiorCustoDosFilhos(List<? extends Node> filhos, MethodDeclaration metodoAtual) {

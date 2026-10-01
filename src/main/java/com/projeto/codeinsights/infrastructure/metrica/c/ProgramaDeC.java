@@ -26,7 +26,7 @@ public record ProgramaDeC(List<FuncaoDeC> funcoes, boolean integro, String motiv
             parametros = List.copyOf(parametros);
         }
 
-        /** Identidade da funcao: nome + aridade, como {@code AstUtils.chaveDoMetodo} no lado Java. */
+        /** Identidade da funcao: nome + aridade. C nao tem classe nem sobrecarga, entao nada mais a distingue. */
         public String chave() {
             return nome + "/" + parametros.size();
         }

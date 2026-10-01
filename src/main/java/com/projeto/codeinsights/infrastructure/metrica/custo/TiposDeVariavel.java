@@ -2,6 +2,7 @@ package com.projeto.codeinsights.infrastructure.metrica.custo;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.github.javaparser.ast.CompilationUnit;
@@ -12,6 +13,7 @@ import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.VarType;
 
 /**
  * Tabela de simbolos leve: nome de variavel -> tipo concreto. Substitui o
@@ -38,6 +40,7 @@ public final class TiposDeVariavel {
             "Collection", "List", "Map", "Set", "Queue", "Deque");
 
     private final Map<String, String> tipoConcreto = new HashMap<>();
+    private final Map<String, Type> tipoDeclarado = new HashMap<>();
     private final Map<String, Integer> profundidadeDeColecao = new HashMap<>();
 
     public static TiposDeVariavel de(CompilationUnit unidade) {
@@ -55,6 +58,9 @@ public final class TiposDeVariavel {
                 ? criacao.getType().getNameAsString()
                 : nomeSimples(declarado);
         tipoConcreto.put(nome, concreto);
+        tipoDeclarado.put(nome, declarado instanceof VarType && inicializador instanceof ObjectCreationExpr criacao
+                ? criacao.getType()
+                : declarado);
         profundidadeDeColecao.put(nome, profundidade(declarado));
     }
 
@@ -63,9 +69,27 @@ public final class TiposDeVariavel {
         return tipoConcreto.get(nome);
     }
 
+    /**
+     * Tipo como foi <b>declarado</b>, com os argumentos genericos: {@code List<List<Integer>>}, e nao
+     * o {@code ArrayList} do {@code new}. E dele que se tira o tipo de {@code adj.get(u)}.
+     */
+    public Optional<Type> tipoDeclarado(String nome) {
+        return Optional.ofNullable(tipoDeclarado.get(nome));
+    }
+
     /** {@code true} quando o tipo so e conhecido pela interface (ex.: {@code List} recebido por parametro). */
     public boolean ehApenasInterface(String nome) {
-        return INTERFACES.contains(tipoConcreto.get(nome));
+        return ehInterface(tipoConcreto.get(nome));
+    }
+
+    public static boolean ehInterface(String tipo) {
+        return INTERFACES.contains(tipo);
+    }
+
+    /** Nome simples do tipo, ou vazio quando ele nao diz nada: {@code var} e o parametro de lambda sem tipo. */
+    public static Optional<String> nomeDe(Type tipo) {
+        String nome = nomeSimples(tipo);
+        return nome.isEmpty() || nome.equals("var") ? Optional.empty() : Optional.of(nome);
     }
 
     /**

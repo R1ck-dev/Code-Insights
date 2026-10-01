@@ -38,8 +38,8 @@ public final class AvaliadorDeEspaco {
     }
 
     public static CustoAvaliado doPrograma(CompilationUnit unidade) {
-        TiposDeVariavel tipos = TiposDeVariavel.de(unidade);
-        return maiorAlocacao(unidade, tipos).mais(profundidadeDaPilha(unidade));
+        ResolvedorDeChamadas resolvedor = ResolvedorDeChamadas.de(unidade);
+        return maiorAlocacao(unidade, resolvedor.tipos()).mais(profundidadeDaPilha(resolvedor));
     }
 
     private static CustoAvaliado maiorAlocacao(CompilationUnit unidade, TiposDeVariavel tipos) {
@@ -98,15 +98,15 @@ public final class AvaliadorDeEspaco {
     }
 
     /** A recorrencia diz quantos niveis a recursao desce - e, portanto, quantos quadros a pilha guarda. */
-    private static CustoAvaliado profundidadeDaPilha(CompilationUnit unidade) {
+    private static CustoAvaliado profundidadeDaPilha(ResolvedorDeChamadas resolvedor) {
         CustoAvaliado maior = CustoAvaliado.exato(Custo.CONSTANTE);
-        for (MethodDeclaration metodo : unidade.findAll(MethodDeclaration.class)) {
-            if (!AnalisadorDeRecursao.ehRecursivo(metodo)) {
+        for (MethodDeclaration metodo : resolvedor.metodos()) {
+            if (!AnalisadorDeRecursao.ehRecursivo(metodo, resolvedor)) {
                 continue;
             }
-            maior = maior.mais(custoDaPilha(AnalisadorDeRecursao.analisar(metodo)));
+            maior = maior.mais(custoDaPilha(AnalisadorDeRecursao.analisar(metodo, resolvedor)));
         }
-        if (!GrafoDeChamadas.temCicloIndireto(unidade)) {
+        if (!GrafoDeChamadas.temCicloIndireto(resolvedor)) {
             return maior;
         }
         return maior.mais(CustoAvaliado.estimado(Custo.LINEAR,

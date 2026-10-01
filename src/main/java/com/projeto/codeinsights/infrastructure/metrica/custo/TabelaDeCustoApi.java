@@ -241,29 +241,72 @@ public final class TabelaDeCustoApi {
      * Custo da chamada, ou vazio quando ela nao e reconhecida como API da biblioteca
      * padrao (o avaliador entao decide o que fazer com uma chamada desconhecida).
      */
-    public static Optional<CustoAvaliado> custo(MethodCallExpr chamada, TiposDeVariavel tipos) {
+    public static Optional<CustoAvaliado> custo(MethodCallExpr chamada, ResolvedorDeChamadas resolvedor) {
         Expression escopo = chamada.getScope().orElse(null);
         if (escopo == null) {
             return Optional.empty();
         }
-        if (escopo instanceof FieldAccessExpr || escopo instanceof MethodCallExpr) {
-            return custoDeEscopoDerivado(chamada, escopo);
+        if (escopo instanceof FieldAccessExpr campo) {
+            return custoDeCampo(chamada, campo, resolvedor.tipos());
+        }
+        if (escopo instanceof MethodCallExpr) {
+            return custoDeResultado(chamada, escopo, resolvedor);
         }
         if (escopo instanceof StringLiteralExpr) {
             return busca(TEXTO, chamada).map(CustoAvaliado::exato);
         }
         if (escopo instanceof NameExpr referencia) {
-            return custoDeNome(chamada, referencia.getNameAsString(), tipos);
+            return custoDeNome(chamada, referencia.getNameAsString(), resolvedor.tipos());
         }
         return Optional.empty();
     }
 
-    /** {@code System.out.println(...)} ou uma chamada encadeada de Stream. */
-    private static Optional<CustoAvaliado> custoDeEscopoDerivado(MethodCallExpr chamada, Expression escopo) {
-        if (escopo instanceof FieldAccessExpr campo && campo.getNameAsString().equals("out")) {
+    /**
+     * {@code System.out.println(...)} ou {@code this.nomes.contains(x)}: o campo tem o tipo com que
+     * foi declarado, e e por ele que a chamada e cobrada — como se fosse {@code nomes.contains(x)}.
+     */
+    private static Optional<CustoAvaliado> custoDeCampo(MethodCallExpr chamada, FieldAccessExpr campo,
+            TiposDeVariavel tipos) {
+        String nome = campo.getNameAsString();
+        if (nome.equals("out")) {
             return Optional.of(CustoAvaliado.exato(Custo.CONSTANTE));
         }
+        Optional<CustoAvaliado> pelaTabelaDoTipo = Optional.ofNullable(tipos.tipoDe(nome))
+                .flatMap(tipo -> custoTabelado(chamada, tipo, tipos.ehApenasInterface(nome), nome));
+        return pelaTabelaDoTipo.isPresent() ? pelaTabelaDoTipo : custoDeStream(chamada);
+    }
+
+    /**
+     * {@code adj.get(u).contains(v)} ou uma chamada encadeada de Stream: se o tipo do resultado e
+     * conhecido ({@code adj: List<List<Integer>>} da {@code List<Integer>}), a chamada e cobrada pela
+     * tabela dele; senao, e uma operacao de Stream pelo nome.
+     */
+    private static Optional<CustoAvaliado> custoDeResultado(MethodCallExpr chamada, Expression escopo,
+            ResolvedorDeChamadas resolvedor) {
+        Optional<CustoAvaliado> pelaTabelaDoTipo = resolvedor.tipoDe(escopo)
+                .flatMap(TiposDeVariavel::nomeDe)
+                .flatMap(tipo -> custoTabelado(chamada, tipo, TiposDeVariavel.ehInterface(tipo), escopo.toString()));
+        return pelaTabelaDoTipo.isPresent() ? pelaTabelaDoTipo : custoDeStream(chamada);
+    }
+
+    private static Optional<CustoAvaliado> custoDeStream(MethodCallExpr chamada) {
         return Optional.ofNullable(STREAM.get(chamada.getNameAsString())).map(CustoAvaliado::exato);
+    }
+
+    /**
+     * Custo pela tabela do tipo, ou vazio quando o tipo ou o metodo nao constam dela. Vazio — e nao
+     * {@code O(1)} — para o chamador poder tentar outra fonte antes de desistir.
+     */
+    private static Optional<CustoAvaliado> custoTabelado(MethodCallExpr chamada, String tipo,
+            boolean apenasInterface, String receptor) {
+        Optional<Custo> custo = CLASSES_TRIVIAIS.contains(tipo)
+                ? Optional.of(Custo.CONSTANTE)
+                : Optional.ofNullable(POR_TIPO.get(tipo))
+                        .flatMap(tabela -> ajustarPorAridade(tabela, chamada).or(() -> busca(tabela, chamada)));
+        return custo.map(valor -> apenasInterface
+                ? CustoAvaliado.estimado(valor, "tipo de `%s` conhecido so pela interface %s; assumida a implementacao usual"
+                        .formatted(receptor, tipo))
+                : CustoAvaliado.exato(valor));
     }
 
     private static Optional<CustoAvaliado> custoDeNome(MethodCallExpr chamada, String nome, TiposDeVariavel tipos) {

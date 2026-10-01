@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -80,14 +81,16 @@ public final class AnalisadorDeRecursao {
     private AnalisadorDeRecursao() {
     }
 
-    public static boolean ehRecursivo(MethodDeclaration metodo) {
-        return !autoChamadas(metodo).isEmpty();
+    public static boolean ehRecursivo(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
+        return !autoChamadas(metodo, resolvedor).isEmpty();
     }
 
-    public static Recursao analisar(MethodDeclaration metodo) {
-        List<MethodCallExpr> chamadas = autoChamadas(metodo);
-        int chamadasPorCaminho = Math.max(1, contarPorCaminho(metodo.getBody().orElse(null), metodo));
-        Recursao recursao = classificarReducao(metodo, chamadas, chamadasPorCaminho);
+    public static Recursao analisar(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
+        List<MethodCallExpr> chamadas = autoChamadas(metodo, resolvedor);
+        Set<MethodCallExpr> proprias = ResolvedorDeChamadas.conjuntoPorIdentidade();
+        proprias.addAll(chamadas);
+        int chamadasPorCaminho = Math.max(1, contarPorCaminho(metodo.getBody().orElse(null), proprias));
+        Recursao recursao = classificarReducao(metodo, chamadas, chamadasPorCaminho, resolvedor);
 
         return dimensoesDoCache(metodo)
                 .map(dimensoes -> new Recursao(recursao.reducao(), chamadasPorCaminho, recursao.fator(), true, dimensoes,
@@ -95,9 +98,10 @@ public final class AnalisadorDeRecursao {
                 .orElse(recursao);
     }
 
-    private static List<MethodCallExpr> autoChamadas(MethodDeclaration metodo) {
+    /** As chamadas do metodo a si mesmo — pelo nome, por {@code this}, pela classe ou por outro objeto da mesma classe. */
+    private static List<MethodCallExpr> autoChamadas(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
         return metodo.findAll(MethodCallExpr.class).stream()
-                .filter(chamada -> AstUtils.ehAutoChamada(chamada, metodo))
+                .filter(chamada -> resolvedor.ehAutoChamada(chamada, metodo))
                 .toList();
     }
 
@@ -108,45 +112,45 @@ public final class AnalisadorDeRecursao {
      * sao exclusivos (usa {@code max}); comandos em sequencia se somam - mas so ate o
      * primeiro que sempre retorna, porque o resto e inalcancavel naquele caminho.
      */
-    private static int contarPorCaminho(Node no, MethodDeclaration metodo) {
+    private static int contarPorCaminho(Node no, Set<MethodCallExpr> proprias) {
         if (no == null) {
             return 0;
         }
-        if (no instanceof MethodCallExpr chamada && AstUtils.ehAutoChamada(chamada, metodo)) {
-            return 1 + somaDosFilhos(chamada.getArguments(), metodo);
+        if (no instanceof MethodCallExpr chamada && proprias.contains(chamada)) {
+            return 1 + somaDosFilhos(chamada.getArguments(), proprias);
         }
         if (no instanceof BlockStmt bloco) {
-            return contarBloco(bloco.getStatements(), metodo);
+            return contarBloco(bloco.getStatements(), proprias);
         }
         if (no instanceof IfStmt condicional) {
-            int entao = contarPorCaminho(condicional.getThenStmt(), metodo);
-            int senao = condicional.getElseStmt().map(ramo -> contarPorCaminho(ramo, metodo)).orElse(0);
-            return contarPorCaminho(condicional.getCondition(), metodo) + Math.max(entao, senao);
+            int entao = contarPorCaminho(condicional.getThenStmt(), proprias);
+            int senao = condicional.getElseStmt().map(ramo -> contarPorCaminho(ramo, proprias)).orElse(0);
+            return contarPorCaminho(condicional.getCondition(), proprias) + Math.max(entao, senao);
         }
         if (no instanceof ConditionalExpr ternario) {
-            return contarPorCaminho(ternario.getCondition(), metodo)
-                    + Math.max(contarPorCaminho(ternario.getThenExpr(), metodo),
-                            contarPorCaminho(ternario.getElseExpr(), metodo));
+            return contarPorCaminho(ternario.getCondition(), proprias)
+                    + Math.max(contarPorCaminho(ternario.getThenExpr(), proprias),
+                            contarPorCaminho(ternario.getElseExpr(), proprias));
         }
-        return somaDosFilhos(no.getChildNodes(), metodo);
+        return somaDosFilhos(no.getChildNodes(), proprias);
     }
 
-    private static int contarBloco(List<Statement> comandos, MethodDeclaration metodo) {
+    private static int contarBloco(List<Statement> comandos, Set<MethodCallExpr> proprias) {
         int acumulado = 0;
         int melhorCaminhoQueSai = 0;
         for (Statement comando : comandos) {
             if (ehGuardaQueRetorna(comando)) {
                 IfStmt guarda = comando.asIfStmt();
-                int custoDaGuarda = contarPorCaminho(guarda.getCondition(), metodo);
+                int custoDaGuarda = contarPorCaminho(guarda.getCondition(), proprias);
                 melhorCaminhoQueSai = Math.max(melhorCaminhoQueSai,
-                        acumulado + custoDaGuarda + contarPorCaminho(guarda.getThenStmt(), metodo));
+                        acumulado + custoDaGuarda + contarPorCaminho(guarda.getThenStmt(), proprias));
                 acumulado += custoDaGuarda;
                 continue;
             }
             if (AstUtils.sempreRetorna(comando)) {
-                return Math.max(melhorCaminhoQueSai, acumulado + contarPorCaminho(comando, metodo));
+                return Math.max(melhorCaminhoQueSai, acumulado + contarPorCaminho(comando, proprias));
             }
-            acumulado += contarPorCaminho(comando, metodo);
+            acumulado += contarPorCaminho(comando, proprias);
         }
         return Math.max(melhorCaminhoQueSai, acumulado);
     }
@@ -157,13 +161,14 @@ public final class AnalisadorDeRecursao {
                 && AstUtils.sempreRetorna(condicional.getThenStmt());
     }
 
-    private static int somaDosFilhos(List<? extends Node> filhos, MethodDeclaration metodo) {
-        return filhos.stream().mapToInt(filho -> contarPorCaminho(filho, metodo)).sum();
+    private static int somaDosFilhos(List<? extends Node> filhos, Set<MethodCallExpr> proprias) {
+        return filhos.stream().mapToInt(filho -> contarPorCaminho(filho, proprias)).sum();
     }
 
     // ----- b: como o argumento encolhe -----
 
-    private static Recursao classificarReducao(MethodDeclaration metodo, List<MethodCallExpr> chamadas, int a) {
+    private static Recursao classificarReducao(MethodDeclaration metodo, List<MethodCallExpr> chamadas, int a,
+            ResolvedorDeChamadas resolvedor) {
         Optional<Recursao> emLaco = reducaoDeChamadaEmLaco(metodo, chamadas, a);
         if (emLaco.isPresent()) {
             return emLaco.get();
@@ -181,6 +186,8 @@ public final class AnalisadorDeRecursao {
         int fatorDivisao = Integer.MAX_VALUE;
 
         for (MethodCallExpr chamada : chamadas) {
+            // esq.altura(): o argumento nao encolhe, o receptor desce na estrutura
+            estrutural |= resolvedor.chamaOutraInstancia(chamada);
             for (Expression argumento : chamada.getArguments()) {
                 OptionalInt divisor = divisaoDeParametro(argumento, parametros);
                 if (AstUtils.referenciaAlguma(argumento, pontosMedios)) {
@@ -231,7 +238,7 @@ public final class AnalisadorDeRecursao {
         if (laco.isEmpty()) {
             return Optional.empty();
         }
-        if (laco.get() instanceof ForEachStmt paraCada && iteraSobreOsArgumentos(paraCada, chamadas)) {
+        if (laco.get() instanceof ForEachStmt paraCada && iteraSobreOsOperandos(paraCada, chamadas)) {
             return Optional.of(new Recursao(Reducao.ESTRUTURAL, a, 2, false, 0,
                     "recursao sobre os elementos iterados; assumido um passo por elemento"));
         }
@@ -239,11 +246,12 @@ public final class AnalisadorDeRecursao {
                 "auto-chamada dentro de laco: assumida busca exaustiva"));
     }
 
-    private static boolean iteraSobreOsArgumentos(ForEachStmt paraCada, List<MethodCallExpr> chamadas) {
+    /** A variavel do for-each e passada como argumento ({@code f(viz)}) ou e o receptor ({@code filho.f()}). */
+    private static boolean iteraSobreOsOperandos(ForEachStmt paraCada, List<MethodCallExpr> chamadas) {
         String variavel = paraCada.getVariable().getVariable(0).getNameAsString();
         return chamadas.stream()
-                .flatMap(chamada -> chamada.getArguments().stream())
-                .anyMatch(argumento -> AstUtils.referenciaAlguma(argumento, Set.of(variavel)));
+                .flatMap(chamada -> Stream.concat(chamada.getArguments().stream(), chamada.getScope().stream()))
+                .anyMatch(operando -> AstUtils.referenciaAlguma(operando, Set.of(variavel)));
     }
 
     private static String suposicaoDaDivisao(boolean subtrativa, boolean porResto) {

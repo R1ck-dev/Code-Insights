@@ -4,13 +4,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForEachStmt;
@@ -42,20 +39,6 @@ public final class AstUtils {
             pai = pai.getParentNode().orElse(null);
         }
         return null;
-    }
-
-    /** Chave que identifica um metodo dentro da unidade de compilacao (nome + aridade). */
-    public static String chaveDoMetodo(MethodDeclaration metodo) {
-        return metodo.getNameAsString() + "/" + metodo.getParameters().size();
-    }
-
-    /** {@code true} se a chamada e ao proprio metodo (sem escopo ou via {@code this}). */
-    public static boolean ehAutoChamada(MethodCallExpr chamada, MethodDeclaration metodo) {
-        if (!chamada.getNameAsString().equals(metodo.getNameAsString())
-                || chamada.getArguments().size() != metodo.getParameters().size()) {
-            return false;
-        }
-        return chamada.getScope().map(escopo -> escopo instanceof ThisExpr).orElse(true);
     }
 
     /**
