@@ -371,7 +371,6 @@ class DefeitosDoMotorDeJavaTest {
          * entre exponencial e fatorial.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("marcar e desmarcar na volta e backtracking, e nao memoizacao")
         void desmarcarNaVoltaNaoEhMemoizacao() {
             String busca = """

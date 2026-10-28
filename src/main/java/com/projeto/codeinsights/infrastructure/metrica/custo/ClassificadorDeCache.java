@@ -1,18 +1,17 @@
 package com.projeto.codeinsights.infrastructure.metrica.custo;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
-import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -32,31 +31,48 @@ final class ClassificadorDeCache {
 
     private static final Set<String> CACHES_ASSOCIATIVOS = Set.of(
             "Map", "HashMap", "TreeMap", "LinkedHashMap", "Set", "HashSet", "TreeSet", "LinkedHashSet");
-    private static final Set<String> CONSULTAS_DE_CACHE = Set.of("get", "containsKey", "contains", "getOrDefault");
     private static final Set<String> ESCRITAS_DE_CACHE = Set.of("put", "add");
 
     private ClassificadorDeCache() {
     }
 
     /**
-     * O papel do primeiro candidato que funciona como cache, ou {@link UsoDeCache#NENHUM}.
+     * O papel da estrutura que melhor limita a recursao, ou {@link UsoDeCache#NENHUM}: uma
+     * memoizacao vence uma marca desfeita (e a que poda o tempo), e entre papeis iguais vence o
+     * cache de maior dimensao.
      *
      * @param autoChamadas as chamadas do metodo a si mesmo; a guarda que retorna nao precisa delas,
-     *                     mas as formas de protecao por envolvimento verificam cada uma
+     *                     mas a desmarcacao na volta e as formas de protecao por envolvimento usam cada uma
      */
     static UsoDeCache classificar(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas) {
-        return candidatosACache(metodo).entrySet().stream()
-                .map(candidato -> classificarCandidato(metodo, candidato.getKey(), candidato.getValue()))
+        List<UsoDeCache> usos = candidatosACache(metodo).entrySet().stream()
+                .map(candidato -> classificarCandidato(metodo, autoChamadas, candidato.getKey(), candidato.getValue()))
                 .filter(uso -> uso.papel() != Papel.NENHUM)
-                .findFirst()
+                .toList();
+        return melhorDe(usos, Papel.MEMOIZACAO)
+                .or(() -> melhorDe(usos, Papel.MARCA_DESFEITA))
                 .orElse(UsoDeCache.NENHUM);
     }
 
-    private static UsoDeCache classificarCandidato(MethodDeclaration metodo, String cache, int dimensoes) {
-        if (temGuardaDeLeitura(metodo, cache) && temEscrita(metodo, cache)) {
-            return new UsoDeCache(Papel.MEMOIZACAO, dimensoes, Forma.GUARDA_QUE_RETORNA);
+    private static Optional<UsoDeCache> melhorDe(List<UsoDeCache> usos, Papel papel) {
+        return usos.stream()
+                .filter(uso -> uso.papel() == papel)
+                .max(Comparator.comparingInt(UsoDeCache::dimensoes));
+    }
+
+    /**
+     * A consulta poda a recursao e ha escrita? Entao e memoizacao - a menos que a escrita seja
+     * desfeita na volta, quando e apenas a marca do caminho de um backtracking.
+     */
+    private static UsoDeCache classificarCandidato(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas,
+            String cache, int dimensoes) {
+        if (!temGuardaDeLeitura(metodo, cache) || !temEscrita(metodo, cache)) {
+            return UsoDeCache.NENHUM;
         }
-        return UsoDeCache.NENHUM;
+        Papel papel = DesmarcacaoNaVolta.desfazNaVolta(metodo, cache, autoChamadas)
+                ? Papel.MARCA_DESFEITA
+                : Papel.MEMOIZACAO;
+        return new UsoDeCache(papel, dimensoes, Forma.GUARDA_QUE_RETORNA);
     }
 
     // ----- candidatos -----
@@ -94,40 +110,17 @@ final class ClassificadorDeCache {
     private static boolean temGuardaDeLeitura(MethodDeclaration metodo, String cache) {
         return metodo.findAll(IfStmt.class).stream()
                 .filter(condicional -> AstUtils.sempreRetorna(condicional.getThenStmt()))
-                .anyMatch(condicional -> consultaOCache(condicional.getCondition(), cache));
-    }
-
-    private static boolean consultaOCache(Expression condicao, String cache) {
-        boolean porIndice = condicao.findAll(ArrayAccessExpr.class).stream()
-                .anyMatch(acesso -> AstUtils.referenciaAlguma(acesso.getName(), Set.of(cache)));
-        boolean porConsulta = condicao.findAll(MethodCallExpr.class).stream()
-                .filter(chamada -> CONSULTAS_DE_CACHE.contains(chamada.getNameAsString()))
-                .anyMatch(chamada -> temEscopo(chamada, cache));
-        return porIndice || porConsulta;
+                .anyMatch(condicional -> AcessosAoCache.consulta(condicional.getCondition(), cache));
     }
 
     // ----- escrita -----
 
     private static boolean temEscrita(MethodDeclaration metodo, String cache) {
         boolean porAtribuicao = metodo.findAll(AssignExpr.class).stream()
-                .anyMatch(atribuicao -> escreveEm(atribuicao.getTarget(), cache));
+                .anyMatch(atribuicao -> AcessosAoCache.escreveEm(atribuicao.getTarget(), cache));
         boolean porChamada = metodo.findAll(MethodCallExpr.class).stream()
                 .filter(chamada -> ESCRITAS_DE_CACHE.contains(chamada.getNameAsString()))
-                .anyMatch(chamada -> temEscopo(chamada, cache));
+                .anyMatch(chamada -> AcessosAoCache.temEscopo(chamada, cache));
         return porAtribuicao || porChamada;
-    }
-
-    private static boolean escreveEm(Expression alvo, String cache) {
-        if (alvo instanceof ArrayAccessExpr acesso) {
-            return AstUtils.referenciaAlguma(acesso.getName(), Set.of(cache));
-        }
-        return alvo instanceof NameExpr nome && nome.getNameAsString().equals(cache);
-    }
-
-    /** {@code cache.metodo(...)}, com o cache nomeado diretamente como receptor. */
-    private static boolean temEscopo(MethodCallExpr chamada, String cache) {
-        return chamada.getScope()
-                .map(escopo -> escopo instanceof NameExpr nome && nome.getNameAsString().equals(cache))
-                .orElse(false);
     }
 }

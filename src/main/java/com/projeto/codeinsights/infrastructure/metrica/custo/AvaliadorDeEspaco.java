@@ -137,7 +137,10 @@ public final class AvaliadorDeEspaco {
         if (!cache.limitaAPilha()) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
-        return CustoAvaliado.estimado(Custo.poliLog(cache.dimensoes(), 0),
+        CustoAvaliado limitada = CustoAvaliado.estimado(Custo.poliLog(cache.dimensoes(), 0),
                 "pilha limitada pelos estados distintos do cache (grau %d)".formatted(cache.dimensoes()));
+        return cache.papel() == UsoDeCache.Papel.MARCA_DESFEITA
+                ? limitada.comNota("marca desfeita na volta: a pilha nao repete estado")
+                : limitada;
     }
 }
