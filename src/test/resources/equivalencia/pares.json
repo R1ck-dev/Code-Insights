@@ -118,6 +118,27 @@
       "regra": "Arrays.sort contra qsort: a tabela de custo de biblioteca precisa concordar. Espaco nao declarado -- o auxiliar de uma ordenacao de biblioteca depende da implementacao; exige-se apenas que as duas linguagens digam a MESMA coisa (ambas dizem O(1)).",
       "tempo": "O(n log n)",
       "espaco": null
+    },
+    {
+      "base": "bolha-com-flag",
+      "nome": "bolha com flag de parada",
+      "regra": "for (p = 0; trocou == 1; p++) tem literal na condicao mas o contador nao e o comparado: o laco gira ate nao haver troca, nao e constante; com o laco interno e O(n^2) nas duas linguagens",
+      "tempo": "O(n^2)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "vizinhanca-da-grade",
+      "nome": "vizinhanca da grade",
+      "regra": "for (di = -1; di <= 1; di++) e constante (-literal): os dois lacos internos de 3 voltas so multiplicam o n^2 dos externos por uma constante",
+      "tempo": "O(n^2)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "frequencia-por-letra",
+      "nome": "frequencia por letra",
+      "regra": "for (c = 'a'; c <= 'z'; c++) e constante (literal char): 26 voltas somam ao laco de n, nao o multiplicam",
+      "tempo": "O(n)",
+      "espaco": "O(1)"
     }
   ],
   "divergencias": [

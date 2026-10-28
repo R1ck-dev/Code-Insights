@@ -11,7 +11,8 @@ package com.projeto.codeinsights.infrastructure.metrica.c;
  *       comentado — justamente o que nao esta no fluxo de controle.</li>
  *   <li><b>Literais</b> de string e de caractere: {@code "a && b"} nao ramifica nada. Escapes sao
  *       respeitados, senao um {@code "\\"} encerraria a string cedo demais e o resto do arquivo
- *       viraria literal.</li>
+ *       viraria literal. O de caractere nao some: vira {@code 0}, porque e uma constante inteira
+ *       e a condicao de um laco precisa continuar com os dois lados.</li>
  *   <li><b>Diretivas</b> ({@code #if}, {@code #define}, …): sao decisao de <i>compilacao</i>, nao de
  *       execucao. McCabe mede caminhos no fluxo do programa, e o binario ja saiu com um so lado do
  *       {@code #if}. Contar os dois inflaria a metrica de quem usa guarda de header.</li>
@@ -20,6 +21,13 @@ package com.projeto.codeinsights.infrastructure.metrica.c;
  * identificadores ({@code el/}{@code *x*}{@code /se} viraria {@code else}).
  */
 public final class LexerDeC {
+
+    /**
+     * Literal de caractere vira o numero {@code 0}, e nao um espaco: {@code 'a'} e uma constante
+     * inteira em C, e apaga-lo deixava {@code for (c = 'a'; c <= 'z'; c++)} com os dois lados da
+     * comparacao vazios. O valor nao importa ao modelo de custo - so o fato de ser constante.
+     */
+    private static final String CARACTERE_COMO_NUMERO = " 0 ";
 
     private LexerDeC() {
     }
@@ -43,7 +51,10 @@ public final class LexerDeC {
             } else if (atual == '/' && proximo == '*') {
                 i = ateFimDoBloco(fonte, i + 2);
                 saida.append(' ');
-            } else if (atual == '"' || atual == '\'') {
+            } else if (atual == '\'') {
+                i = ateFimDoLiteral(fonte, i);
+                saida.append(CARACTERE_COMO_NUMERO);
+            } else if (atual == '"') {
                 i = ateFimDoLiteral(fonte, i);
                 saida.append(' ');
             } else if (atual == '#' && inicioDeLinha) {

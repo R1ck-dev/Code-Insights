@@ -20,18 +20,17 @@ import com.projeto.codeinsights.infrastructure.metrica.custo.CustoAvaliado;
  * sendo "o intervalo que governa a parada e dividido a cada volta", nas duas formas — indice
  * multiplicativo e intervalo que encolhe.
  * <p>
- * <b>Uma regra a mais que o lado Java, por necessidade de C.</b> Constante de {@code #define} conta
- * como limite literal: {@code for (i = 0; i < MAX; i++)} nao depende da entrada. Sem isso, o jeito
+ * <b>Uma diferenca em relacao ao lado Java, por necessidade de C.</b> Constante de {@code #define}
+ * conta como limite: {@code for (i = 0; i < MAX; i++)} nao depende da entrada. Sem isso, o jeito
  * padrao de dimensionar vetor em C viraria O(n) em toda solucao do piloto. O lado Java tem a mesma
- * lacuna com {@code static final int} e ainda nao a trata — anotado como divida, porque a diferenca
- * so aparece em codigo que usa constante nomeada como limite de laco.
+ * lacuna com {@code static final int} e ainda nao a trata - anotado como divida, porque a diferenca
+ * so aparece em codigo que usa constante nomeada como limite de laco. A regra de "laco constante"
+ * (o contador do cabecalho) esta em {@link LacoLimitadoPorConstanteEmC}.
  */
 final class IteracoesDeLacoEmC {
 
     /** {@code x / 2} ou {@code x >> 1}: divisao por constante, o sinal de intervalo que encolhe. */
     private static final Pattern DIVISAO_POR_CONSTANTE = Pattern.compile("(/|>>)\\s*[0-9]+");
-
-    private static final Pattern COMPARACAO = Pattern.compile("<=|>=|==|!=|<|>");
 
     private static final Set<String> OPERADORES_MULTIPLICATIVOS = Set.of("*", "/", "<<", ">>");
 
@@ -43,7 +42,7 @@ final class IteracoesDeLacoEmC {
         if (terminacao.isEmpty()) {
             return CustoAvaliado.estimado(Custo.LINEAR, "laco sem condicao de parada; assumidas n iteracoes");
         }
-        if (ehLimitadoPorConstante(laco, constantes)) {
+        if (LacoLimitadoPorConstanteEmC.de(laco, constantes)) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
         if (ehLogaritmico(laco, terminacao)) {
@@ -59,67 +58,6 @@ final class IteracoesDeLacoEmC {
         Set<String> variaveis = new LinkedHashSet<>(ExpressoesDeC.variaveisEm(laco.condicao()));
         variaveis.removeAll(constantes);
         return variaveis;
-    }
-
-    /** {@code for (i = 0; i < 26; i++)} e {@code for (i = 0; i < MAX; i++)} nao dependem da entrada. */
-    private static boolean ehLimitadoPorConstante(NoDeC laco, Set<String> constantes) {
-        if (laco.tipo() != NoDeC.Tipo.FOR || laco.inicio().isBlank()) {
-            return false;
-        }
-        List<Atribuicao> inicializacoes = ExpressoesDeC.atribuicoesEm(laco.inicio());
-        boolean iniciosLiterais = !inicializacoes.isEmpty()
-                && inicializacoes.stream().allMatch(a -> ExpressoesDeC.ehLiteralInteiro(a.valor()));
-        return iniciosLiterais && comparaComConstante(laco.condicao(), constantes);
-    }
-
-    /**
-     * Uma <b>unica</b> comparacao contra constante. Condicao composta ({@code i < n && achou == 0})
-     * nao conta: o lado Java olha o operador de topo da condicao, e num {@code &&} nenhum dos lados
-     * e literal. Varrer a condicao inteira atras de qualquer comparacao com literal fazia o
-     * {@code achou == 0} declarar o laco constante — e um laco de n voltas saia como O(1), que e a
-     * direcao perigosa de errar.
-     */
-    private static boolean comparaComConstante(String condicao, Set<String> constantes) {
-        if (temOperadorLogicoNoTopo(condicao)) {
-            return false;
-        }
-        var achado = COMPARACAO.matcher(condicao);
-        while (achado.find()) {
-            String esquerda = condicao.substring(0, achado.start());
-            String direita = condicao.substring(achado.end());
-            if (ladoConstante(esquerda, constantes) || ladoConstante(direita, constantes)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean temOperadorLogicoNoTopo(String condicao) {
-        int profundidade = 0;
-        for (int i = 0; i + 1 < condicao.length(); i++) {
-            char c = condicao.charAt(i);
-            if (c == '(' || c == '[') {
-                profundidade++;
-            } else if (c == ')' || c == ']') {
-                profundidade--;
-            } else if (profundidade == 0 && (c == '&' || c == '|') && condicao.charAt(i + 1) == c) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Lado sem nenhuma variavel livre <b>e</b> sem chamada. A chamada precisa entrar na conta:
-     * {@code i < tamanho()} nao tem identificador solto — {@code tamanho} e consumido como nome de
-     * funcao — e passaria por limite constante, quando o motor nao tem como provar que o retorno
-     * nao cresce com a entrada.
-     */
-    private static boolean ladoConstante(String lado, Set<String> constantes) {
-        String limpo = lado.trim();
-        return !limpo.isEmpty()
-                && !ExpressoesDeC.temChamada(limpo)
-                && ExpressoesDeC.ehConstante(limpo, constantes);
     }
 
     private static boolean ehLogaritmico(NoDeC laco, Set<String> terminacao) {
