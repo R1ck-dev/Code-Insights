@@ -34,11 +34,11 @@
     { "defeito": "C-9", "arquivo": "c9-sem-classe-sem-import.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "controle: o mesmo codigo sem a linha de import" },
 
-    { "defeito": "L-1", "arquivo": "l1-contador-predeclarado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "L-1", "arquivo": "l1-contador-predeclarado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "int i; for (i = frase.length() - 1; i >= 0; i--): a init e uma atribuicao, sem declarador, e allMatch sobre lista vazia da true; n voltas com concatenacao em String viram O(1) x O(n)" },
-    { "defeito": "L-1", "arquivo": "l1-digitos.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": true,
+    { "defeito": "L-1", "arquivo": "l1-digitos.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": false,
       "nota": "for (int d = 0; n > 0; d++) n /= 10: o declarador d = 0 e literal e n > 0 tem literal, entao sai constante antes de olhar a divisao do corpo" },
-    { "defeito": "L-1", "arquivo": "l1-josefo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "L-1", "arquivo": "l1-josefo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "for (int rodada = 1; roda.size() > 1; rodada++): a condicao nao compara o contador, mas tem literal; n voltas de remove O(n) saem como O(n)" },
 
     { "defeito": "L-2", "arquivo": "l2-fatoracao-um-laco.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
@@ -56,9 +56,9 @@
     { "defeito": "L-4", "arquivo": "l4-gnome-sort.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
       "nota": "gnome sort: i-- no corpo, ignorado porque existe um i++" },
 
-    { "defeito": "L-6", "arquivo": "l6-campo-minado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "L-6", "arquivo": "l6-campo-minado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "for (di = -1; di <= 1; di++): -1 e UnaryExpr, nao literal inteiro; 9 vizinhos viram n^2" },
-    { "defeito": "L-6", "arquivo": "l6-frequencia-por-letra.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
+    { "defeito": "L-6", "arquivo": "l6-frequencia-por-letra.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "for (char c = 'a'; c <= 'z'; c++): 26 voltas lidas como n" },
 
     { "defeito": "L-7", "arquivo": "l7-vogais-foreach.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,

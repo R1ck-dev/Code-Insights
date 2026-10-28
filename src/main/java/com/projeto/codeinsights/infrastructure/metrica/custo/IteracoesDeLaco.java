@@ -60,23 +60,9 @@ public final class IteracoesDeLaco {
         return CustoAvaliado.estimado(Custo.LINEAR, "progressao do laco nao reconhecida; assumidas n iteracoes");
     }
 
-    /** {@code for (int i = 0; i < 26; i++)} nao depende da entrada: O(1). */
+    /** {@code for (int i = 0; i < 26; i++)} nao depende da entrada: O(1). A regra esta em {@link LacoLimitadoPorConstante}. */
     private static boolean ehLimitadoPorConstante(Node laco) {
-        if (!(laco instanceof ForStmt paraLaco)) {
-            return false;
-        }
-        boolean iniciosLiterais = paraLaco.getInitialization().stream()
-                .flatMap(inicio -> inicio.findAll(VariableDeclarator.class).stream())
-                .allMatch(declaracao -> declaracao.getInitializer().map(Expression::isIntegerLiteralExpr).orElse(false));
-        return iniciosLiterais && !paraLaco.getInitialization().isEmpty()
-                && paraLaco.getCompare().map(IteracoesDeLaco::comparaComLiteral).orElse(false);
-    }
-
-    private static boolean comparaComLiteral(Expression condicao) {
-        if (!(condicao instanceof BinaryExpr binaria)) {
-            return false;
-        }
-        return binaria.getLeft().isIntegerLiteralExpr() || binaria.getRight().isIntegerLiteralExpr();
+        return laco instanceof ForStmt paraLaco && LacoLimitadoPorConstante.de(paraLaco);
     }
 
     private static boolean ehLogaritmico(Node laco, Set<String> variaveisDeTerminacao) {

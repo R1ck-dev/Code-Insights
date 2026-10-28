@@ -242,7 +242,6 @@ class DefeitosDoMotorDeJavaTest {
          * O(1), e a ordenacao, O(n). Escrito com {@code while}, o mesmo laco sai certo.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("laco com flag de parada nao vira laco constante")
         void lacoComFlagNaoEhConstante() {
             String comWhile = """
