@@ -133,11 +133,11 @@ public final class AvaliadorDeEspaco {
      * estimativa — nunca baixar uma profundidade ja corretamente deduzida.
      */
     private static CustoAvaliado pilhaLimitadaPelosEstados(Recursao recursao) {
-        if (!recursao.memoizada()) {
+        UsoDeCache cache = recursao.cache();
+        if (!cache.limitaAPilha()) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
-        return CustoAvaliado.estimado(Custo.poliLog(recursao.dimensoesDoCache(), 0),
-                "pilha limitada pelos estados distintos do cache (grau %d)"
-                        .formatted(recursao.dimensoesDoCache()));
+        return CustoAvaliado.estimado(Custo.poliLog(cache.dimensoes(), 0),
+                "pilha limitada pelos estados distintos do cache (grau %d)".formatted(cache.dimensoes()));
     }
 }
