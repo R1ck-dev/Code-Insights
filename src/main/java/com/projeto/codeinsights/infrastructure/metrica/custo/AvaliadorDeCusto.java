@@ -13,7 +13,9 @@ import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.stmt.DoStmt;
 import com.github.javaparser.ast.stmt.ForEachStmt;
@@ -21,6 +23,8 @@ import com.github.javaparser.ast.stmt.ForStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
+
+import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
 
 /**
  * Avalia o custo de tempo de uma unidade de compilacao percorrendo a AST de baixo
@@ -74,10 +78,16 @@ public final class AvaliadorDeCusto {
         return raizes.isEmpty() ? metodos : raizes;
     }
 
-    /** Metodos chamados por <b>outro</b> metodo; auto-chamadas nao tiram um metodo da raiz. */
+    /**
+     * Metodos chamados ou referenciados ({@code Main::f}) por <b>outro</b> metodo; auto-chamadas nao tiram
+     * um metodo da raiz. Sem {@code main}, um metodo so referenciado e custeado pela referencia, nao como raiz.
+     */
     private Set<MethodDeclaration> metodosChamados() {
         Set<MethodDeclaration> chamados = ResolvedorDeChamadas.conjuntoPorIdentidade();
-        resolvedor.metodos().forEach(metodo -> chamados.addAll(resolvedor.chamadosPor(metodo)));
+        resolvedor.metodos().forEach(metodo -> {
+            chamados.addAll(resolvedor.chamadosPor(metodo));
+            chamados.addAll(resolvedor.referenciadosPor(metodo));
+        });
         return chamados;
     }
 
@@ -141,11 +151,10 @@ public final class AvaliadorDeCusto {
                     .mais(maiorCustoDosFilhos(escolha.getEntries(), metodoAtual));
         }
         if (no instanceof MethodCallExpr chamada) {
-            CustoAvaliado escopo = chamada.getScope()
-                    .map(receptor -> custoDoNo(receptor, metodoAtual))
-                    .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
-            return escopo.mais(maiorCustoDosFilhos(chamada.getArguments(), metodoAtual))
-                    .mais(custoDaChamada(chamada, metodoAtual));
+            return custoDeChamadaComArgumentos(chamada, metodoAtual);
+        }
+        if (no instanceof MethodReferenceExpr referencia) {
+            return custoDoNo(referencia.getScope(), metodoAtual).mais(custoDoMetodoReferenciado(referencia, metodoAtual));
         }
         if (no instanceof ArrayCreationExpr criacao) {
             return maiorCustoDosFilhos(criacao.getChildNodes(), metodoAtual).mais(custoDeAlocacao(criacao));
@@ -154,6 +163,74 @@ public final class AvaliadorDeCusto {
             return maiorCustoDosFilhos(atribuicao.getChildNodes(), metodoAtual).mais(custoDeConcatenacao(atribuicao));
         }
         return maiorCustoDosFilhos(no.getChildNodes(), metodoAtual);
+    }
+
+    private CustoAvaliado custoDeChamadaComArgumentos(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
+        CustoAvaliado escopo = chamada.getScope()
+                .map(receptor -> custoDoNo(receptor, metodoAtual))
+                .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
+        return escopo.mais(custoDosArgumentos(chamada, metodoAtual))
+                .mais(custoDaChamada(chamada, metodoAtual));
+    }
+
+    /**
+     * Argumentos da chamada. O lambda — ou a referencia a metodo — de uma operacao que percorre os elementos
+     * ({@link OperacoesComCallback}) roda uma vez por elemento: seu custo <b>multiplica</b>; qualquer outro
+     * argumento entra por {@code mais}.
+     */
+    private CustoAvaliado custoDosArgumentos(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
+        Optional<CustoAvaliado> repeticoes = OperacoesComCallback.repeticoes(chamada, resolvedor);
+        return chamada.getArguments().stream()
+                .map(argumento -> custoDeArgumento(argumento, repeticoes, metodoAtual))
+                .reduce(CustoAvaliado.exato(Custo.CONSTANTE), CustoAvaliado::mais);
+    }
+
+    private CustoAvaliado custoDeArgumento(Expression argumento, Optional<CustoAvaliado> repeticoes,
+            MethodDeclaration metodoAtual) {
+        if (repeticoes.isPresent() && argumento instanceof MethodReferenceExpr referencia) {
+            // O receptor (`obj` em obj::m) e avaliado uma vez; so o metodo apontado roda por elemento.
+            return custoDoNo(referencia.getScope(), metodoAtual)
+                    .mais(repeticoes.get().vezes(custoDoMetodoReferenciado(referencia, metodoAtual)));
+        }
+        CustoAvaliado custo = custoDoNo(argumento, metodoAtual);
+        return repeticoes.isPresent() && argumento instanceof LambdaExpr
+                ? repeticoes.get().vezes(custo)
+                : custo;
+    }
+
+    /**
+     * Custo de uma execucao do metodo da unidade que a referencia aponta. Biblioteca ({@code Integer::sum}),
+     * construtor e receptor de tipo desconhecido saem O(1), como uma chamada externa. Mais de uma sobrecarga
+     * de mesmo nome: vale a de <b>maior</b> custo, com nota — a referencia nao diz qual aridade o callback usa.
+     * Referencia ao proprio metodo (ou a um ciclo) e recursao por dentro de callback, que o motor nao
+     * resolve: sai "?", como a recursao mutua.
+     */
+    private CustoAvaliado custoDoMetodoReferenciado(MethodReferenceExpr referencia, MethodDeclaration metodoAtual) {
+        List<MethodDeclaration> alvos = resolvedor.alvosDaReferencia(referencia);
+        if (alvos.isEmpty()) {
+            return CustoAvaliado.exato(Custo.CONSTANTE);
+        }
+        if (alvos.stream().anyMatch(alvo -> alvo == metodoAtual)) {
+            return CustoAvaliado.desconhecido(
+                    "referencia `%s` ao proprio metodo: recursao por dentro de callback nao e analisada"
+                            .formatted(referencia.getIdentifier()));
+        }
+        CustoAvaliado maior = alvos.stream()
+                .map(this::custoDeUmaExecucao)
+                .reduce(CustoAvaliado::mais)
+                .orElseThrow();
+        return alvos.size() > 1
+                ? maior.rebaixado(NivelConfianca.MEDIA).comNota("referencia `%s` com %d sobrecargas: assumida a de maior custo"
+                        .formatted(referencia.getIdentifier(), alvos.size()))
+                : maior;
+    }
+
+    private CustoAvaliado custoDeUmaExecucao(MethodDeclaration metodo) {
+        return metodo.getBody().isEmpty()
+                ? CustoAvaliado.estimado(Custo.CONSTANTE,
+                        "metodo abstrato `%s`: o custo das implementacoes nao e considerado"
+                                .formatted(metodo.getNameAsString()))
+                : custoDoMetodo(metodo);
     }
 
     private CustoAvaliado custoDeFor(ForStmt paraLaco, MethodDeclaration metodoAtual) {
