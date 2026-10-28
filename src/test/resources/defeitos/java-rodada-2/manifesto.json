@@ -193,7 +193,7 @@
       "nota": "IntStream.range(0, n).forEach(i -> { for j < n ... }): range(0, n) itera n vezes, o motor soma o laco interno" },
     { "defeito": "C-5", "arquivo": "c5-sort-comparador-linear.java", "metrica": "tempo", "gabarito": "O(n^3)", "aberto": false,
       "nota": "comparador linear em Collections.sort: o correto e n log n x n = n^2 log n, que a escala fixa exibe como O(n^3) (arredonda para cima, Custo.classe); o motor responde O(n log n)" },
-    { "defeito": "C-5", "arquivo": "c5-referencia-metodo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-5", "arquivo": "c5-referencia-metodo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "filter(Main::ehPalindromo): o metodo referenciado nunca e custeado; escrito com for-each o mesmo algoritmo sai O(n^2)" },
     { "defeito": "C-5", "arquivo": "c5-recursao-em-lambda.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
       "nota": "contar(f) dentro de mapToInt: lambda nao conta como laco para a recursao, que sai '?' com confianca BAIXA; escrita com for-each recebe classe" },

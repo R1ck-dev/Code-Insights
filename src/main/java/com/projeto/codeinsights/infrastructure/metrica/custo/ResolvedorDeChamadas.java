@@ -21,10 +21,12 @@ import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
+import com.github.javaparser.ast.expr.TypeExpr;
 import com.github.javaparser.ast.type.ArrayType;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
@@ -70,6 +72,9 @@ public final class ResolvedorDeChamadas {
             "get", "getFirst", "getLast", "peek", "poll", "pop", "peekFirst", "peekLast", "pollFirst",
             "pollLast", "removeFirst", "removeLast", "element", "first", "last",
             "floor", "ceiling", "higher", "lower");
+
+    /** A referencia a metodo ({@code Main::f}) nao traz argumentos: a aridade nao serve para escolher o metodo. */
+    private static final int QUALQUER_ARIDADE = -1;
 
     private final TiposDeVariavel tipos;
     private final List<MethodDeclaration> metodos;
@@ -132,6 +137,37 @@ public final class ResolvedorDeChamadas {
         metodo.findAll(MethodCallExpr.class)
                 .forEach(chamada -> alvo(chamada).filter(alvo -> alvo != metodo).ifPresent(chamados::add));
         return chamados;
+    }
+
+    /**
+     * Metodos da unidade que a <b>referencia</b> {@code X::m} / {@code this::m} / {@code receptor::m} pode
+     * apontar. Como ela nao traz argumentos, todas as sobrecargas de nome {@code m} na classe alvo sao
+     * candidatas; quem custeia escolhe entre elas. Vazio para biblioteca ({@code Integer::sum}), para
+     * construtor ({@code Tipo::new}) e para receptor de tipo que o motor nao sabe dizer.
+     */
+    public List<MethodDeclaration> alvosDaReferencia(MethodReferenceExpr referencia) {
+        String nome = referencia.getIdentifier();
+        Expression escopo = referencia.getScope();
+        if (escopo instanceof ThisExpr) {
+            return candidatosSemReceptor(referencia, nome, QUALQUER_ARIDADE);
+        }
+        return classeDaReferencia(escopo)
+                .map(classe -> candidatosDe(classe, nome, QUALQUER_ARIDADE, conjuntoPorIdentidade()))
+                .orElse(List.of());
+    }
+
+    /**
+     * Metodos da unidade que {@code metodo} aponta por referencia; a auto-referencia nao conta. Fica
+     * fora de {@link #chamadosPor}: o grafo de ciclos do espaco nao enxerga referencias, e so a escolha
+     * do ponto de entrada precisa saber que um metodo so referenciado nao e raiz.
+     */
+    public Set<MethodDeclaration> referenciadosPor(MethodDeclaration metodo) {
+        Set<MethodDeclaration> referenciados = conjuntoPorIdentidade();
+        metodo.findAll(MethodReferenceExpr.class)
+                .forEach(referencia -> alvosDaReferencia(referencia).stream()
+                        .filter(alvo -> alvo != metodo)
+                        .forEach(referenciados::add));
+        return referenciados;
     }
 
     /** Tipo estatico da expressao, ou vazio quando o motor nao sabe dizer. */
@@ -197,18 +233,20 @@ public final class ResolvedorDeChamadas {
 
     /** Chamada sem escopo ou com {@code this}: a classe que a envolve, depois as de fora, depois as supertipos. */
     private Optional<MethodDeclaration> alvoSemReceptor(Node chamada, String nome, int aridade) {
-        Optional<TypeDeclaration<?>> classe = tipoEnvolvente(chamada);
+        return ultimo(candidatosSemReceptor(chamada, nome, aridade));
+    }
+
+    private List<MethodDeclaration> candidatosSemReceptor(Node ponto, String nome, int aridade) {
+        Optional<TypeDeclaration<?>> classe = tipoEnvolvente(ponto);
         while (classe.isPresent()) {
-            Optional<MethodDeclaration> achado = metodoDe(classe.get(), nome, aridade);
-            if (achado.isPresent()) {
-                return achado;
+            List<MethodDeclaration> achados = candidatosDe(classe.get(), nome, aridade, conjuntoPorIdentidade());
+            if (!achados.isEmpty()) {
+                return achados;
             }
             classe = tipoEnvolvente(classe.get());
         }
         // Corpo de classe anonima nao e um TypeDeclaration: ali o metodo so se acha pelo nome.
-        return metodos.stream()
-                .filter(metodo -> ehMetodo(metodo, nome, aridade))
-                .reduce((primeiro, ultimo) -> ultimo);
+        return metodos.stream().filter(metodo -> ehMetodo(metodo, nome, aridade)).toList();
     }
 
     private Optional<TypeDeclaration<?>> classeDoReceptor(Expression receptor) {
@@ -226,30 +264,55 @@ public final class ResolvedorDeChamadas {
     }
 
     private Optional<MethodDeclaration> metodoDe(TypeDeclaration<?> tipo, String nome, int aridade) {
-        return metodoDe(tipo, nome, aridade, conjuntoPorIdentidade());
+        return ultimo(candidatosDe(tipo, nome, aridade, conjuntoPorIdentidade()));
     }
 
-    private Optional<MethodDeclaration> metodoDe(TypeDeclaration<?> tipo, String nome, int aridade,
+    /**
+     * {@code X} em {@code X::m}. O parser entrega tudo como {@code TypeExpr} — {@code Main::f} e
+     * {@code filtro::passa} —, entao um nome que e variavel declarada resolve pelo tipo dela, e o resto
+     * pelo nome da classe da unidade. Receptor mais complexo ({@code obj.campo::m}) segue a regra da chamada.
+     */
+    private Optional<TypeDeclaration<?>> classeDaReferencia(Expression escopo) {
+        if (!(escopo instanceof TypeExpr tipo)) {
+            return classeDoReceptor(escopo);
+        }
+        Optional<String> nome = TiposDeVariavel.nomeDe(tipo.getType());
+        Optional<Type> daVariavel = nome.flatMap(tipos::tipoDeclarado);
+        return (daVariavel.isPresent() ? daVariavel.flatMap(TiposDeVariavel::nomeDe) : nome).map(classes::get);
+    }
+
+    /**
+     * Os metodos de nome {@code nome} que o tipo declara; se nao declara nenhum, os do primeiro
+     * supertipo da unidade que declare. Sobrecargas de mesma aridade ficam todas na lista.
+     */
+    private List<MethodDeclaration> candidatosDe(TypeDeclaration<?> tipo, String nome, int aridade,
             Set<TypeDeclaration<?>> vistos) {
         if (!vistos.add(tipo)) {
-            return Optional.empty();
+            return List.of();
         }
-        Optional<MethodDeclaration> proprio = tipo.getMethods().stream()
+        List<MethodDeclaration> proprios = tipo.getMethods().stream()
                 .filter(metodo -> ehMetodo(metodo, nome, aridade))
-                .reduce((primeiro, ultimo) -> ultimo);
-        if (proprio.isPresent() || !(tipo instanceof ClassOrInterfaceDeclaration declaracao)) {
-            return proprio;
+                .toList();
+        if (!proprios.isEmpty() || !(tipo instanceof ClassOrInterfaceDeclaration declaracao)) {
+            return proprios;
         }
         return Stream.concat(declaracao.getExtendedTypes().stream(), declaracao.getImplementedTypes().stream())
                 .map(supertipo -> classes.get(supertipo.getNameAsString()))
                 .filter(Objects::nonNull)
-                .map(supertipo -> metodoDe(supertipo, nome, aridade, vistos))
-                .flatMap(Optional::stream)
-                .findFirst();
+                .map(supertipo -> candidatosDe(supertipo, nome, aridade, vistos))
+                .filter(achados -> !achados.isEmpty())
+                .findFirst()
+                .orElse(List.of());
+    }
+
+    /** Entre sobrecargas de mesma aridade, vence a ultima declarada. */
+    private static Optional<MethodDeclaration> ultimo(List<MethodDeclaration> candidatos) {
+        return candidatos.isEmpty() ? Optional.empty() : Optional.of(candidatos.get(candidatos.size() - 1));
     }
 
     private static boolean ehMetodo(MethodDeclaration metodo, String nome, int aridade) {
-        return metodo.getNameAsString().equals(nome) && metodo.getParameters().size() == aridade;
+        return metodo.getNameAsString().equals(nome)
+                && (aridade == QUALQUER_ARIDADE || metodo.getParameters().size() == aridade);
     }
 
     private static Optional<TypeDeclaration<?>> tipoEnvolvente(Node no) {
