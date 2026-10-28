@@ -185,13 +185,13 @@
     { "defeito": "T-14", "arquivo": "t14-join-em-laco.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
       "nota": "String.join fora da tabela: chamada estatica em String vira externa O(1)" },
 
-    { "defeito": "C-5", "arquivo": "c5-filter-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-5", "arquivo": "c5-filter-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "filter(x -> b.contains(x)): o corpo linear do lambda roda uma vez por elemento, mas o motor o soma ao filter e responde O(n)" },
-    { "defeito": "C-5", "arquivo": "c5-removeif-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-5", "arquivo": "c5-removeif-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "removeIf(x -> proibidos.contains(x)): removeIf LINEAR + corpo LINEAR somados dao O(n)" },
-    { "defeito": "C-5", "arquivo": "c5-range-laco-interno.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "C-5", "arquivo": "c5-range-laco-interno.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "IntStream.range(0, n).forEach(i -> { for j < n ... }): range(0, n) itera n vezes, o motor soma o laco interno" },
-    { "defeito": "C-5", "arquivo": "c5-sort-comparador-linear.java", "metrica": "tempo", "gabarito": "O(n^3)", "aberto": true,
+    { "defeito": "C-5", "arquivo": "c5-sort-comparador-linear.java", "metrica": "tempo", "gabarito": "O(n^3)", "aberto": false,
       "nota": "comparador linear em Collections.sort: o correto e n log n x n = n^2 log n, que a escala fixa exibe como O(n^3) (arredonda para cima, Custo.classe); o motor responde O(n log n)" },
     { "defeito": "C-5", "arquivo": "c5-referencia-metodo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
       "nota": "filter(Main::ehPalindromo): o metodo referenciado nunca e custeado; escrito com for-each o mesmo algoritmo sai O(n^2)" },
@@ -202,12 +202,12 @@
     { "defeito": "C-5", "arquivo": "c5-compute-if-absent-controle.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "controle: computeIfAbsent roda o lambda no maximo uma vez por chamada; so as operacoes que percorrem os elementos multiplicam" },
 
-    { "defeito": "L-5", "arquivo": "l5-foreach-lambda-linear.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "L-5", "arquivo": "l5-foreach-lambda-linear.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "nums.forEach(x -> ...frequency/contains): forEach de List nem esta na tabela (O(1)), e o corpo linear e somado, nao multiplicado" },
 
-    { "defeito": "T-5", "arquivo": "t5-anymatch-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "T-5", "arquivo": "t5-anymatch-contains.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "anyMatch(x -> b.contains(x)): curto-circuito vale pelo pior caso; anyMatch LINEAR + corpo LINEAR somados dao O(n)" },
-    { "defeito": "T-5", "arquivo": "t5-range-aninhado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+    { "defeito": "T-5", "arquivo": "t5-range-aninhado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "forEach dentro de forEach, ambos em IntStream.range(0, n): os dois lambdas devem multiplicar, e o motor soma" },
 
     { "defeito": "D6", "arquivo": "d6-recursao-mutua-campo-homonimo.java", "metrica": "espaco", "gabarito": "O(n)", "aberto": true,

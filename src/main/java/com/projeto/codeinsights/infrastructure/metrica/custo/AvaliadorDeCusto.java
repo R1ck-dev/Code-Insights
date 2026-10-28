@@ -13,6 +13,7 @@ import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.stmt.DoStmt;
@@ -141,11 +142,7 @@ public final class AvaliadorDeCusto {
                     .mais(maiorCustoDosFilhos(escolha.getEntries(), metodoAtual));
         }
         if (no instanceof MethodCallExpr chamada) {
-            CustoAvaliado escopo = chamada.getScope()
-                    .map(receptor -> custoDoNo(receptor, metodoAtual))
-                    .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
-            return escopo.mais(maiorCustoDosFilhos(chamada.getArguments(), metodoAtual))
-                    .mais(custoDaChamada(chamada, metodoAtual));
+            return custoDeChamadaComArgumentos(chamada, metodoAtual);
         }
         if (no instanceof ArrayCreationExpr criacao) {
             return maiorCustoDosFilhos(criacao.getChildNodes(), metodoAtual).mais(custoDeAlocacao(criacao));
@@ -154,6 +151,33 @@ public final class AvaliadorDeCusto {
             return maiorCustoDosFilhos(atribuicao.getChildNodes(), metodoAtual).mais(custoDeConcatenacao(atribuicao));
         }
         return maiorCustoDosFilhos(no.getChildNodes(), metodoAtual);
+    }
+
+    private CustoAvaliado custoDeChamadaComArgumentos(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
+        CustoAvaliado escopo = chamada.getScope()
+                .map(receptor -> custoDoNo(receptor, metodoAtual))
+                .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
+        return escopo.mais(custoDosArgumentos(chamada, metodoAtual))
+                .mais(custoDaChamada(chamada, metodoAtual));
+    }
+
+    /**
+     * Argumentos da chamada. O lambda de uma operacao que percorre os elementos ({@link OperacoesComCallback})
+     * roda uma vez por elemento: seu custo <b>multiplica</b>; qualquer outro argumento entra por {@code mais}.
+     */
+    private CustoAvaliado custoDosArgumentos(MethodCallExpr chamada, MethodDeclaration metodoAtual) {
+        Optional<CustoAvaliado> repeticoes = OperacoesComCallback.repeticoes(chamada, resolvedor);
+        return chamada.getArguments().stream()
+                .map(argumento -> custoDeArgumento(argumento, repeticoes, metodoAtual))
+                .reduce(CustoAvaliado.exato(Custo.CONSTANTE), CustoAvaliado::mais);
+    }
+
+    private CustoAvaliado custoDeArgumento(Expression argumento, Optional<CustoAvaliado> repeticoes,
+            MethodDeclaration metodoAtual) {
+        CustoAvaliado custo = custoDoNo(argumento, metodoAtual);
+        return repeticoes.isPresent() && argumento instanceof LambdaExpr
+                ? repeticoes.get().vezes(custo)
+                : custo;
     }
 
     private CustoAvaliado custoDeFor(ForStmt paraLaco, MethodDeclaration metodoAtual) {

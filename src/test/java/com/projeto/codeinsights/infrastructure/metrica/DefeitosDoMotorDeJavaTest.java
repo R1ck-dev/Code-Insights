@@ -209,7 +209,6 @@ class DefeitosDoMotorDeJavaTest {
          * nada no algoritmo.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("lambda de stream e multiplicado pelos elementos, como o corpo do laco")
         void lambdaEmStreamEhMultiplicado() {
             String comLaco = """
