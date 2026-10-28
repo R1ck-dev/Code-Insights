@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
@@ -222,7 +221,6 @@ class DefeitosDoMotorDeCTest {
          * com {@code while}, o mesmo laco sai certo. Espelha o caso de Java.
          */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("laco com flag de parada nao vira laco constante")
         void lacoComFlagNaoEhConstante() {
             String comWhile = """
