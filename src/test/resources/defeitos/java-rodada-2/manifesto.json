@@ -34,6 +34,13 @@
     { "defeito": "C-9", "arquivo": "c9-sem-classe-sem-import.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": false,
       "nota": "controle: o mesmo codigo sem a linha de import" },
 
+    { "defeito": "L-1", "arquivo": "l1-contador-predeclarado.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "int i; for (i = frase.length() - 1; i >= 0; i--): a init e uma atribuicao, sem declarador, e allMatch sobre lista vazia da true; n voltas com concatenacao em String viram O(1) x O(n)" },
+    { "defeito": "L-1", "arquivo": "l1-digitos.java", "metrica": "tempo", "gabarito": "O(log n)", "aberto": true,
+      "nota": "for (int d = 0; n > 0; d++) n /= 10: o declarador d = 0 e literal e n > 0 tem literal, entao sai constante antes de olhar a divisao do corpo" },
+    { "defeito": "L-1", "arquivo": "l1-josefo.java", "metrica": "tempo", "gabarito": "O(n^2)", "aberto": true,
+      "nota": "for (int rodada = 1; roda.size() > 1; rodada++): a condicao nao compara o contador, mas tem literal; n voltas de remove O(n) saem como O(n)" },
+
     { "defeito": "L-2", "arquivo": "l2-fatoracao-um-laco.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": true,
       "nota": "uma divisao num ramo do corpo declara o laco logaritmico; com n primo, divisor sobe ate n" },
 

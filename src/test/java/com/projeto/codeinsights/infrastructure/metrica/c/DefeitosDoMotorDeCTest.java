@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
@@ -213,6 +214,40 @@ class DefeitosDoMotorDeCTest {
         void limitePorChamadaNaoEhConstante() {
             assertThat(tempo("int main(void) { for (int i = 0; i < tamanho(); i++) soma += i; return 0; }"))
                     .isEqualTo("O(n)");
+        }
+
+        /**
+         * D5: a condicao {@code trocou == 1} compara com literal e o init {@code passada = 0} tambem,
+         * entao o laco externo do bubble sort com flag virava constante e a ordenacao, O(n). Escrito
+         * com {@code while}, o mesmo laco sai certo. Espelha o caso de Java.
+         */
+        @Test
+        @Tag("defeito-aberto")
+        @DisplayName("laco com flag de parada nao vira laco constante")
+        void lacoComFlagNaoEhConstante() {
+            String comWhile = """
+                    void ordena(int v[], int n) {
+                        int trocou = 1;
+                        while (trocou == 1) {
+                            trocou = 0;
+                            for (int j = 0; j < n - 1; j++)
+                                if (v[j] > v[j + 1]) { int t = v[j]; v[j] = v[j + 1]; v[j + 1] = t; trocou = 1; }
+                        }
+                    }
+                    """;
+            String comFor = """
+                    void ordena(int v[], int n) {
+                        int p, trocou = 1;
+                        for (p = 0; trocou == 1; p++) {
+                            trocou = 0;
+                            for (int j = 0; j < n - 1; j++)
+                                if (v[j] > v[j + 1]) { int t = v[j]; v[j] = v[j + 1]; v[j + 1] = t; trocou = 1; }
+                        }
+                    }
+                    """;
+
+            assertThat(tempo(comWhile)).isEqualTo("O(n^2)");
+            assertThat(tempo(comFor)).isEqualTo("O(n^2)");
         }
     }
 
