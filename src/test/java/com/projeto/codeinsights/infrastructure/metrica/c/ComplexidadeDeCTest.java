@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
@@ -315,6 +316,112 @@ class ComplexidadeDeCTest {
                         return n * fatorial(n - 1);
                     }
                     """)).isEqualTo("O(n)");
+        }
+    }
+
+    /**
+     * IC-11b: funcoes que se chamam em ciclo, sem auto-chamada direta. Os dois primeiros testes
+     * afirmam o gabarito e ficam abertos ate o motor resolver o ciclo; os demais sao controles que
+     * a correcao nao pode mexer: sem reducao, ou com descida por laco, a resposta honesta e '?'.
+     */
+    @Nested
+    @DisplayName("recursao mutua")
+    class RecursaoMutua {
+
+        private static final String PAR_IMPAR = """
+                int ehImpar(int n);
+
+                int ehPar(int n) {
+                    if (n == 0) return 1;
+                    return ehImpar(n - 1);
+                }
+
+                int ehImpar(int n) {
+                    if (n == 0) return 0;
+                    return ehPar(n - 1);
+                }
+
+                int main(void) { return ehPar(n); }
+                """;
+
+        @Test
+        @Tag("defeito-aberto")
+        @DisplayName("par e impar mutuos, com n - 1, sao lineares")
+        void parImparMutuoEhLinear() {
+            assertThat(tempo(PAR_IMPAR)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @Tag("defeito-aberto")
+        @DisplayName("ciclo de tres funcoes, com n - 1, e linear")
+        void trioMutuoEhLinear() {
+            assertThat(tempo("""
+                    int b(int n);
+                    int c(int n);
+
+                    int a(int n) {
+                        if (n == 0) return 1;
+                        return b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n == 0) return 0;
+                        return c(n - 1);
+                    }
+
+                    int c(int n) {
+                        if (n == 0) return 0;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("controle: ciclo sem reducao nao tem recorrencia, e a resposta e '?'")
+        void cicloSemReducaoContinuaIndeterminado() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n == 0) return 1;
+                        return b(n);
+                    }
+
+                    int b(int n) {
+                        if (n == 0) return 0;
+                        return a(n);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: ciclo que desce por um laco nao e reducao aritmetica, e a resposta e '?'")
+        void cicloPorLacoContinuaIndeterminado() {
+            assertThat(tempo("""
+                    int somaFilho(int i);
+
+                    int somaNo(int n) {
+                        int total = 0;
+                        for (int i = 0; i < n; i++) total += somaFilho(i);
+                        return total;
+                    }
+
+                    int somaFilho(int i) {
+                        return somaNo(i);
+                    }
+
+                    int main(void) { return somaNo(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: o espaco do ciclo continua O(n), com ou sem resolver o tempo")
+        void espacoDoCicloNaoMuda() {
+            assertThat(espaco(PAR_IMPAR)).isEqualTo("O(n)");
         }
     }
 
