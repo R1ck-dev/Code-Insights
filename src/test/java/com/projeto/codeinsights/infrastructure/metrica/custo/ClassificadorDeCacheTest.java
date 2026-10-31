@@ -432,6 +432,258 @@ class ClassificadorDeCacheTest {
                 .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
     }
 
+    // ----- ternario: cada ramo e protegido pela condicao que o seleciona -----
+
+    @Test
+    @DisplayName("ternario: memo[n] != 0 ? memo[n] : (memo[n] = f(n-1) + f(n-2)) e memoizacao, o else grava o resultado")
+    void ternarioQueGravaOResultado() {
+        assertThat(classificarDaRodada2("r9-fib-ternario.java", "fib"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.TERNARIO));
+    }
+
+    @Test
+    @DisplayName("ternario com o resultado no ramo then: memo[n] == 0 ? (memo[n] = f(n-1) + f(n-2)) : memo[n]")
+    void ternarioComOResultadoNoRamoEntao() {
+        String fonte = """
+                class Solucao {
+                    static long[] memo = new long[91];
+
+                    static long fib(int n) {
+                        if (n < 2) return n;
+                        return memo[n] == 0 ? (memo[n] = fib(n - 1) + fib(n - 2)) : memo[n];
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "fib")).isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.TERNARIO));
+    }
+
+    @Test
+    @DisplayName("ternario: o else so enxerga os termos || da condicao, um && nao garante a consulta")
+    void ternarioComEENoElseNaoProtege() {
+        String fonte = """
+                class Solucao {
+                    static long[] memo = new long[91];
+
+                    static long fib(int n, boolean cache) {
+                        if (n < 2) return n;
+                        return cache && memo[n] != 0 ? memo[n] : (memo[n] = fib(n - 1, cache) + fib(n - 2, cache));
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "fib")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("ternario sem escrita do resultado: a regra do indice decide, e a marca desfeita tira a memoizacao")
+    void caminhosComTernarioSaoMarcaDesfeita() {
+        String fonte = """
+                class Solucao {
+                    static int[][] adj;
+                    static boolean[] noCaminho;
+
+                    static int caminhos(int u, int destino) {
+                        if (u == destino) return 1;
+                        noCaminho[u] = true;
+                        int total = 0;
+                        for (int v = 0; v < adj.length; v++)
+                            total += adj[u][v] == 1 && !noCaminho[v] ? caminhos(v, destino) : 0;
+                        noCaminho[u] = false;
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "caminhos"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    // ----- continue: o que vem depois de if (consulta) continue; so executa com a consulta falsa -----
+
+    @Test
+    @DisplayName("DFS com continue: if (a[u][v] == 0 || visitado[v]) continue; e memoizacao, o indice v vai na chamada")
+    void dfsComContinue() {
+        assertThat(classificarDaRodada2("r9-dfs-continue.java", "visita"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("combinacoes com continue e desmarcacao: a protecao passa, quem rejeita a memoizacao e a volta")
+    void combinacoesComContinueSaoMarcaDesfeita() {
+        assertThat(classificarDaRodada2("r4-combinacoes-continue.java", "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("caminhos simples com Set, contains/continue e remove na volta: marca desfeita")
+    void caminhosComSetEContinueSaoMarcaDesfeita() {
+        String fonte = """
+                import java.util.Set;
+
+                class Solucao {
+                    static int caminhos(int[][] adj, Set<Integer> noCaminho, int u, int destino) {
+                        if (u == destino) return 1;
+                        noCaminho.add(u);
+                        int total = 0;
+                        for (int v = 0; v < adj.length; v++) {
+                            if (adj[u][v] == 0 || noCaminho.contains(v)) continue;
+                            total += caminhos(adj, noCaminho, v, destino);
+                        }
+                        noCaminho.remove(u);
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "caminhos"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("permutacoes com continue: usado[i] nao aparece em permuta(usado, k + 1), a regra do indice barra")
+    void permutacoesComContinueNaoTemIndiceNaChamada() {
+        String fonte = """
+                class Solucao {
+                    static int permuta(boolean[] usado, int k) {
+                        if (k == usado.length) return 1;
+                        int total = 0;
+                        for (int i = 0; i < usado.length; i++) {
+                            if (usado[i]) continue;
+                            usado[i] = true;
+                            total += permuta(usado, k + 1);
+                            usado[i] = false;
+                        }
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "permuta")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("continue numa condicao com &&: o corpo executa mesmo com a consulta falsa, nao protege")
+    void continueComEENaoProtege() {
+        String fonte = """
+                class Grafo {
+                    void visita(int[][] adj, boolean[] vis, int u) {
+                        vis[u] = true;
+                        for (int v = 0; v < adj.length; v++) {
+                            if (adj[u][v] == 0 && vis[v]) continue;
+                            visita(adj, vis, v);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "visita")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("continue com rotulo nao e reconhecido: so o continue sem rotulo vale (conservador)")
+    void continueComRotuloNaoProtege() {
+        String fonte = """
+                class Grafo {
+                    void visita(int[][] adj, boolean[] vis, int u) {
+                        vis[u] = true;
+                        externo:
+                        for (int v = 0; v < adj.length; v++) {
+                            if (vis[v]) continue externo;
+                            visita(adj, vis, v);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "visita")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("continue fora do corpo do laco da chamada: a chamada num laco interno nao e protegida")
+    void continueDeForaDoLacoInternoNaoProtege() {
+        String fonte = """
+                class Grafo {
+                    void visita(int[][] adj, boolean[] vis, int u) {
+                        vis[u] = true;
+                        for (int v = 0; v < adj.length; v++) {
+                            if (vis[v]) continue;
+                            for (int w = 0; w < adj.length; w++) visita(adj, vis, v);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "visita")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    // ----- residuo de risco: a consulta nao e uma marca, o metodo reordena os dados do vetor -----
+
+    @Test
+    @DisplayName("ordenacao: if (a[i] != a[j]) { troca; ordena(a, i+1, j); } compara dados e troca celulas, nao e memo")
+    void ordenacaoComTrocaSobIfNaoEhMemoizacao() {
+        String fonte = """
+                class Solucao {
+                    static void ordena(int[] a, int i, int j) {
+                        if (i >= j) return;
+                        if (a[i] != a[j]) {
+                            int t = a[i];
+                            a[i] = a[j];
+                            a[j] = t;
+                            ordena(a, i + 1, j);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "ordena")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("ordenacao com continue: if (a[k] == a[k+1]) continue; troca; ordena(a, k+1, j) tambem nao e memo")
+    void ordenacaoComTrocaDepoisDeContinueNaoEhMemoizacao() {
+        String fonte = """
+                class Solucao {
+                    static void ordena(int[] a, int i, int j) {
+                        if (i >= j) return;
+                        for (int k = i; k < j; k++) {
+                            if (a[k] == a[k + 1]) continue;
+                            int t = a[k];
+                            a[k] = a[k + 1];
+                            a[k + 1] = t;
+                            ordena(a, k + 1, j);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "ordena")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("insercao recursiva que desloca celulas sob if com indice nos argumentos nao e memo")
+    void insercaoQueDeslocaCelulasNaoEhMemoizacao() {
+        String fonte = """
+                class Solucao {
+                    static void insere(int[] a, int j, int chave) {
+                        if (j >= 0 && a[j] != chave) {
+                            a[j + 1] = a[j];
+                            insere(a, j - 1, chave);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "insere")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("rotulagem de distancia: dist[v] = dist[u] + 1 calcula um valor, e marca; segue memoizacao")
+    void rotulagemDeDistanciaEhMarca() {
+        String fonte = """
+                class Grafo {
+                    void rotula(int[][] adj, int[] dist, int u) {
+                        for (int v = 0; v < adj.length; v++)
+                            if (adj[u][v] == 1 && dist[v] == -1) {
+                                dist[v] = dist[u] + 1;
+                                rotula(adj, dist, v);
+                            }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "rotula"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
     // ----- escolha entre candidatos -----
 
     @Test
