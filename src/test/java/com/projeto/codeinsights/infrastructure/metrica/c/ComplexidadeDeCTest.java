@@ -75,6 +75,80 @@ class ComplexidadeDeCTest {
                     """)).isEqualTo("O(1)");
         }
 
+        /**
+         * Revisao da IC-11: a sombra do {@code const int N} global precisa enxergar a redeclaracao
+         * em lista ({@code int i, N = n}), por parametro de tipo do aluno e o {@code volatile const}.
+         * Em todas, {@code N} e a entrada: o laco e O(n), nunca O(1) com confianca.
+         */
+        @Test
+        @DisplayName("sombra do const global por declaracao multipla (int i, N = n) e laco linear")
+        void sombraPorDeclaracaoMultiplaNaoEhConstante() {
+            assertThat(tempo("""
+                    const int N = 100;
+                    void f(int n) {
+                        int i, N = n;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("sombra do const global por parametro de tipo do aluno (typedef) e laco linear")
+        void sombraPorParametroDeTipoDoAlunoNaoEhConstante() {
+            assertThat(tempo("""
+                    typedef int myint;
+                    const int N = 100;
+                    void f(myint N) {
+                        int i;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("sombra por parametro ponteiro de tipo do aluno e por struct (S *N) tambem tira o nome")
+        void sombraPorPonteiroDeTipoDoAluno() {
+            assertThat(ConstantesConstEmC.colher("""
+                    typedef struct { int a; } Reg;
+                    const int N = 100;
+                    void f(Reg *N) { }
+                    """)).doesNotContain("N");
+            assertThat(ConstantesConstEmC.colher("""
+                    struct S { int a; };
+                    const int N = 100;
+                    void f(struct S *N) { }
+                    """)).doesNotContain("N");
+        }
+
+        @Test
+        @DisplayName("volatile const nao e constante: o valor pode mudar fora do programa")
+        void volatileConstNaoEhConstante() {
+            assertThat(tempo("""
+                    volatile const int N = 5;
+                    void f(int n) {
+                        int i;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("controle: const global lido em varias expressoes, sem redeclaracao, segue constante")
+        void constLidoEmExpressoesSegueConstante() {
+            assertThat(tempo("""
+                    const int N = 100;
+                    int g(int a, int b) { return a + b; }
+                    void f(int n) {
+                        int i, s = 0, v[N];
+                        for (i = 0; i < N; i++) {
+                            s += i * N;
+                            s = g(s, N);
+                            v[i] = (int) N;
+                        }
+                    }
+                    """)).isEqualTo("O(1)");
+        }
+
         @Test
         @DisplayName("indice que dobra e logaritmico")
         void indiceMultiplicativoEhLogaritmico() {
@@ -240,6 +314,25 @@ class ComplexidadeDeCTest {
                     """)).isEqualTo("O(1)");
         }
 
+        /** IC-11 (11a): {@code const int} com literal e colhido junto dos {@code #define}. */
+        @Test
+        @DisplayName("const int com literal tambem dimensiona vetor fixo")
+        void vetorPorConstEhConstante() {
+            assertThat(espaco("""
+                    const int MAX = 1000;
+                    int main(void) { int v[MAX]; return v[0]; }
+                    """)).isEqualTo("O(1)");
+        }
+
+        @Test
+        @DisplayName("controle: int sem const nao e constante, o vetor e de tamanho variavel")
+        void vetorPorIntSemConstCresce() {
+            assertThat(espaco("""
+                    int MAX = 1000;
+                    int main(void) { int v[MAX]; return v[0]; }
+                    """)).isEqualTo("O(n)");
+        }
+
         @Test
         @DisplayName("vetor de tamanho variavel cresce com a entrada")
         void vlaCresce() {
@@ -296,6 +389,238 @@ class ComplexidadeDeCTest {
                         return n * fatorial(n - 1);
                     }
                     """)).isEqualTo("O(n)");
+        }
+    }
+
+    /**
+     * IC-11b: funcoes que se chamam em ciclo, sem auto-chamada direta. Os testes de gabarito (linear,
+     * exponencial, divisivo) afirmam a classe do ciclo fundido numa recorrencia so; os controles nao
+     * podem mudar: sem reducao, ou com descida por laco, a resposta honesta e '?'.
+     */
+    @Nested
+    @DisplayName("recursao mutua")
+    class RecursaoMutua {
+
+        private static final String PAR_IMPAR = """
+                int ehImpar(int n);
+
+                int ehPar(int n) {
+                    if (n == 0) return 1;
+                    return ehImpar(n - 1);
+                }
+
+                int ehImpar(int n) {
+                    if (n == 0) return 0;
+                    return ehPar(n - 1);
+                }
+
+                int main(void) { return ehPar(n); }
+                """;
+
+        @Test
+        @DisplayName("par e impar mutuos, com n - 1, sao lineares")
+        void parImparMutuoEhLinear() {
+            assertThat(tempo(PAR_IMPAR)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("ciclo de tres funcoes, com n - 1, e linear")
+        void trioMutuoEhLinear() {
+            assertThat(tempo("""
+                    int b(int n);
+                    int c(int n);
+
+                    int a(int n) {
+                        if (n == 0) return 1;
+                        return b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n == 0) return 0;
+                        return c(n - 1);
+                    }
+
+                    int c(int n) {
+                        if (n == 0) return 0;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(n)");
+        }
+
+        /**
+         * a(n) = 2 b(n-1) e b(n) = 2 a(n-1): a(n) = 4 a(n-2) = 2^n exato. Sem folga entre o
+         * gabarito e a classe, e o caso que a fusao do ciclo (a = 2, reducao n-1) acerta em cheio.
+         */
+        @Test
+        @DisplayName("mutua em que cada funcao chama a outra duas vezes, com n - 1, e O(2^n)")
+        void exponencialMutuaSimetricaEhExponencial() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1) + a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(2^n)");
+        }
+
+        /**
+         * a(n) = 2 b(n-1) e b(n) = a(n-1): a(n) = 2 a(n-2), Theta(raiz de 2 elevada a n). Fundido
+         * em a = 2 com n-1 sai O(2^n): superestima, o lado seguro; '?' ou classe abaixo seria erro
+         * para menos. Mesmo contrato do controle Java (ic11b-exponencial-mutua).
+         */
+        @Test
+        @DisplayName("mutua em que so uma das funcoes chama a outra duas vezes nao fica abaixo de O(2^n)")
+        void exponencialMutuaAssimetricaNaoSubestima() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(2^n)");
+        }
+
+        /**
+         * Cada funcao faz n de trabalho e chama a outra duas vezes com n/2: a(n) = 2 b(n/2) + n e
+         * b(n) = 2 a(n/2) + n, logo a(n) = 4 a(n/4) + 2n. Teorema Mestre (a = b = 4, f = n), caso 2:
+         * n log n. O ciclo fundido, 2 T(n/2) + n, da a mesma classe.
+         */
+        @Test
+        @DisplayName("mutua divisiva, com n/2 e trabalho linear em cada funcao, e O(n log n)")
+        void divisivoMutuoEhNLogN() {
+            assertThat(tempo("""
+                    long direita(int n);
+
+                    long esquerda(int n) {
+                        if (n <= 1) return 1;
+                        long soma = 0;
+                        for (int i = 0; i < n; i++) soma += i;
+                        return soma + direita(n / 2) + direita(n / 2);
+                    }
+
+                    long direita(int n) {
+                        if (n <= 1) return 1;
+                        long soma = 0;
+                        for (int i = 0; i < n; i++) soma += i;
+                        return soma + esquerda(n / 2) + esquerda(n / 2);
+                    }
+
+                    int main(void) { return esquerda(n); }
+                    """)).isEqualTo("O(n log n)");
+        }
+
+        /**
+         * Revisao da IC-11: a(n) = 2 a(n-1) + b(n-1) e b(n) = a(n/2). Tomar a divisiva "que domina"
+         * dava um polinomio para um real exponencial; entre membros nao ha reducao mista assumida.
+         */
+        @Test
+        @DisplayName("controle: n-c num membro e n/b noutro nao tem recorrencia unica, e a resposta e '?'")
+        void reducoesMistasEntreMembrosSaemIndeterminadas() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1) + a(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n / 2);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: a chama b(n/2) e c(n-1); membros de reducao diferente voltam '?'")
+        void reducoesMistasNoTrioSaemIndeterminadas() {
+            assertThat(tempo("""
+                    int b(int n);
+                    int c(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n / 2) + c(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n / 2);
+                    }
+
+                    int c(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: ciclo sem reducao nao tem recorrencia, e a resposta e '?'")
+        void cicloSemReducaoContinuaIndeterminado() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n == 0) return 1;
+                        return b(n);
+                    }
+
+                    int b(int n) {
+                        if (n == 0) return 0;
+                        return a(n);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: ciclo que desce por um laco nao e reducao aritmetica, e a resposta e '?'")
+        void cicloPorLacoContinuaIndeterminado() {
+            assertThat(tempo("""
+                    int somaFilho(int i);
+
+                    int somaNo(int n) {
+                        int total = 0;
+                        for (int i = 0; i < n; i++) total += somaFilho(i);
+                        return total;
+                    }
+
+                    int somaFilho(int i) {
+                        return somaNo(i);
+                    }
+
+                    int main(void) { return somaNo(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: o espaco do ciclo continua O(n), com ou sem resolver o tempo")
+        void espacoDoCicloNaoMuda() {
+            assertThat(espaco(PAR_IMPAR)).isEqualTo("O(n)");
         }
     }
 

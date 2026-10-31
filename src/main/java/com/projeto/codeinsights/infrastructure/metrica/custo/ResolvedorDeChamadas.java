@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import com.github.javaparser.ast.CompilationUnit;
@@ -77,11 +78,13 @@ public final class ResolvedorDeChamadas {
     private static final int QUALQUER_ARIDADE = -1;
 
     private final TiposDeVariavel tipos;
+    private final NomesAmbiguos ambiguos;
     private final List<MethodDeclaration> metodos;
     private final Map<String, TypeDeclaration<?>> classes = new HashMap<>();
 
     private ResolvedorDeChamadas(CompilationUnit unidade) {
         this.tipos = TiposDeVariavel.de(unidade);
+        this.ambiguos = NomesAmbiguos.de(unidade);
         this.metodos = unidade.findAll(MethodDeclaration.class);
         unidade.findAll(TypeDeclaration.class).forEach(tipo -> classes.putIfAbsent(tipo.getNameAsString(), tipo));
     }
@@ -133,8 +136,23 @@ public final class ResolvedorDeChamadas {
 
     /** Metodos da unidade que {@code metodo} chama; a auto-chamada nao conta. */
     public Set<MethodDeclaration> chamadosPor(MethodDeclaration metodo) {
+        return chamadosPor(metodo, chamada -> true);
+    }
+
+    /**
+     * Como {@link #chamadosPor}, mas sem as chamadas cujo receptor e um nome declarado com mais de um
+     * tipo na unidade: a tabela plana resolve esse receptor para um dos tipos, sem saber qual, e a
+     * aresta pode ser falsa. Alimenta so o SCC do tempo, onde uma aresta falsa vira um numero errado;
+     * o espaco continua com {@link #chamadosPor}.
+     */
+    public Set<MethodDeclaration> chamadosPorSemReceptorAmbiguo(MethodDeclaration metodo) {
+        return chamadosPor(metodo, chamada -> chamada.getScope().filter(ambiguos::receptorAmbiguo).isEmpty());
+    }
+
+    private Set<MethodDeclaration> chamadosPor(MethodDeclaration metodo, Predicate<MethodCallExpr> considerar) {
         Set<MethodDeclaration> chamados = conjuntoPorIdentidade();
-        metodo.findAll(MethodCallExpr.class)
+        metodo.findAll(MethodCallExpr.class).stream()
+                .filter(considerar)
                 .forEach(chamada -> alvo(chamada).filter(alvo -> alvo != metodo).ifPresent(chamados::add));
         return chamados;
     }

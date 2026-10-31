@@ -264,8 +264,7 @@
       "origem": "exemplo classico de recursao mutua (Abelson e Sussman, SICP, exercicio 1.15 e variantes): duas funcoes que se chamam alternadamente, sem auto-chamada direta",
       "tempoGabarito": "O(n)",
       "espacoGabarito": "O(n)",
-      "tempoMotor": "?",
-      "nota": "Recursao MUTUA: ehPar chama ehImpar e vice-versa, sem auto-chamada direta. O motor conta auto-chamadas por caminho e nao monta o ciclo do grafo de chamadas, entao nao encontra recorrencia para resolver. Responde ? em vez de chutar -- a mesma escolha do lado Java, onde a limitacao ja estava documentada. Confessar ignorancia e preferivel a inventar uma classe: o espaco, esse sim, sai O(n) porque a profundidade da pilha e visivel sem resolver a recorrencia."
+      "nota": "Recursao MUTUA: ehPar chama ehImpar e vice-versa, sem auto-chamada direta. O motor monta o ciclo do grafo de chamadas e o resolve como uma recorrencia unica (reducao n - 1 por volta, n voltas), acertando O(n). O ganho vem de um caso adversarial que era '?' honesto, nao de generalizacao medida. O espaco ja saia O(n) porque a profundidade da pilha e visivel sem resolver a recorrencia."
     },
     {
       "arquivo": "canonico/ordenacao-selecao.c",

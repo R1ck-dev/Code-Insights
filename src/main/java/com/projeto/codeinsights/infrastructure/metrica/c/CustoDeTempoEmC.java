@@ -1,9 +1,11 @@
 package com.projeto.codeinsights.infrastructure.metrica.c;
 
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,6 +13,8 @@ import java.util.Set;
 
 import com.projeto.codeinsights.infrastructure.metrica.c.ExpressoesDeC.Chamada;
 import com.projeto.codeinsights.infrastructure.metrica.c.ProgramaDeC.FuncaoDeC;
+import com.projeto.codeinsights.infrastructure.metrica.custo.AnalisadorDeRecursao.Recursao;
+import com.projeto.codeinsights.infrastructure.metrica.custo.CicloDeRecursao;
 import com.projeto.codeinsights.infrastructure.metrica.custo.Custo;
 import com.projeto.codeinsights.infrastructure.metrica.custo.CustoAvaliado;
 import com.projeto.codeinsights.infrastructure.metrica.custo.SolucionadorDeRecorrencia;
@@ -26,7 +30,9 @@ import com.projeto.codeinsights.infrastructure.metrica.custo.SolucionadorDeRecor
  *   <li>chamada a funcao do arquivo: o custo dela, memoizado;</li>
  *   <li>chamada a biblioteca: {@link BibliotecaDeC};</li>
  *   <li>funcao recursiva: {@link SolucionadorDeRecorrencia} sobre a recorrencia de
- *       {@link RecursaoEmC} — literalmente o mesmo Teorema Mestre do lado Java.</li>
+ *       {@link RecursaoEmC} — literalmente o mesmo Teorema Mestre do lado Java;</li>
+ *   <li>recursao mutua ({@code par -> impar -> par}): uma recorrencia so para o ciclo inteiro, fundida por
+ *       {@link CicloDeRecursao} — o mesmo codigo do lado Java.</li>
  * </ul>
  * O ponto de entrada e {@code main}; sem ele, as raizes do grafo de chamadas. Codigo morto nao
  * contamina a estimativa.
@@ -38,14 +44,26 @@ import com.projeto.codeinsights.infrastructure.metrica.custo.SolucionadorDeRecor
  */
 final class CustoDeTempoEmC {
 
-    private final Map<String, FuncaoDeC> funcoes = new HashMap<>();
+    private final ProgramaDeC programa;
     private final Map<String, CustoAvaliado> memo = new HashMap<>();
     private final Deque<String> emAvaliacao = new ArrayDeque<>();
     private final Set<String> constantes;
+    /** Funcao (por chave) -> o ciclo de recursao mutua a que pertence, so grupos de duas ou mais. */
+    private final Map<String, List<FuncaoDeC>> ciclos;
 
     private CustoDeTempoEmC(ProgramaDeC programa, Set<String> constantes) {
+        this.programa = programa;
         this.constantes = constantes;
-        programa.funcoes().forEach(funcao -> funcoes.put(funcao.chave(), funcao));
+        this.ciclos = ciclosPorChave(programa);
+    }
+
+    private static Map<String, List<FuncaoDeC>> ciclosPorChave(ProgramaDeC programa) {
+        Map<String, List<FuncaoDeC>> porChave = new HashMap<>();
+        for (int[] indices : GrafoDeChamadasEmC.ciclos(programa)) {
+            List<FuncaoDeC> ciclo = Arrays.stream(indices).mapToObj(programa.funcoes()::get).toList();
+            ciclo.forEach(membro -> porChave.put(membro.chave(), ciclo));
+        }
+        return porChave;
     }
 
     static CustoAvaliado doPrograma(ProgramaDeC programa, Set<String> constantes) {
@@ -94,9 +112,12 @@ final class CustoDeTempoEmC {
                     "recursao mutua envolvendo `%s`: nao ha recorrencia de uma funcao so a resolver"
                             .formatted(funcao.nome()));
         }
+        if (ciclos.containsKey(funcao.chave())) {
+            return custoDoCiclo(ciclos.get(funcao.chave()));
+        }
         emAvaliacao.push(funcao.chave());
         try {
-            CustoAvaliado corpo = custoDoNo(funcao.corpo(), funcao);
+            CustoAvaliado corpo = custoLocal(funcao);
             CustoAvaliado resultado = RecursaoEmC.ehRecursiva(funcao)
                     ? SolucionadorDeRecorrencia.resolver(RecursaoEmC.analisar(funcao), corpo)
                     : corpo;
@@ -104,6 +125,35 @@ final class CustoDeTempoEmC {
             return resultado;
         } finally {
             emAvaliacao.pop();
+        }
+    }
+
+    private CustoAvaliado custoLocal(FuncaoDeC funcao) {
+        return custoDoNo(funcao.corpo(), funcao);
+    }
+
+    /**
+     * Recursao mutua: uma recorrencia so para o ciclo inteiro ({@link CicloDeRecursao}). O custo local de cada
+     * membro conta as chamadas ao ciclo como O(1) ({@link #custoDaChamada}); o resultado e o mesmo para todos
+     * os membros, entao e gravado no memo de cada um. Sem {@code main} e sem raiz fora do ciclo, todos os
+     * membros sao pontos de entrada ({@link #pontosDeEntrada}) e o custo e o do ciclo, para qualquer entrada.
+     */
+    private CustoAvaliado custoDoCiclo(List<FuncaoDeC> ciclo) {
+        ciclo.forEach(membro -> emAvaliacao.push(membro.chave()));
+        try {
+            List<String> nomes = ciclo.stream().map(FuncaoDeC::nome).toList();
+            Set<String> nomesDoCiclo = new LinkedHashSet<>(nomes);
+            List<CustoAvaliado> locais = ciclo.stream().map(this::custoLocal).toList();
+            List<Recursao> recursoes = ciclo.stream()
+                    .map(membro -> RecursaoEmC.analisar(membro, nomesDoCiclo))
+                    .toList();
+            CustoAvaliado resultado = CicloDeRecursao.combinar(recursoes)
+                    .map(unica -> CicloDeRecursao.resolver(nomes, unica, locais))
+                    .orElseGet(() -> CicloDeRecursao.semRecorrenciaUnica(nomes, recursoes));
+            ciclo.forEach(membro -> memo.put(membro.chave(), resultado));
+            return resultado;
+        } finally {
+            ciclo.forEach(membro -> emAvaliacao.remove(membro.chave()));
         }
     }
 
@@ -146,24 +196,17 @@ final class CustoDeTempoEmC {
         if (atual != null && chamada.nome().equals(atual.nome())) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
-        FuncaoDeC alvo = funcoes.get(chamada.nome() + "/" + aridade(chamada));
-        if (alvo == null) {
-            alvo = funcoes.values().stream()
-                    .filter(funcao -> funcao.nome().equals(chamada.nome()))
-                    .findFirst()
-                    .orElse(null);
-        }
-        if (alvo != null) {
-            return custoDaFuncao(alvo);
+        Optional<FuncaoDeC> alvo = GrafoDeChamadasEmC.funcaoChamada(programa, chamada);
+        if (alvo.isPresent()) {
+            return mesmoCiclo(alvo.get(), atual) ? CustoAvaliado.exato(Custo.CONSTANTE) : custoDaFuncao(alvo.get());
         }
         return BibliotecaDeC.custo(chamada.nome())
                 .orElseGet(() -> CustoAvaliado.estimado(Custo.CONSTANTE,
                         "chamada externa `%s` desconhecida; assumida O(1)".formatted(chamada.nome())));
     }
 
-    private static int aridade(Chamada chamada) {
-        return chamada.argumentos().isBlank()
-                ? 0
-                : ParserEstruturalDeC.dividirNoNivelZero(chamada.argumentos(), ',').size();
+    private boolean mesmoCiclo(FuncaoDeC alvo, FuncaoDeC atual) {
+        List<FuncaoDeC> ciclo = atual == null ? null : ciclos.get(atual.chave());
+        return ciclo != null && ciclo.stream().anyMatch(membro -> membro.chave().equals(alvo.chave()));
     }
 }

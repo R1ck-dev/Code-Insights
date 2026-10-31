@@ -39,13 +39,14 @@ public final class AvaliadorDeEspaco {
 
     public static CustoAvaliado doPrograma(CompilationUnit unidade) {
         ResolvedorDeChamadas resolvedor = ResolvedorDeChamadas.de(unidade);
-        return maiorAlocacao(unidade, resolvedor.tipos()).mais(profundidadeDaPilha(resolvedor));
+        return maiorAlocacao(unidade, resolvedor.tipos(), ConstantesFinais.de(unidade)).mais(profundidadeDaPilha(resolvedor));
     }
 
-    private static CustoAvaliado maiorAlocacao(CompilationUnit unidade, TiposDeVariavel tipos) {
+    private static CustoAvaliado maiorAlocacao(CompilationUnit unidade, TiposDeVariavel tipos,
+            ConstantesFinais constantes) {
         CustoAvaliado maior = CustoAvaliado.exato(Custo.CONSTANTE);
         for (ArrayCreationExpr criacao : unidade.findAll(ArrayCreationExpr.class)) {
-            maior = maior.mais(CustoAvaliado.exato(Custo.poliLog(dimensoesVariaveis(criacao), 0)));
+            maior = maior.mais(CustoAvaliado.exato(Custo.poliLog(dimensoesVariaveis(criacao, constantes), 0)));
         }
         for (ObjectCreationExpr criacao : unidade.findAll(ObjectCreationExpr.class)) {
             if (COLECOES.contains(criacao.getType().getNameAsString())) {
@@ -72,10 +73,10 @@ public final class AvaliadorDeEspaco {
                 .orElse(false);
     }
 
-    /** {@code new int[n]} -> grau 1; {@code new int[n][n]} -> grau 2; {@code new int[26]} -> grau 0 (constante). */
-    private static int dimensoesVariaveis(ArrayCreationExpr criacao) {
+    /** {@code new int[n]} -> grau 1; {@code new int[n][n]} -> grau 2; {@code new int[26]} -> grau 0 (constante), assim como {@code new int[ALFABETO]} com {@code ALFABETO} final literal. */
+    private static int dimensoesVariaveis(ArrayCreationExpr criacao, ConstantesFinais constantes) {
         return (int) criacao.getLevels().stream()
-                .filter(nivel -> nivel.getDimension().map(AvaliadorDeCusto::dependeDaEntrada).orElse(false))
+                .filter(nivel -> nivel.getDimension().map(tamanho -> AvaliadorDeCusto.dependeDaEntrada(tamanho, constantes)).orElse(false))
                 .count();
     }
 

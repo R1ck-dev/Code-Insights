@@ -25,6 +25,7 @@ import com.github.javaparser.ast.stmt.SwitchStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 
 import com.projeto.codeinsights.domain.knowledge.enums.NivelConfianca;
+import com.projeto.codeinsights.infrastructure.metrica.custo.AnalisadorDeRecursao.Recursao;
 
 /**
  * Avalia o custo de tempo de uma unidade de compilacao percorrendo a AST de baixo
@@ -48,12 +49,16 @@ public final class AvaliadorDeCusto {
 
     private final ResolvedorDeChamadas resolvedor;
     private final TiposDeVariavel tipos;
+    private final ConstantesFinais constantes;
     private final Map<MethodDeclaration, CustoAvaliado> memo = new IdentityHashMap<>();
+    private final Map<MethodDeclaration, List<MethodDeclaration>> ciclos;
     private final Set<MethodDeclaration> emAvaliacao = ResolvedorDeChamadas.conjuntoPorIdentidade();
 
     private AvaliadorDeCusto(CompilationUnit unidade) {
         this.resolvedor = ResolvedorDeChamadas.de(unidade);
         this.tipos = resolvedor.tipos();
+        this.constantes = ConstantesFinais.de(unidade);
+        this.ciclos = GrafoDeChamadas.ciclos(resolvedor);
     }
 
     public static CustoAvaliado doPrograma(CompilationUnit unidade) {
@@ -101,11 +106,12 @@ public final class AvaliadorDeCusto {
                     "recursao mutua envolvendo `%s`: nao ha recorrencia de um metodo so a resolver"
                             .formatted(metodo.getNameAsString()));
         }
+        if (ciclos.containsKey(metodo)) {
+            return custoDoCiclo(ciclos.get(metodo));
+        }
         emAvaliacao.add(metodo);
         try {
-            CustoAvaliado corpo = metodo.getBody()
-                    .map(bloco -> custoDoNo(bloco, metodo))
-                    .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
+            CustoAvaliado corpo = custoLocal(metodo);
             CustoAvaliado resultado = AnalisadorDeRecursao.ehRecursivo(metodo, resolvedor)
                     ? SolucionadorDeRecorrencia.resolver(AnalisadorDeRecursao.analisar(metodo, resolvedor), corpo)
                     : corpo;
@@ -116,23 +122,53 @@ public final class AvaliadorDeCusto {
         }
     }
 
+    private CustoAvaliado custoLocal(MethodDeclaration metodo) {
+        return metodo.getBody()
+                .map(bloco -> custoDoNo(bloco, metodo))
+                .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
+    }
+
+    /**
+     * Recursao mutua: uma recorrencia so para o ciclo inteiro ({@link CicloDeRecursao}). O custo local de cada
+     * membro conta as chamadas ao ciclo como O(1) ({@link #custoDaChamada}); o resultado e o mesmo para todos
+     * os membros, entao e gravado no memo de cada um. Sem {@code main} e sem raiz fora do ciclo, todos os
+     * membros sao pontos de entrada ({@link #pontosDeEntrada}) e o custo e o do ciclo, para qualquer entrada.
+     */
+    private CustoAvaliado custoDoCiclo(List<MethodDeclaration> ciclo) {
+        emAvaliacao.addAll(ciclo);
+        try {
+            List<String> nomes = ciclo.stream().map(MethodDeclaration::getNameAsString).toList();
+            List<CustoAvaliado> locais = ciclo.stream().map(this::custoLocal).toList();
+            List<Recursao> recursoes = ciclo.stream()
+                    .map(membro -> AnalisadorDeRecursao.analisarNoCiclo(membro, ciclo, resolvedor))
+                    .toList();
+            CustoAvaliado resultado = CicloDeRecursao.combinar(recursoes)
+                    .map(unica -> CicloDeRecursao.resolver(nomes, unica, locais))
+                    .orElseGet(() -> CicloDeRecursao.semRecorrenciaUnica(nomes, recursoes));
+            ciclo.forEach(membro -> memo.put(membro, resultado));
+            return resultado;
+        } finally {
+            ciclo.forEach(emAvaliacao::remove);
+        }
+    }
+
     private CustoAvaliado custoDoNo(Node no, MethodDeclaration metodoAtual) {
         if (no instanceof ForStmt paraLaco) {
             return custoDeFor(paraLaco, metodoAtual);
         }
         if (no instanceof ForEachStmt paraCada) {
             return custoDoNo(paraCada.getIterable(), metodoAtual)
-                    .mais(IteracoesDeLaco.de(paraCada).vezes(custoDoNo(paraCada.getBody(), metodoAtual)));
+                    .mais(IteracoesDeLaco.de(paraCada, constantes).vezes(custoDoNo(paraCada.getBody(), metodoAtual)));
         }
         if (no instanceof WhileStmt enquantoLaco) {
             CustoAvaliado volta = custoDoNo(enquantoLaco.getCondition(), metodoAtual)
                     .mais(custoDoNo(enquantoLaco.getBody(), metodoAtual));
-            return IteracoesDeLaco.de(enquantoLaco).vezes(volta);
+            return IteracoesDeLaco.de(enquantoLaco, constantes).vezes(volta);
         }
         if (no instanceof DoStmt facaLaco) {
             CustoAvaliado volta = custoDoNo(facaLaco.getCondition(), metodoAtual)
                     .mais(custoDoNo(facaLaco.getBody(), metodoAtual));
-            return IteracoesDeLaco.de(facaLaco).vezes(volta);
+            return IteracoesDeLaco.de(facaLaco, constantes).vezes(volta);
         }
         if (no instanceof IfStmt condicional) {
             CustoAvaliado entao = custoDoNo(condicional.getThenStmt(), metodoAtual);
@@ -240,17 +276,23 @@ public final class AvaliadorDeCusto {
         CustoAvaliado comparacao = paraLaco.getCompare()
                 .map(condicao -> custoDoNo(condicao, metodoAtual))
                 .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
-        return inicializacao.mais(IteracoesDeLaco.de(paraLaco).vezes(volta.mais(comparacao)));
+        return inicializacao.mais(IteracoesDeLaco.de(paraLaco, constantes).vezes(volta.mais(comparacao)));
     }
 
-    /** {@code new int[n]} zera n posicoes; {@code new int[n][n]}, n^2. Dimensoes literais nao dependem da entrada. */
+    /** {@code new int[n]} zera n posicoes; {@code new int[n][n]}, n^2. Dimensoes literais ou constantes finais nao dependem da entrada. */
     private CustoAvaliado custoDeAlocacao(ArrayCreationExpr criacao) {
         int dimensoesVariaveis = (int) criacao.getLevels().stream()
-                .filter(nivel -> nivel.getDimension().map(AvaliadorDeCusto::dependeDaEntrada).orElse(false))
+                .filter(nivel -> nivel.getDimension().map(tamanho -> dependeDaEntrada(tamanho, constantes)).orElse(false))
                 .count();
         return CustoAvaliado.exato(Custo.poliLog(dimensoesVariaveis, 0));
     }
 
+    /** Tamanho que nao e literal nem constante final ({@link ConstantesFinais}). */
+    static boolean dependeDaEntrada(Expression tamanho, ConstantesFinais constantes) {
+        return !constantes.ehConstante(tamanho);
+    }
+
+    /** So o literal; para quem nao tem as constantes da unidade a mao (faixa de {@code IntStream.range}). */
     static boolean dependeDaEntrada(Expression tamanho) {
         return !tamanho.isIntegerLiteralExpr() && !tamanho.isLongLiteralExpr();
     }
@@ -276,7 +318,7 @@ public final class AvaliadorDeCusto {
         if (alvo.isEmpty()) {
             return ehChamadaLocal(chamada) ? naoResolvida(chamada) : daBiblioteca(chamada);
         }
-        if (alvo.get() == metodoAtual) {
+        if (alvo.get() == metodoAtual || mesmoCiclo(alvo.get(), metodoAtual)) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
         if (alvo.get().getBody().isEmpty()) {
@@ -285,6 +327,11 @@ public final class AvaliadorDeCusto {
                             .formatted(chamada.getNameAsString()));
         }
         return custoDoMetodo(alvo.get());
+    }
+
+    private boolean mesmoCiclo(MethodDeclaration alvo, MethodDeclaration metodoAtual) {
+        List<MethodDeclaration> ciclo = ciclos.get(metodoAtual);
+        return ciclo != null && ciclo.stream().anyMatch(membro -> membro == alvo);
     }
 
     private CustoAvaliado daBiblioteca(MethodCallExpr chamada) {

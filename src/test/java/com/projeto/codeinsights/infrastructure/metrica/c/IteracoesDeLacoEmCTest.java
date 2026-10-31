@@ -33,7 +33,7 @@ class IteracoesDeLacoEmCTest {
                 .filter(no -> no.tipo() == NoDeC.Tipo.FOR)
                 .findFirst()
                 .orElseThrow();
-        return IteracoesDeLacoEmC.de(laco, ExpressoesDeC.constantesDeMacro(fonte)).custo();
+        return IteracoesDeLacoEmC.de(laco, ExpressoesDeC.constantesNomeadas(fonte)).custo();
     }
 
     @Test
@@ -96,5 +96,50 @@ class IteracoesDeLacoEmCTest {
     void limiteVariavelOuComposto() {
         assertThat(primeiroFor("for (int i = 0; i < n; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
         assertThat(primeiroFor("for (int i = 0; i < 26 && trocou == 0; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+    }
+
+    /**
+     * IC-11 (11a): {@code const int N = 100;} e o par de {@code static final int} do Java, colhido
+     * no mesmo conjunto dos {@code #define}; o controle do {@code #define} com o mesmo formato e
+     * {@code limiteDeMacro}, acima.
+     */
+    @Test
+    @DisplayName("limite vindo de const int global, a constante nomeada de C: constante")
+    void limiteDeConstGlobal() {
+        assertThat(primeiroFor("const int N = 100;", "for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("const int N = 100;", "for (int i = 0; N > i; i++) { }")).isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("limite vindo de const int local a funcao: constante")
+    void limiteDeConstLocal() {
+        assertThat(primeiroFor("const int N = 100; for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("controles do const: sem const, ou const sem literal, o limite continua sendo variavel")
+    void constanteSoSeForConstEComLiteral() {
+        assertThat(primeiroFor("int N = 100;", "for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("const int N = n; for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("int N = 100; for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("sombra: local N nao const (int ou outro tipo) redefinindo o const int N global tira o nome do conjunto")
+    void sombraDoConstGlobalNaoEhConstante() {
+        assertThat(primeiroFor("const int N = 100;", "int N = n; for (int i = 0; i < N; i++) { }"))
+                .isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("const int N = 100;", "double N = n; for (int i = 0; i < N; i++) { }"))
+                .isNotEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("const comentado, qualificador depois do tipo e static const")
+    void formasDeDeclararConst() {
+        assertThat(primeiroFor("// const int N = 100;", "for (int i = 0; i < N; i++) { }"))
+                .isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("int const N = 100;", "for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("static const int N = 100;", "for (int i = 0; i < N; i++) { }"))
+                .isEqualTo(Custo.CONSTANTE);
     }
 }

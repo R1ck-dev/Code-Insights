@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import com.projeto.codeinsights.infrastructure.metrica.c.ExpressoesDeC.Atribuicao;
 import com.projeto.codeinsights.infrastructure.metrica.c.ExpressoesDeC.Chamada;
 import com.projeto.codeinsights.infrastructure.metrica.c.ProgramaDeC.FuncaoDeC;
+import com.projeto.codeinsights.infrastructure.metrica.custo.AnalisadorDeRecursao;
 import com.projeto.codeinsights.infrastructure.metrica.custo.AnalisadorDeRecursao.Recursao;
 import com.projeto.codeinsights.infrastructure.metrica.custo.AnalisadorDeRecursao.Reducao;
 
@@ -46,12 +47,21 @@ final class RecursaoEmC {
     }
 
     static boolean ehRecursiva(FuncaoDeC funcao) {
-        return !autoChamadas(funcao.corpo(), funcao.nome()).isEmpty();
+        return !autoChamadas(funcao.corpo(), Set.of(funcao.nome())).isEmpty();
     }
 
     static Recursao analisar(FuncaoDeC funcao) {
-        int porCaminho = Math.max(1, contarPorCaminho(funcao.corpo(), funcao.nome()));
-        return classificarReducao(funcao, porCaminho);
+        return analisar(funcao, Set.of(funcao.nome()));
+    }
+
+    /**
+     * A recorrencia de um membro de um ciclo de recursao mutua: as chamadas que contam sao as feitas a
+     * <b>qualquer</b> funcao do ciclo ({@code nomesDoCiclo}), mas a reducao e lida dos parametros do
+     * <b>proprio</b> membro. {@code CicloDeRecursao} funde as recorrencias dos membros numa so.
+     */
+    static Recursao analisar(FuncaoDeC funcao, Set<String> nomesDoCiclo) {
+        int porCaminho = Math.max(1, contarPorCaminho(funcao.corpo(), nomesDoCiclo));
+        return classificarReducao(funcao, nomesDoCiclo, porCaminho);
     }
 
     // ---------------------------------------------------------------- a: chamadas por caminho
@@ -61,14 +71,14 @@ final class RecursaoEmC {
      * {@code max}); comandos em sequencia se somam — mas so ate o primeiro que sempre sai, porque
      * o que vem depois e inalcancavel naquele caminho.
      */
-    private static int contarPorCaminho(NoDeC no, String nome) {
+    private static int contarPorCaminho(NoDeC no, Set<String> nomes) {
         return switch (no.tipo()) {
-            case COMANDO -> contarNoTexto(no.condicao(), nome);
+            case COMANDO -> contarNoTexto(no.condicao(), nomes);
             case ROTULO -> 0;
-            case BLOCO -> contarBloco(no.filhos(), nome);
-            case IF -> contarNoTexto(no.condicao(), nome) + maiorDosFilhos(no.filhos(), nome);
-            case SWITCH -> contarNoTexto(no.condicao(), nome) + somaDoCorpoDoSwitch(no, nome);
-            case FOR, WHILE, DO -> contarNoTexto(no.textoProprio(), nome) + maiorDosFilhos(no.filhos(), nome);
+            case BLOCO -> contarBloco(no.filhos(), nomes);
+            case IF -> contarNoTexto(no.condicao(), nomes) + maiorDosFilhos(no.filhos(), nomes);
+            case SWITCH -> contarNoTexto(no.condicao(), nomes) + somaDoCorpoDoSwitch(no, nomes);
+            case FOR, WHILE, DO -> contarNoTexto(no.textoProprio(), nomes) + maiorDosFilhos(no.filhos(), nomes);
         };
     }
 
@@ -84,38 +94,38 @@ final class RecursaoEmC {
      * de fato exclusivos, mas errar junto com Java e melhor que acertar sozinho: o mesmo algoritmo
      * precisa receber a mesma classe nas duas linguagens.
      */
-    private static int somaDoCorpoDoSwitch(NoDeC escolha, String nome) {
+    private static int somaDoCorpoDoSwitch(NoDeC escolha, Set<String> nomes) {
         int total = 0;
         for (NoDeC filho : escolha.filhos()) {
             List<NoDeC> comandos = filho.tipo() == NoDeC.Tipo.BLOCO ? filho.filhos() : List.of(filho);
             for (NoDeC comando : comandos) {
-                total += contarPorCaminho(comando, nome);
+                total += contarPorCaminho(comando, nomes);
             }
         }
         return total;
     }
 
-    private static int contarBloco(List<NoDeC> comandos, String nome) {
+    private static int contarBloco(List<NoDeC> comandos, Set<String> nomes) {
         int acumulado = 0;
         int melhorCaminhoQueSai = 0;
         for (NoDeC comando : comandos) {
             if (ehGuardaQueSai(comando)) {
-                int custoDaGuarda = contarNoTexto(comando.condicao(), nome);
+                int custoDaGuarda = contarNoTexto(comando.condicao(), nomes);
                 melhorCaminhoQueSai = Math.max(melhorCaminhoQueSai,
-                        acumulado + custoDaGuarda + contarPorCaminho(comando.filhos().get(0), nome));
+                        acumulado + custoDaGuarda + contarPorCaminho(comando.filhos().get(0), nomes));
                 acumulado += custoDaGuarda;
                 continue;
             }
             if (sempreSai(comando)) {
-                return Math.max(melhorCaminhoQueSai, acumulado + contarPorCaminho(comando, nome));
+                return Math.max(melhorCaminhoQueSai, acumulado + contarPorCaminho(comando, nomes));
             }
-            acumulado += contarPorCaminho(comando, nome);
+            acumulado += contarPorCaminho(comando, nomes);
         }
         return Math.max(melhorCaminhoQueSai, acumulado);
     }
 
-    private static int maiorDosFilhos(List<NoDeC> filhos, String nome) {
-        return filhos.stream().mapToInt(filho -> contarPorCaminho(filho, nome)).max().orElse(0);
+    private static int maiorDosFilhos(List<NoDeC> filhos, Set<String> nomes) {
+        return filhos.stream().mapToInt(filho -> contarPorCaminho(filho, nomes)).max().orElse(0);
     }
 
     /** {@code if (n <= 1) return 1;} — guarda sem {@code else} cujo ramo sai da funcao. */
@@ -137,13 +147,13 @@ final class RecursaoEmC {
      * poe duas ocorrencias no texto, mas {@code cond ? x : y} executa so um dos lados, e contar os
      * dois transformaria uma recursao linear numa arvore binaria exponencial.
      */
-    private static int contarNoTexto(String texto, String nome) {
+    private static int contarNoTexto(String texto, Set<String> nomes) {
         List<String> ternario = partesDoTernario(texto);
         if (ternario.size() == 3) {
-            return contarOcorrencias(ternario.get(0), nome)
-                    + Math.max(contarNoTexto(ternario.get(1), nome), contarNoTexto(ternario.get(2), nome));
+            return contarOcorrencias(ternario.get(0), nomes)
+                    + Math.max(contarNoTexto(ternario.get(1), nomes), contarNoTexto(ternario.get(2), nomes));
         }
-        return contarOcorrencias(texto, nome);
+        return contarOcorrencias(texto, nomes);
     }
 
     private static List<String> partesDoTernario(String texto) {
@@ -175,16 +185,16 @@ final class RecursaoEmC {
         return -1;
     }
 
-    private static int contarOcorrencias(String texto, String nome) {
+    private static int contarOcorrencias(String texto, Set<String> nomes) {
         return (int) ExpressoesDeC.chamadasEm(texto).stream()
-                .filter(chamada -> chamada.nome().equals(nome))
+                .filter(chamada -> nomes.contains(chamada.nome()))
                 .count();
     }
 
     // ---------------------------------------------------------------- b: como o argumento encolhe
 
-    private static Recursao classificarReducao(FuncaoDeC funcao, int porCaminho) {
-        if (temAutoChamadaEmLaco(funcao)) {
+    private static Recursao classificarReducao(FuncaoDeC funcao, Set<String> nomes, int porCaminho) {
+        if (temAutoChamadaEmLaco(funcao, nomes)) {
             return new Recursao(Reducao.BACKTRACKING, porCaminho, 2, false, 0,
                     "auto-chamada dentro de laco: assumida busca exaustiva");
         }
@@ -192,7 +202,7 @@ final class RecursaoEmC {
         Set<String> parametros = new LinkedHashSet<>(funcao.parametros());
         Set<String> pontosMedios = pontosMedios(funcao, parametros);
         Set<String> locais = locaisDe(funcao, parametros);
-        Sinais sinais = lerSinais(funcao, parametros, pontosMedios, locais);
+        Sinais sinais = lerSinais(funcao, nomes, parametros, pontosMedios, locais);
 
         if (sinais.divisiva) {
             return new Recursao(Reducao.DIVISIVA, porCaminho, sinais.fator, false, 0,
@@ -207,7 +217,7 @@ final class RecursaoEmC {
         }
         if (sinais.derivadoDeLocal && porCaminho >= 2 && parametros.size() >= 2) {
             return new Recursao(Reducao.DIVISIVA, porCaminho, 2, false, 0,
-                    "recursao sobre subintervalos delimitados por um pivo; assumida divisao balanceada");
+                    AnalisadorDeRecursao.SUPOSICAO_DE_PIVO);
         }
         return new Recursao(Reducao.INDETERMINADA, porCaminho, 2, false, 0, null);
     }
@@ -227,10 +237,10 @@ final class RecursaoEmC {
         }
     }
 
-    private static Sinais lerSinais(FuncaoDeC funcao, Set<String> parametros,
+    private static Sinais lerSinais(FuncaoDeC funcao, Set<String> nomes, Set<String> parametros,
             Set<String> pontosMedios, Set<String> locais) {
         Sinais sinais = new Sinais();
-        for (Chamada chamada : autoChamadas(funcao.corpo(), funcao.nome())) {
+        for (Chamada chamada : autoChamadas(funcao.corpo(), nomes)) {
             for (String argumento : ParserEstruturalDeC.dividirNoNivelZero(chamada.argumentos(), ',')) {
                 classificarArgumento(argumento, parametros, pontosMedios, locais, sinais);
             }
@@ -269,7 +279,7 @@ final class RecursaoEmC {
 
     private static String suposicaoDaDivisao(Sinais sinais) {
         if (sinais.subtrativa) {
-            return "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina";
+            return AnalisadorDeRecursao.SUPOSICAO_DE_REDUCAO_MISTA;
         }
         if (sinais.porResto) {
             return "reducao por resto entre parametros, como no algoritmo de Euclides; "
@@ -322,16 +332,16 @@ final class RecursaoEmC {
         return ACESSO_ESTRUTURAL.matcher(argumento).find() && referencia(argumento, parametros);
     }
 
-    private static boolean temAutoChamadaEmLaco(FuncaoDeC funcao) {
+    private static boolean temAutoChamadaEmLaco(FuncaoDeC funcao, Set<String> nomes) {
         return funcao.corpo().comDescendentes().stream()
                 .filter(NoDeC::ehLaco)
-                .anyMatch(laco -> !autoChamadas(laco, funcao.nome()).isEmpty());
+                .anyMatch(laco -> !autoChamadas(laco, nomes).isEmpty());
     }
 
-    private static List<Chamada> autoChamadas(NoDeC raiz, String nome) {
+    private static List<Chamada> autoChamadas(NoDeC raiz, Set<String> nomes) {
         List<Chamada> proprias = new ArrayList<>();
         for (Chamada chamada : ExpressoesDeC.chamadasEm(raiz.textoDaSubarvore())) {
-            if (chamada.nome().equals(nome)) {
+            if (nomes.contains(chamada.nome())) {
                 proprias.add(chamada);
             }
         }

@@ -36,6 +36,20 @@
       "espaco": "O(1)"
     },
     {
+      "base": "constante-final",
+      "nome": "constante final como limite",
+      "regra": "static final / const com literal nao depende da entrada",
+      "tempo": "O(1)",
+      "espaco": "O(1)"
+    },
+    {
+      "base": "recursao-mutua",
+      "nome": "recursao mutua",
+      "regra": "ciclo de chamadas vira uma recorrencia unica",
+      "tempo": "O(n)",
+      "espaco": "O(n)"
+    },
+    {
       "base": "sequencia-de-lacos",
       "nome": "sequencia de lacos",
       "regra": "lacos em sequencia somam, nao multiplicam",

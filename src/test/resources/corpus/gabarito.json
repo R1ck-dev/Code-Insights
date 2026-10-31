@@ -203,9 +203,8 @@
       "arquivo": "canonico/recursao-mutua.java",
       "nome": "recursao mutua",
       "origem": "par/impar mutuamente recursivos — decrementa n ate 0",
-      "nota": "O motor responde '?' em vez de errar a classe. Nao acerta o gabarito, mas a resposta e honesta: recusa classificar em vez de chutar.",
+      "nota": "O motor resolve a recursao mutua como uma recorrencia unica sobre o ciclo (reducao n - 1 por volta, n voltas) e acerta O(n). O ganho vem de um caso canonico que era '?' honesto, nao de generalizacao medida.",
       "tempoGabarito": "O(n)",
-      "tempoMotor": "?",
       "espacoGabarito": "O(n)"
     },
     {

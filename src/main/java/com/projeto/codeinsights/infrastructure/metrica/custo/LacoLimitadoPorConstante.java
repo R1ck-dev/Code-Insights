@@ -3,6 +3,7 @@ package com.projeto.codeinsights.infrastructure.metrica.custo;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
@@ -18,21 +19,22 @@ import com.github.javaparser.ast.stmt.ForStmt;
  * literal e roda n vezes. O laco e constante so quando a variavel comparada na condicao e o
  * <b>contador do cabecalho</b>: ele nasce constante no init (declarador ou atribuicao), e
  * comparado com um limite constante (em qualquer lado) e avanca no update do proprio {@code for}.
- * Constante e literal inteiro, {@code -literal} ou literal {@code char}. Escrita no contador
- * dentro do corpo nao e conferida.
+ * Constante e literal inteiro, {@code -literal}, literal {@code char} ou nome de constante final
+ * ({@link ConstantesFinais}). Escrita no contador dentro do corpo nao e conferida.
  */
 final class LacoLimitadoPorConstante {
 
     private LacoLimitadoPorConstante() {
     }
 
-    static boolean de(ForStmt laco) {
+    static boolean de(ForStmt laco, ConstantesFinais constantes) {
+        Predicate<Expression> ehConstante = constantes::ehConstante;
         return laco.getCompare()
                 .filter(BinaryExpr.class::isInstance)
                 .map(condicao -> (BinaryExpr) condicao)
                 .filter(LacoLimitadoPorConstante::ehComparacaoDeOrdem)
-                .flatMap(LacoLimitadoPorConstante::contadorComparado)
-                .map(contador -> contadoresDoInit(laco).contains(contador) && avancaNoUpdate(laco, contador))
+                .flatMap(condicao -> contadorComparado(condicao, ehConstante))
+                .map(contador -> contadoresDoInit(laco, ehConstante).contains(contador) && avancaNoUpdate(laco, contador))
                 .orElse(false);
     }
 
@@ -44,28 +46,28 @@ final class LacoLimitadoPorConstante {
     }
 
     /** O nome da variavel de um lado da comparacao quando o outro lado e um limite constante. */
-    private static Optional<String> contadorComparado(BinaryExpr condicao) {
-        if (condicao.getLeft().isNameExpr() && ehConstante(condicao.getRight())) {
+    private static Optional<String> contadorComparado(BinaryExpr condicao, Predicate<Expression> ehConstante) {
+        if (condicao.getLeft().isNameExpr() && ehConstante.test(condicao.getRight())) {
             return Optional.of(condicao.getLeft().asNameExpr().getNameAsString());
         }
-        if (condicao.getRight().isNameExpr() && ehConstante(condicao.getLeft())) {
+        if (condicao.getRight().isNameExpr() && ehConstante.test(condicao.getLeft())) {
             return Optional.of(condicao.getRight().asNameExpr().getNameAsString());
         }
         return Optional.empty();
     }
 
     /** Variaveis que o init do {@code for} faz nascer com valor constante. */
-    private static Set<String> contadoresDoInit(ForStmt laco) {
+    private static Set<String> contadoresDoInit(ForStmt laco, Predicate<Expression> ehConstante) {
         Set<String> contadores = new HashSet<>();
         for (Expression inicio : laco.getInitialization()) {
             if (inicio instanceof VariableDeclarationExpr declaracao) {
                 declaracao.getVariables().stream()
-                        .filter(variavel -> variavel.getInitializer().map(LacoLimitadoPorConstante::ehConstante).orElse(false))
+                        .filter(variavel -> variavel.getInitializer().map(ehConstante::test).orElse(false))
                         .forEach(variavel -> contadores.add(variavel.getNameAsString()));
             } else if (inicio instanceof AssignExpr atribuicao
                     && atribuicao.getOperator() == AssignExpr.Operator.ASSIGN
                     && atribuicao.getTarget().isNameExpr()
-                    && ehConstante(atribuicao.getValue())) {
+                    && ehConstante.test(atribuicao.getValue())) {
                 contadores.add(atribuicao.getTarget().asNameExpr().getNameAsString());
             }
         }
@@ -93,15 +95,5 @@ final class LacoLimitadoPorConstante {
 
     private static boolean ehVariavel(Expression expressao, String nome) {
         return expressao.isNameExpr() && expressao.asNameExpr().getNameAsString().equals(nome);
-    }
-
-    /** Literal inteiro, {@code -literal} ou literal {@code char}. */
-    private static boolean ehConstante(Expression expressao) {
-        if (expressao.isIntegerLiteralExpr() || expressao.isCharLiteralExpr()) {
-            return true;
-        }
-        return expressao instanceof UnaryExpr unario
-                && unario.getOperator() == UnaryExpr.Operator.MINUS
-                && unario.getExpression().isIntegerLiteralExpr();
     }
 }
