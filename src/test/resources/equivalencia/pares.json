@@ -43,6 +43,13 @@
       "espaco": "O(1)"
     },
     {
+      "base": "recursao-mutua",
+      "nome": "recursao mutua",
+      "regra": "ciclo de chamadas vira uma recorrencia unica",
+      "tempo": "O(n)",
+      "espaco": "O(n)"
+    },
+    {
       "base": "sequencia-de-lacos",
       "nome": "sequencia de lacos",
       "regra": "lacos em sequencia somam, nao multiplicam",
