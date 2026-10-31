@@ -88,9 +88,9 @@ public final class AnalisadorDeRecursao {
     private static final Set<String> TIPOS_NUMERICOS = Set.of("int", "long", "Integer", "Long", "short", "byte");
     private static final String SUPOSICAO_DE_CACHE =
             "cache/marcacao de visitados detectado: o numero de estados distintos limita a recursao";
-    static final String SUPOSICAO_DE_REDUCAO_MISTA =
+    public static final String SUPOSICAO_DE_REDUCAO_MISTA =
             "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina";
-    static final String SUPOSICAO_DE_PIVO =
+    public static final String SUPOSICAO_DE_PIVO =
             "recursao sobre subintervalos delimitados por um pivo; assumida divisao balanceada";
 
     private AnalisadorDeRecursao() {

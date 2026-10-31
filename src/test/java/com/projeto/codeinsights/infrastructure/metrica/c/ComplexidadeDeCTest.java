@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
@@ -320,9 +319,9 @@ class ComplexidadeDeCTest {
     }
 
     /**
-     * IC-11b: funcoes que se chamam em ciclo, sem auto-chamada direta. Os dois primeiros testes
-     * afirmam o gabarito e ficam abertos ate o motor resolver o ciclo; os demais sao controles que
-     * a correcao nao pode mexer: sem reducao, ou com descida por laco, a resposta honesta e '?'.
+     * IC-11b: funcoes que se chamam em ciclo, sem auto-chamada direta. Os testes de gabarito (linear,
+     * exponencial, divisivo) afirmam a classe do ciclo fundido numa recorrencia so; os controles nao
+     * podem mudar: sem reducao, ou com descida por laco, a resposta honesta e '?'.
      */
     @Nested
     @DisplayName("recursao mutua")
@@ -345,14 +344,12 @@ class ComplexidadeDeCTest {
                 """;
 
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("par e impar mutuos, com n - 1, sao lineares")
         void parImparMutuoEhLinear() {
             assertThat(tempo(PAR_IMPAR)).isEqualTo("O(n)");
         }
 
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("ciclo de tres funcoes, com n - 1, e linear")
         void trioMutuoEhLinear() {
             assertThat(tempo("""
@@ -376,6 +373,84 @@ class ComplexidadeDeCTest {
 
                     int main(void) { return a(n); }
                     """)).isEqualTo("O(n)");
+        }
+
+        /**
+         * a(n) = 2 b(n-1) e b(n) = 2 a(n-1): a(n) = 4 a(n-2) = 2^n exato. Sem folga entre o
+         * gabarito e a classe, e o caso que a fusao do ciclo (a = 2, reducao n-1) acerta em cheio.
+         */
+        @Test
+        @DisplayName("mutua em que cada funcao chama a outra duas vezes, com n - 1, e O(2^n)")
+        void exponencialMutuaSimetricaEhExponencial() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1) + a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(2^n)");
+        }
+
+        /**
+         * a(n) = 2 b(n-1) e b(n) = a(n-1): a(n) = 2 a(n-2), Theta(raiz de 2 elevada a n). Fundido
+         * em a = 2 com n-1 sai O(2^n): superestima, o lado seguro; '?' ou classe abaixo seria erro
+         * para menos. Mesmo contrato do controle Java (ic11b-exponencial-mutua).
+         */
+        @Test
+        @DisplayName("mutua em que so uma das funcoes chama a outra duas vezes nao fica abaixo de O(2^n)")
+        void exponencialMutuaAssimetricaNaoSubestima() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("O(2^n)");
+        }
+
+        /**
+         * Cada funcao faz n de trabalho e chama a outra duas vezes com n/2: a(n) = 2 b(n/2) + n e
+         * b(n) = 2 a(n/2) + n, logo a(n) = 4 a(n/4) + 2n. Teorema Mestre (a = b = 4, f = n), caso 2:
+         * n log n. O ciclo fundido, 2 T(n/2) + n, da a mesma classe.
+         */
+        @Test
+        @DisplayName("mutua divisiva, com n/2 e trabalho linear em cada funcao, e O(n log n)")
+        void divisivoMutuoEhNLogN() {
+            assertThat(tempo("""
+                    long direita(int n);
+
+                    long esquerda(int n) {
+                        if (n <= 1) return 1;
+                        long soma = 0;
+                        for (int i = 0; i < n; i++) soma += i;
+                        return soma + direita(n / 2) + direita(n / 2);
+                    }
+
+                    long direita(int n) {
+                        if (n <= 1) return 1;
+                        long soma = 0;
+                        for (int i = 0; i < n; i++) soma += i;
+                        return soma + esquerda(n / 2) + esquerda(n / 2);
+                    }
+
+                    int main(void) { return esquerda(n); }
+                    """)).isEqualTo("O(n log n)");
         }
 
         @Test
