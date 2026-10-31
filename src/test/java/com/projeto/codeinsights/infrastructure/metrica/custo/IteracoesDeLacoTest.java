@@ -21,17 +21,23 @@ class IteracoesDeLacoTest {
 
     /** O custo do primeiro {@code for} do metodo {@code f(int n, int trocou)}. */
     private static Custo primeiroFor(String cabecalho) {
+        return primeiroForEm("", cabecalho);
+    }
+
+    /** Como {@link #primeiroFor}, com {@code membros} declarados na classe antes do metodo. */
+    private static Custo primeiroForEm(String membros, String cabecalho) {
         CompilationUnit unidade = new JavaParser(new ParserConfiguration()
                 .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21))
                 .parse("""
                         class Solucao {
+                            %s
                             void f(int n, int trocou) {
                                 %s
                             }
                         }
-                        """.formatted(cabecalho)).getResult().orElseThrow();
+                        """.formatted(membros, cabecalho)).getResult().orElseThrow();
         ForStmt laco = unidade.findFirst(ForStmt.class).orElseThrow();
-        return IteracoesDeLaco.de(laco).custo();
+        return IteracoesDeLaco.de(laco, ConstantesFinais.de(unidade)).custo();
     }
 
     @Test
@@ -77,5 +83,40 @@ class IteracoesDeLacoTest {
     void semInitConstanteOuSemUpdate() {
         assertThat(primeiroFor("for (int i = n; i < 26; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
         assertThat(primeiroFor("for (int i = 0; i < 26; ) { i++; }")).isNotEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("limite que e campo final com literal: constante")
+    void limiteEhCampoFinal() {
+        assertThat(primeiroForEm("static final int MAX = 100;", "for (int i = 0; i < MAX; i++) { }"))
+                .isEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroForEm("final int MAX = 100;", "for (int i = MAX; i > 0; i--) { }"))
+                .isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("limite que e local final com literal: constante")
+    void limiteEhLocalFinal() {
+        assertThat(primeiroFor("final int N = 100; for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("campo nao final, final sem literal e final de outro tipo: nao e constante")
+    void naoEhConstanteFinal() {
+        assertThat(primeiroForEm("static int MAX = 100;", "for (int i = 0; i < MAX; i++) { }"))
+                .isEqualTo(Custo.LINEAR);
+        assertThat(primeiroForEm("final int MAX;", "for (int i = 0; i < MAX; i++) { }")).isEqualTo(Custo.LINEAR);
+        assertThat(primeiroForEm("static final int MAX = 100 - 1;", "for (int i = 0; i < MAX; i++) { }"))
+                .isEqualTo(Custo.LINEAR);
+        assertThat(primeiroFor("final int N = n; for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.LINEAR);
+    }
+
+    @Test
+    @DisplayName("parametro ou local nao final com o nome do campo tira a constante (sombra)")
+    void sombraTiraAConstante() {
+        assertThat(primeiroForEm("static final int n = 100;", "for (int i = 0; i < n; i++) { }"))
+                .isEqualTo(Custo.LINEAR);
+        assertThat(primeiroForEm("static final int MAX = 100;", "int MAX = n; for (int i = 0; i < MAX; i++) { }"))
+                .isEqualTo(Custo.LINEAR);
     }
 }

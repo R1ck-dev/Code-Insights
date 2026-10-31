@@ -48,12 +48,14 @@ public final class AvaliadorDeCusto {
 
     private final ResolvedorDeChamadas resolvedor;
     private final TiposDeVariavel tipos;
+    private final ConstantesFinais constantes;
     private final Map<MethodDeclaration, CustoAvaliado> memo = new IdentityHashMap<>();
     private final Set<MethodDeclaration> emAvaliacao = ResolvedorDeChamadas.conjuntoPorIdentidade();
 
     private AvaliadorDeCusto(CompilationUnit unidade) {
         this.resolvedor = ResolvedorDeChamadas.de(unidade);
         this.tipos = resolvedor.tipos();
+        this.constantes = ConstantesFinais.de(unidade);
     }
 
     public static CustoAvaliado doPrograma(CompilationUnit unidade) {
@@ -122,17 +124,17 @@ public final class AvaliadorDeCusto {
         }
         if (no instanceof ForEachStmt paraCada) {
             return custoDoNo(paraCada.getIterable(), metodoAtual)
-                    .mais(IteracoesDeLaco.de(paraCada).vezes(custoDoNo(paraCada.getBody(), metodoAtual)));
+                    .mais(IteracoesDeLaco.de(paraCada, constantes).vezes(custoDoNo(paraCada.getBody(), metodoAtual)));
         }
         if (no instanceof WhileStmt enquantoLaco) {
             CustoAvaliado volta = custoDoNo(enquantoLaco.getCondition(), metodoAtual)
                     .mais(custoDoNo(enquantoLaco.getBody(), metodoAtual));
-            return IteracoesDeLaco.de(enquantoLaco).vezes(volta);
+            return IteracoesDeLaco.de(enquantoLaco, constantes).vezes(volta);
         }
         if (no instanceof DoStmt facaLaco) {
             CustoAvaliado volta = custoDoNo(facaLaco.getCondition(), metodoAtual)
                     .mais(custoDoNo(facaLaco.getBody(), metodoAtual));
-            return IteracoesDeLaco.de(facaLaco).vezes(volta);
+            return IteracoesDeLaco.de(facaLaco, constantes).vezes(volta);
         }
         if (no instanceof IfStmt condicional) {
             CustoAvaliado entao = custoDoNo(condicional.getThenStmt(), metodoAtual);
@@ -240,17 +242,23 @@ public final class AvaliadorDeCusto {
         CustoAvaliado comparacao = paraLaco.getCompare()
                 .map(condicao -> custoDoNo(condicao, metodoAtual))
                 .orElseGet(() -> CustoAvaliado.exato(Custo.CONSTANTE));
-        return inicializacao.mais(IteracoesDeLaco.de(paraLaco).vezes(volta.mais(comparacao)));
+        return inicializacao.mais(IteracoesDeLaco.de(paraLaco, constantes).vezes(volta.mais(comparacao)));
     }
 
-    /** {@code new int[n]} zera n posicoes; {@code new int[n][n]}, n^2. Dimensoes literais nao dependem da entrada. */
+    /** {@code new int[n]} zera n posicoes; {@code new int[n][n]}, n^2. Dimensoes literais ou constantes finais nao dependem da entrada. */
     private CustoAvaliado custoDeAlocacao(ArrayCreationExpr criacao) {
         int dimensoesVariaveis = (int) criacao.getLevels().stream()
-                .filter(nivel -> nivel.getDimension().map(AvaliadorDeCusto::dependeDaEntrada).orElse(false))
+                .filter(nivel -> nivel.getDimension().map(tamanho -> dependeDaEntrada(tamanho, constantes)).orElse(false))
                 .count();
         return CustoAvaliado.exato(Custo.poliLog(dimensoesVariaveis, 0));
     }
 
+    /** Tamanho que nao e literal nem constante final ({@link ConstantesFinais}). */
+    static boolean dependeDaEntrada(Expression tamanho, ConstantesFinais constantes) {
+        return !constantes.ehConstante(tamanho);
+    }
+
+    /** So o literal; para quem nao tem as constantes da unidade a mao (faixa de {@code IntStream.range}). */
     static boolean dependeDaEntrada(Expression tamanho) {
         return !tamanho.isIntegerLiteralExpr() && !tamanho.isLongLiteralExpr();
     }

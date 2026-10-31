@@ -40,7 +40,7 @@ public final class IteracoesDeLaco {
     private IteracoesDeLaco() {
     }
 
-    public static CustoAvaliado de(Node laco) {
+    static CustoAvaliado de(Node laco, ConstantesFinais constantes) {
         if (laco instanceof ForEachStmt) {
             return CustoAvaliado.exato(Custo.LINEAR);
         }
@@ -48,7 +48,7 @@ public final class IteracoesDeLaco {
         if (variaveisDeTerminacao.isEmpty()) {
             return CustoAvaliado.estimado(Custo.LINEAR, "laco sem condicao de parada; assumidas n iteracoes");
         }
-        if (ehLimitadoPorConstante(laco)) {
+        if (ehLimitadoPorConstante(laco, constantes)) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
         if (ehLogaritmico(laco, variaveisDeTerminacao)) {
@@ -61,8 +61,8 @@ public final class IteracoesDeLaco {
     }
 
     /** {@code for (int i = 0; i < 26; i++)} nao depende da entrada: O(1). A regra esta em {@link LacoLimitadoPorConstante}. */
-    private static boolean ehLimitadoPorConstante(Node laco) {
-        return laco instanceof ForStmt paraLaco && LacoLimitadoPorConstante.de(paraLaco);
+    private static boolean ehLimitadoPorConstante(Node laco, ConstantesFinais constantes) {
+        return laco instanceof ForStmt paraLaco && LacoLimitadoPorConstante.de(paraLaco, constantes);
     }
 
     private static boolean ehLogaritmico(Node laco, Set<String> variaveisDeTerminacao) {
