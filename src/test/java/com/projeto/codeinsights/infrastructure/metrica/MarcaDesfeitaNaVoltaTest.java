@@ -21,8 +21,8 @@ import com.projeto.codeinsights.domain.knowledge.model.ResultadoMetrica;
  * Reconhecer essas formas como memoizacao e o risco da correcao: a mesma marca que poda a DFS
  * (visita unica, polinomial) e, quando desfeita depois da chamada, so impede repetir um estado no
  * caminho atual, e a busca segue exaustiva. Cada teste aqui e um algoritmo cujo gabarito na
- * literatura e fatorial; o motor ja acerta hoje (sem memo, segue a reducao) e nao pode deixar de
- * acertar. O gabarito aceita {@code O(2^n)} e {@code O(n!)}, como no D8 de
+ * literatura e fatorial; o motor acerta porque a desmarcacao na volta tira o papel de memoizacao
+ * (o tempo segue a reducao) e nao pode deixar de acertar. O gabarito aceita {@code O(2^n)} e {@code O(n!)}, como no D8 de
  * {@link DefeitosDoMotorDeJavaTest}: o que se guarda e a ausencia de memoizacao falsa, e nao a
  * escolha entre exponencial e fatorial.
  */
@@ -119,6 +119,47 @@ class MarcaDesfeitaNaVoltaTest {
                     }
                 }
                 """)).isIn("O(2^n)", "O(n!)");
+    }
+
+    @Test
+    @DisplayName("combinacoes com != 1 num if envolvente e usado[j] = 0 na volta seguem exponenciais")
+    void combinacoesComDiferenteDeUm() {
+        assertThat(tempo("""
+                class Solucao {
+                    static int comb(int[] usado, int i, int k) {
+                        if (k == 0) return 1;
+                        int total = 0;
+                        for (int j = i; j < usado.length; j++) {
+                            if (usado[j] != 1) {
+                                usado[j] = 1;
+                                total += comb(usado, j + 1, k - 1);
+                                usado[j] = 0;
+                            }
+                        }
+                        return total;
+                    }
+                }
+                """)).isEqualTo("O(2^n)");
+    }
+
+    @Test
+    @DisplayName("combinacoes com toggle na ida e na volta seguem exponenciais")
+    void combinacoesComToggle() {
+        assertThat(tempo("""
+                class Solucao {
+                    static int comb(boolean[] usado, int i, int k) {
+                        if (k == 0) return 1;
+                        int total = 0;
+                        for (int j = i; j < usado.length; j++) {
+                            if (usado[j]) continue;
+                            usado[j] = !usado[j];
+                            total += comb(usado, j + 1, k - 1);
+                            usado[j] = !usado[j];
+                        }
+                        return total;
+                    }
+                }
+                """)).isEqualTo("O(2^n)");
     }
 
     // ---------------------------------------------------------------- apoio

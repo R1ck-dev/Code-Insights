@@ -684,6 +684,114 @@ class ClassificadorDeCacheTest {
                 .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CHECA_ANTES_DE_CHAMAR));
     }
 
+    // ----- formas novas: a desmarcacao e conservadora, nao depende do valor comparado na guarda -----
+
+    @Test
+    @DisplayName("int[] com == 1 e continue: usado[j] = 0 na volta nao e o valor comparado, mas e desmarcar")
+    void continueComInteiroRestauraZero() {
+        assertThat(classificarDaRodada2("r4-combinacoes-int-continue.java", "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("int[] com != 1 num if envolvente: usado[j] = 0 na volta desfaz")
+    void ifEnvolventeComInteiroRestauraZero() {
+        String fonte = """
+                class Solucao {
+                    static int comb(int[] usado, int i, int k) {
+                        if (k == 0) return 1;
+                        int total = 0;
+                        for (int j = i; j < usado.length; j++) {
+                            if (usado[j] != 1) {
+                                usado[j] = 1;
+                                total += comb(usado, j + 1, k - 1);
+                                usado[j] = 0;
+                            }
+                        }
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    @Test
+    @DisplayName("toggle: usado[j] = !usado[j] na ida e na volta desfaz")
+    void toggleNaVoltaDesfaz() {
+        String fonte = """
+                class Solucao {
+                    static int comb(boolean[] usado, int i, int k) {
+                        if (k == 0) return 1;
+                        int total = 0;
+                        for (int j = i; j < usado.length; j++) {
+                            if (usado[j]) continue;
+                            usado[j] = !usado[j];
+                            total += comb(usado, j + 1, k - 1);
+                            usado[j] = !usado[j];
+                        }
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("metodo auxiliar que recebe o cache depois da auto-chamada: desmarca(usado, j) desfaz")
+    void auxiliarQueRecebeOCacheDesfaz() {
+        assertThat(classificarDaRodada2("r4-combinacoes-desmarca-auxiliar.java", "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("Map com put(k, 0) na volta numa forma nova: constante que nao deriva da recursao desfaz")
+    void mapaComPutDeConstanteDesfaz() {
+        String fonte = """
+                import java.util.Map;
+
+                class Solucao {
+                    static int comb(Map<Integer, Integer> usado, int i, int k, int n) {
+                        if (k == 0) return 1;
+                        int total = 0;
+                        for (int j = i; j < n; j++) {
+                            if (usado.getOrDefault(j, 0) == 1) continue;
+                            usado.put(j, 1);
+                            total += comb(usado, j + 1, k - 1, n);
+                            usado.put(j, 0);
+                        }
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.PULA_NO_LACO));
+    }
+
+    @Test
+    @DisplayName("DFS de tres cores por forma nova: cor[u] = 2 e constante na volta, vira marca desfeita (superestima)")
+    void tresCoresPorFormaNovaViraMarcaDesfeita() {
+        String fonte = """
+                class Grafo {
+                    static void visita(int[][] adj, int[] cor, int u) {
+                        cor[u] = 1;
+                        for (int v = 0; v < adj.length; v++)
+                            if (adj[u][v] == 1 && cor[v] == 0) visita(adj, cor, v);
+                        cor[u] = 2;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "visita"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    @Test
+    @DisplayName("os mesmos tres cores pela guarda que retorna seguem memoizacao: a regra estreita nao mudou")
+    void tresCoresPelaGuardaSeguemMemoizacao() {
+        assertThat(classificarDaRodada2("r9-dfs-tres-cores.java", "visita")).isEqualTo(MEMOIZACAO_1);
+    }
+
     // ----- escolha entre candidatos -----
 
     @Test

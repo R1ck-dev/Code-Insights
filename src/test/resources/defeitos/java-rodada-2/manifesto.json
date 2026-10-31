@@ -91,6 +91,10 @@
       "nota": "controle: if (usado[j]) continue; marca e desmarca; a protecao por continue nao pode virar memo" },
     { "defeito": "R-4", "arquivo": "r4-combinacoes-mapa.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
       "nota": "controle: Map com getOrDefault, put(j, true) e put(j, false) na volta; checar antes de chamar nao pode virar memo" },
+    { "defeito": "R-4", "arquivo": "r4-combinacoes-int-continue.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
+      "nota": "controle: int[] com if (usado[j] == 1) continue; usado[j] = 1 ... usado[j] = 0; a guarda compara com 1 e a volta grava 0, que e desmarcar" },
+    { "defeito": "R-4", "arquivo": "r4-combinacoes-desmarca-auxiliar.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": false,
+      "nota": "controle: a volta desmarca por um metodo auxiliar que recebe o cache, desmarca(usado, j); nao e memo" },
 
     { "defeito": "R-5", "arquivo": "r5-subsequencias-substring.java", "metrica": "tempo", "gabarito": "O(2^n)", "aberto": true,
       "nota": "s.substring(1) passado a duas chamadas: ESTRUTURAL ignora o numero de chamadas" },

@@ -35,6 +35,14 @@ import com.github.javaparser.ast.expr.UnaryExpr;
  *       e a marca definitiva ({@code cor[u] = 2} na DFS de tres cores).</li>
  * </ul>
  * A ordem e a de fonte ({@code Node.getRange()}); num laco ela e uma aproximacao da ordem de execucao.
+ * <p>
+ * Nas <b>formas novas</b> de protecao (if envolvente, ternario, continue) a regra e mais larga, o modo
+ * {@code conservador}: a consulta ali nao diz qual e o valor livre ({@code usado[j] == 1} libera 0, e a
+ * guarda so compara com 1), entao desfaz tambem a escrita que nao deriva da recursao e grava uma
+ * constante ({@code usado[j] = 0}, {@code put(k, 0)}), o toggle do proprio valor
+ * ({@code usado[j] = !usado[j]}) e a chamada, depois da auto-chamada, a um metodo que recebe o cache
+ * como argumento ({@code desmarca(usado, j)}). Na duvida, desfeita: subestimar e o pior erro. A guarda
+ * que retorna segue na regra estreita.
  */
 final class DesmarcacaoNaVolta {
 
@@ -42,30 +50,44 @@ final class DesmarcacaoNaVolta {
     private static final Set<String> ESCRITAS_POR_CHAMADA = Set.of("put", "add", "remove");
 
     private final String cache;
+    private final boolean conservador;
     private final Set<MethodCallExpr> autoChamadas = ResolvedorDeChamadas.conjuntoPorIdentidade();
     private final List<Node> escritas;
+    private final List<MethodCallExpr> auxiliaresQueRecebemOCache;
     private final List<Expression> valoresLivres;
     private final DerivacaoDaRecursao recursao;
     private final Set<String> locaisQueLeemOCache;
 
-    private DesmarcacaoNaVolta(MethodDeclaration metodo, String cache, Collection<MethodCallExpr> autoChamadas) {
+    private DesmarcacaoNaVolta(MethodDeclaration metodo, String cache, Collection<MethodCallExpr> autoChamadas,
+            boolean conservador) {
         this.cache = cache;
+        this.conservador = conservador;
         this.autoChamadas.addAll(autoChamadas);
         this.escritas = escritasEm(metodo);
+        this.auxiliaresQueRecebemOCache = conservador ? auxiliaresQueRecebemOCache(metodo) : List.of();
         this.valoresLivres = valoresComparadosNaConsulta(metodo);
         this.recursao = new DerivacaoDaRecursao(metodo, autoChamadas);
         this.locaisQueLeemOCache = locaisQueLeemOCache(recursao.atribuicoes());
     }
 
-    /** Alguma auto-chamada tem uma escrita no cache antes e uma que restaura o valor livre depois? */
-    static boolean desfazNaVolta(MethodDeclaration metodo, String cache, Collection<MethodCallExpr> autoChamadas) {
-        return new DesmarcacaoNaVolta(metodo, cache, autoChamadas).desfaz();
+    /**
+     * Alguma auto-chamada tem uma escrita no cache antes e uma que restaura o valor livre depois?
+     *
+     * @param conservador a regra larga das formas novas de protecao; a guarda que retorna passa {@code false}
+     */
+    static boolean desfazNaVolta(MethodDeclaration metodo, String cache, Collection<MethodCallExpr> autoChamadas,
+            boolean conservador) {
+        return new DesmarcacaoNaVolta(metodo, cache, autoChamadas, conservador).desfaz();
     }
 
     private boolean desfaz() {
         return autoChamadas.stream().anyMatch(chamada ->
-                escritas.stream().anyMatch(escrita -> comecaAntes(escrita, chamada))
-                        && escritas.stream().anyMatch(escrita -> comecaDepois(escrita, chamada) && restaura(escrita)));
+                escritas.stream().anyMatch(escrita -> comecaAntes(escrita, chamada)) && restauraDepoisDe(chamada));
+    }
+
+    private boolean restauraDepoisDe(MethodCallExpr chamada) {
+        return escritas.stream().anyMatch(escrita -> comecaDepois(escrita, chamada) && restaura(escrita))
+                || auxiliaresQueRecebemOCache.stream().anyMatch(auxiliar -> comecaDepois(auxiliar, chamada));
     }
 
     // ----- a ordem de fonte; sem posicao nao ha como provar a ordem, entao nao se desfaz -----
@@ -95,6 +117,18 @@ final class DesmarcacaoNaVolta {
         return achadas;
     }
 
+    /** Chamadas que nao sao auto-chamadas e recebem o proprio cache como argumento: {@code desmarca(usado, j)}. */
+    private List<MethodCallExpr> auxiliaresQueRecebemOCache(MethodDeclaration metodo) {
+        return metodo.findAll(MethodCallExpr.class).stream()
+                .filter(chamada -> !autoChamadas.contains(chamada))
+                .filter(chamada -> chamada.getArguments().stream().anyMatch(this::ehOCache))
+                .toList();
+    }
+
+    private boolean ehOCache(Expression argumento) {
+        return argumento instanceof NameExpr nome && nome.getNameAsString().equals(cache);
+    }
+
     private boolean restaura(Node escrita) {
         if (escrita instanceof AssignExpr atribuicao) {
             return atribuicao.getOperator() == AssignExpr.Operator.ASSIGN && restauraValorLivre(atribuicao.getValue());
@@ -102,7 +136,7 @@ final class DesmarcacaoNaVolta {
         MethodCallExpr chamada = (MethodCallExpr) escrita;
         return switch (chamada.getNameAsString()) {
             case "remove" -> true;
-            case "put" -> chamada.getArguments().size() == 2 && ehFalso(chamada.getArgument(1));
+            case "put" -> chamada.getArguments().size() == 2 && restauraNoPut(chamada.getArgument(1));
             default -> false;
         };
     }
@@ -113,7 +147,20 @@ final class DesmarcacaoNaVolta {
         }
         return ehFalso(valor)
                 || valoresLivres.contains(valor)
-                || (valor instanceof NameExpr nome && locaisQueLeemOCache.contains(nome.getNameAsString()));
+                || (valor instanceof NameExpr nome && locaisQueLeemOCache.contains(nome.getNameAsString()))
+                || (conservador && ehConstanteOuInverso(valor));
+    }
+
+    private boolean restauraNoPut(Expression valor) {
+        return ehFalso(valor) || (conservador && !recursao.deriva(valor) && ehConstanteOuInverso(valor));
+    }
+
+    /** Modo conservador: uma constante ou o inverso de uma celula do cache ({@code !usado[j]}, o toggle). */
+    private boolean ehConstanteOuInverso(Expression valor) {
+        boolean inverso = valor instanceof UnaryExpr negacao
+                && negacao.getOperator() == UnaryExpr.Operator.LOGICAL_COMPLEMENT
+                && AcessosAoCache.consulta(negacao.getExpression(), cache);
+        return ehConstante(valor) || inverso;
     }
 
     private static boolean ehFalso(Expression valor) {

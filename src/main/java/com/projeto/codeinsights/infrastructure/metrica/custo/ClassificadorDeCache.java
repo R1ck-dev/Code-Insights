@@ -63,6 +63,7 @@ final class ClassificadorDeCache {
     /**
      * A consulta poda a recursao e ha escrita? Entao e memoizacao - a menos que a escrita seja
      * desfeita na volta, quando e apenas a marca do caminho de um backtracking.
+     * As formas novas de protecao desfazem pela regra conservadora, a guarda que retorna pela estreita.
      */
     private static UsoDeCache classificarCandidato(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas,
             String cache, int dimensoes) {
@@ -70,7 +71,8 @@ final class ClassificadorDeCache {
         if (forma == Forma.NENHUMA) {
             return UsoDeCache.NENHUM;
         }
-        Papel papel = DesmarcacaoNaVolta.desfazNaVolta(metodo, cache, autoChamadas)
+        boolean formaNova = forma != Forma.GUARDA_QUE_RETORNA;
+        Papel papel = DesmarcacaoNaVolta.desfazNaVolta(metodo, cache, autoChamadas, formaNova)
                 ? Papel.MARCA_DESFEITA
                 : Papel.MEMOIZACAO;
         return new UsoDeCache(papel, dimensoes, forma);
