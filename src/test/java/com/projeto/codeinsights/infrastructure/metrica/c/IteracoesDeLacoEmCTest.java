@@ -3,6 +3,7 @@ package com.projeto.codeinsights.infrastructure.metrica.c;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.infrastructure.metrica.custo.Custo;
@@ -96,5 +97,33 @@ class IteracoesDeLacoEmCTest {
     void limiteVariavelOuComposto() {
         assertThat(primeiroFor("for (int i = 0; i < n; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
         assertThat(primeiroFor("for (int i = 0; i < 26 && trocou == 0; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+    }
+
+    /**
+     * IC-11 (11a): {@code const int N = 100;} e o par de {@code static final int} do Java. Abertos de
+     * proposito ate a fatia 3 colher {@code const int X = <literal>} junto dos {@code #define}; o
+     * controle do {@code #define} com o mesmo formato e {@code limiteDeMacro}, acima.
+     */
+    @Test
+    @Tag("defeito-aberto")
+    @DisplayName("limite vindo de const int global, a constante nomeada de C: constante")
+    void limiteDeConstGlobal() {
+        assertThat(primeiroFor("const int N = 100;", "for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("const int N = 100;", "for (int i = 0; N > i; i++) { }")).isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @Tag("defeito-aberto")
+    @DisplayName("limite vindo de const int local a funcao: constante")
+    void limiteDeConstLocal() {
+        assertThat(primeiroFor("const int N = 100; for (int i = 0; i < N; i++) { }")).isEqualTo(Custo.CONSTANTE);
+    }
+
+    @Test
+    @DisplayName("controles do const: sem const, ou const sem literal, o limite continua sendo variavel")
+    void constanteSoSeForConstEComLiteral() {
+        assertThat(primeiroFor("int N = 100;", "for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("const int N = n; for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
+        assertThat(primeiroFor("int N = 100; for (int i = 0; i < N; i++) { }")).isNotEqualTo(Custo.CONSTANTE);
     }
 }
