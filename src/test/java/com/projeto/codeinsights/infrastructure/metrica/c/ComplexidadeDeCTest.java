@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
@@ -241,9 +240,8 @@ class ComplexidadeDeCTest {
                     """)).isEqualTo("O(1)");
         }
 
-        /** IC-11 (11a): aberto ate a fatia 3 colher {@code const int} junto dos {@code #define}. */
+        /** IC-11 (11a): {@code const int} com literal e colhido junto dos {@code #define}. */
         @Test
-        @Tag("defeito-aberto")
         @DisplayName("const int com literal tambem dimensiona vetor fixo")
         void vetorPorConstEhConstante() {
             assertThat(espaco("""

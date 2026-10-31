@@ -80,6 +80,17 @@ final class ExpressoesDeC {
         return constantes;
     }
 
+    /**
+     * Todos os nomes que valem como constante: os {@code #define} numericos e os
+     * {@code const int X = <literal>} (global ou local). Um conjunto so, para que quem pergunta
+     * ({@link #ehConstante}, o laco limitado) nao precise saber de onde o nome veio.
+     */
+    static Set<String> constantesNomeadas(String fonteCru) {
+        Set<String> constantes = constantesDeMacro(fonteCru);
+        constantes.addAll(ConstantesConstEmC.colher(fonteCru));
+        return constantes;
+    }
+
     // ---------------------------------------------------------------- chamadas
 
     /** Chamadas de funcao no texto: um identificador colado a um {@code (}. */
