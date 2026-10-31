@@ -29,8 +29,6 @@ final class ExpressoesDeC {
             "^\\s*#\\s*define\\s+([A-Za-z_]\\w*)\\s+\\(?\\s*[0-9]+[uUlL]*\\s*\\)?\\s*(?://.*|/\\*.*)?$",
             Pattern.MULTILINE);
 
-    private static final Pattern LITERAL_INTEIRO = Pattern.compile("^[0-9]+[uUlL]*$");
-
     /** Palavras que podem vir antes de um {@code (} sem que aquilo seja chamada de funcao. */
     private static final Set<String> NAO_SAO_CHAMADA = Set.of(
             "if", "for", "while", "switch", "return", "sizeof", "do", "else", "case");
@@ -265,10 +263,6 @@ final class ExpressoesDeC {
     /** A expressao chama alguma funcao? Um limite vindo de chamada nunca pode passar por constante. */
     static boolean temChamada(String expressao) {
         return !chamadasEm(expressao).isEmpty();
-    }
-
-    static boolean ehLiteralInteiro(String expressao) {
-        return LITERAL_INTEIRO.matcher(expressao.trim()).matches();
     }
 
     // ---------------------------------------------------------------- atribuicoes
