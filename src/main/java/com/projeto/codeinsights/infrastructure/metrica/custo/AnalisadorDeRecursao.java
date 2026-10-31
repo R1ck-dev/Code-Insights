@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,16 +88,38 @@ public final class AnalisadorDeRecursao {
     private static final Set<String> TIPOS_NUMERICOS = Set.of("int", "long", "Integer", "Long", "short", "byte");
     private static final String SUPOSICAO_DE_CACHE =
             "cache/marcacao de visitados detectado: o numero de estados distintos limita a recursao";
+    static final String SUPOSICAO_DE_REDUCAO_MISTA =
+            "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina";
+    static final String SUPOSICAO_DE_PIVO =
+            "recursao sobre subintervalos delimitados por um pivo; assumida divisao balanceada";
 
     private AnalisadorDeRecursao() {
     }
 
     public static boolean ehRecursivo(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
-        return !autoChamadas(metodo, resolvedor).isEmpty();
+        return !autoChamadas(metodo, resolvedor, alvo -> alvo == metodo).isEmpty();
     }
 
     public static Recursao analisar(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
-        List<MethodCallExpr> chamadas = autoChamadas(metodo, resolvedor);
+        return analisarChamadas(metodo, resolvedor, alvo -> alvo == metodo);
+    }
+
+    /**
+     * A recorrencia que {@code metodo} descreve <b>dentro de um ciclo de recursao mutua</b>: as chamadas que
+     * contam sao as que apontam para qualquer membro do {@code ciclo}, e a reducao e lida nos parametros do
+     * <b>proprio</b> {@code metodo}. {@link CicloDeRecursao#combinar} junta o resultado de todos os membros.
+     * {@link #ehRecursivo} nao muda: um membro do ciclo nao e "recursivo" para o cache e para o espaco.
+     */
+    public static Recursao analisarNoCiclo(MethodDeclaration metodo, List<MethodDeclaration> ciclo,
+            ResolvedorDeChamadas resolvedor) {
+        Set<MethodDeclaration> membros = ResolvedorDeChamadas.conjuntoPorIdentidade();
+        membros.addAll(ciclo);
+        return analisarChamadas(metodo, resolvedor, membros::contains);
+    }
+
+    private static Recursao analisarChamadas(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor,
+            Predicate<MethodDeclaration> alvoValido) {
+        List<MethodCallExpr> chamadas = autoChamadas(metodo, resolvedor, alvoValido);
         Set<MethodCallExpr> proprias = ResolvedorDeChamadas.conjuntoPorIdentidade();
         proprias.addAll(chamadas);
         int chamadasPorCaminho = Math.max(1, contarPorCaminho(metodo.getBody().orElse(null), proprias));
@@ -117,10 +140,14 @@ public final class AnalisadorDeRecursao {
         return new Recursao(recursao.reducao(), recursao.chamadasPorCaminho(), recursao.fator(), cache, suposicao);
     }
 
-    /** As chamadas do metodo a si mesmo — pelo nome, por {@code this}, pela classe ou por outro objeto da mesma classe. */
-    private static List<MethodCallExpr> autoChamadas(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor) {
+    /**
+     * As chamadas do metodo cujo alvo satisfaz {@code alvoValido} — ele mesmo (pelo nome, por {@code this}, pela
+     * classe ou por outro objeto da mesma classe) ou, na recursao mutua, qualquer membro do ciclo.
+     */
+    private static List<MethodCallExpr> autoChamadas(MethodDeclaration metodo, ResolvedorDeChamadas resolvedor,
+            Predicate<MethodDeclaration> alvoValido) {
         return metodo.findAll(MethodCallExpr.class).stream()
-                .filter(chamada -> resolvedor.ehAutoChamada(chamada, metodo))
+                .filter(chamada -> resolvedor.alvo(chamada).filter(alvoValido).isPresent())
                 .toList();
     }
 
@@ -241,8 +268,7 @@ public final class AnalisadorDeRecursao {
                     "recursao sobre uma estrutura de dados; assumido um passo por elemento");
         }
         if (derivadoDeLocal && a >= 2 && contarParametrosNumericos(metodo) >= 2) {
-            return new Recursao(Reducao.DIVISIVA, a, 2, UsoDeCache.NENHUM,
-                    "recursao sobre subintervalos delimitados por um pivo; assumida divisao balanceada");
+            return new Recursao(Reducao.DIVISIVA, a, 2, UsoDeCache.NENHUM, SUPOSICAO_DE_PIVO);
         }
         return new Recursao(Reducao.INDETERMINADA, a, 2, UsoDeCache.NENHUM, null);
     }
@@ -275,7 +301,7 @@ public final class AnalisadorDeRecursao {
 
     private static String suposicaoDaDivisao(boolean subtrativa, boolean porResto) {
         if (subtrativa) {
-            return "reducao mista (n/b e n-c) nas auto-chamadas; assumida a divisiva, que domina";
+            return SUPOSICAO_DE_REDUCAO_MISTA;
         }
         if (porResto) {
             return "reducao por resto entre parametros, como no algoritmo de Euclides; "
