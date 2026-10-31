@@ -1,9 +1,7 @@
 package com.projeto.codeinsights.infrastructure.metrica.custo;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -12,26 +10,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.expr.ArrayAccessExpr;
-import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ForEachStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import com.github.javaparser.ast.type.ArrayType;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 
 /**
  * Extrai de um metodo recursivo a <b>relacao de recorrencia</b> que ele descreve.
@@ -65,8 +56,28 @@ public final class AnalisadorDeRecursao {
         INDETERMINADA
     }
 
-    public record Recursao(Reducao reducao, int chamadasPorCaminho, int fator,
-            boolean memoizada, int dimensoesDoCache, String suposicao) {
+    public record Recursao(Reducao reducao, int chamadasPorCaminho, int fator, UsoDeCache cache, String suposicao) {
+
+        public Recursao {
+            Objects.requireNonNull(cache);
+        }
+
+        /** Assinatura anterior a {@link UsoDeCache}, mantida para o motor de C, que nao detecta cache. */
+        public Recursao(Reducao reducao, int chamadasPorCaminho, int fator,
+                boolean memoizada, int dimensoesDoCache, String suposicao) {
+            this(reducao, chamadasPorCaminho, fator, memoizada
+                    ? new UsoDeCache(UsoDeCache.Papel.MEMOIZACAO, dimensoesDoCache, UsoDeCache.Forma.GUARDA_QUE_RETORNA)
+                    : UsoDeCache.NENHUM, suposicao);
+        }
+
+        /** O cache poda a arvore: o tempo e estados distintos x trabalho por estado. */
+        public boolean memoizada() {
+            return cache.podaOTempo();
+        }
+
+        public int dimensoesDoCache() {
+            return cache.dimensoes();
+        }
 
         public boolean temSuposicao() {
             return suposicao != null;
@@ -74,9 +85,8 @@ public final class AnalisadorDeRecursao {
     }
 
     private static final Set<String> TIPOS_NUMERICOS = Set.of("int", "long", "Integer", "Long", "short", "byte");
-    private static final Set<String> CACHES_ASSOCIATIVOS = Set.of(
-            "Map", "HashMap", "TreeMap", "LinkedHashMap", "Set", "HashSet", "TreeSet", "LinkedHashSet");
-    private static final Set<String> CONSULTAS_DE_CACHE = Set.of("get", "containsKey", "contains", "getOrDefault");
+    private static final String SUPOSICAO_DE_CACHE =
+            "cache/marcacao de visitados detectado: o numero de estados distintos limita a recursao";
 
     private AnalisadorDeRecursao() {
     }
@@ -91,11 +101,20 @@ public final class AnalisadorDeRecursao {
         proprias.addAll(chamadas);
         int chamadasPorCaminho = Math.max(1, contarPorCaminho(metodo.getBody().orElse(null), proprias));
         Recursao recursao = classificarReducao(metodo, chamadas, chamadasPorCaminho, resolvedor);
+        return comCache(recursao, ClassificadorDeCache.classificar(metodo, chamadas));
+    }
 
-        return dimensoesDoCache(metodo)
-                .map(dimensoes -> new Recursao(recursao.reducao(), chamadasPorCaminho, recursao.fator(), true, dimensoes,
-                        "cache/marcacao de visitados detectado: o numero de estados distintos limita a recursao"))
-                .orElse(recursao);
+    /**
+     * Anexa o papel do cache a recorrencia. A reducao continua a mesma; quem decide se ela ainda
+     * vale e o consumidor ({@link SolucionadorDeRecorrencia} para o tempo, {@link AvaliadorDeEspaco}
+     * para a pilha). A suposicao sobre estados distintos so entra quando o cache poda o tempo.
+     */
+    private static Recursao comCache(Recursao recursao, UsoDeCache cache) {
+        if (cache.papel() == UsoDeCache.Papel.NENHUM) {
+            return recursao;
+        }
+        String suposicao = cache.podaOTempo() ? SUPOSICAO_DE_CACHE : recursao.suposicao();
+        return new Recursao(recursao.reducao(), recursao.chamadasPorCaminho(), recursao.fator(), cache, suposicao);
     }
 
     /** As chamadas do metodo a si mesmo — pelo nome, por {@code this}, pela classe ou por outro objeto da mesma classe. */
@@ -211,21 +230,21 @@ public final class AnalisadorDeRecursao {
         }
 
         if (divisiva) {
-            return new Recursao(Reducao.DIVISIVA, a, fatorDivisao, false, 0,
+            return new Recursao(Reducao.DIVISIVA, a, fatorDivisao, UsoDeCache.NENHUM,
                     suposicaoDaDivisao(subtrativa, porResto));
         }
         if (subtrativa) {
-            return new Recursao(Reducao.SUBTRATIVA, a, 1, false, 0, null);
+            return new Recursao(Reducao.SUBTRATIVA, a, 1, UsoDeCache.NENHUM, null);
         }
         if (estrutural) {
-            return new Recursao(Reducao.ESTRUTURAL, a, 2, false, 0,
+            return new Recursao(Reducao.ESTRUTURAL, a, 2, UsoDeCache.NENHUM,
                     "recursao sobre uma estrutura de dados; assumido um passo por elemento");
         }
         if (derivadoDeLocal && a >= 2 && contarParametrosNumericos(metodo) >= 2) {
-            return new Recursao(Reducao.DIVISIVA, a, 2, false, 0,
+            return new Recursao(Reducao.DIVISIVA, a, 2, UsoDeCache.NENHUM,
                     "recursao sobre subintervalos delimitados por um pivo; assumida divisao balanceada");
         }
-        return new Recursao(Reducao.INDETERMINADA, a, 2, false, 0, null);
+        return new Recursao(Reducao.INDETERMINADA, a, 2, UsoDeCache.NENHUM, null);
     }
 
     /** Auto-chamada dentro de laco: percorre vizinhos (estrutural) ou explora combinacoes (backtracking). */
@@ -239,10 +258,10 @@ public final class AnalisadorDeRecursao {
             return Optional.empty();
         }
         if (laco.get() instanceof ForEachStmt paraCada && iteraSobreOsOperandos(paraCada, chamadas)) {
-            return Optional.of(new Recursao(Reducao.ESTRUTURAL, a, 2, false, 0,
+            return Optional.of(new Recursao(Reducao.ESTRUTURAL, a, 2, UsoDeCache.NENHUM,
                     "recursao sobre os elementos iterados; assumido um passo por elemento"));
         }
-        return Optional.of(new Recursao(Reducao.BACKTRACKING, a, 2, false, 0,
+        return Optional.of(new Recursao(Reducao.BACKTRACKING, a, 2, UsoDeCache.NENHUM,
                 "auto-chamada dentro de laco: assumida busca exaustiva"));
     }
 
@@ -348,84 +367,5 @@ public final class AnalisadorDeRecursao {
         return metodo.getParameters().stream()
                 .filter(parametro -> TIPOS_NUMERICOS.contains(parametro.getType().asString()))
                 .count();
-    }
-
-    // ----- memoizacao / marcacao de visitados -----
-
-    /**
-     * Detecta o idioma {@code if (memo[n] != VAZIO) return memo[n]; ... memo[n] = ...}
-     * (e o equivalente com {@code visitado[u]}): a arvore de recursao e podada, e o custo
-     * passa a ser o numero de estados distintos - a dimensao do cache - vezes o trabalho
-     * por estado. E o que separa Fibonacci ingenuo, {@code O(2^n)}, do memoizado, {@code O(n)}.
-     */
-    private static Optional<Integer> dimensoesDoCache(MethodDeclaration metodo) {
-        return candidatosACache(metodo).entrySet().stream()
-                .filter(candidato -> temGuardaDeLeitura(metodo, candidato.getKey()))
-                .filter(candidato -> temEscrita(metodo, candidato.getKey()))
-                .map(Map.Entry::getValue)
-                .findFirst();
-    }
-
-    /** Arrays e mapas visiveis ao metodo e que sobrevivem entre chamadas: parametros e campos. */
-    private static Map<String, Integer> candidatosACache(MethodDeclaration metodo) {
-        Map<String, Integer> candidatos = new HashMap<>();
-        metodo.getParameters().forEach(parametro -> dimensoesDe(parametro.getType())
-                .ifPresent(dimensoes -> candidatos.put(parametro.getNameAsString(), dimensoes)));
-        metodo.findAncestor(ClassOrInterfaceDeclaration.class).ifPresent(classe -> classe.getFields().stream()
-                .flatMap(campo -> campo.getVariables().stream())
-                .forEach(variavel -> dimensoesDe(variavel.getType())
-                        .ifPresent(dimensoes -> candidatos.put(variavel.getNameAsString(), dimensoes))));
-        return candidatos;
-    }
-
-    private static Optional<Integer> dimensoesDe(Type tipo) {
-        if (tipo instanceof ArrayType arranjo) {
-            return Optional.of(1 + dimensoesDe(arranjo.getComponentType()).orElse(0));
-        }
-        if (tipo instanceof ClassOrInterfaceType classe && CACHES_ASSOCIATIVOS.contains(classe.getNameAsString())) {
-            return Optional.of(1);
-        }
-        return Optional.empty();
-    }
-
-    /**
-     * A guarda precisa <b>consultar o cache pela chave</b> ({@code memo[n]}, {@code memo.get(n)}),
-     * nao apenas mencionar a estrutura. Sem essa exigencia, {@code if (k == v.length) return;} num
-     * backtracking que escreve {@code v[k]} seria lido como memoizacao, e uma busca exponencial
-     * viraria O(n).
-     */
-    private static boolean temGuardaDeLeitura(MethodDeclaration metodo, String cache) {
-        return metodo.findAll(IfStmt.class).stream()
-                .filter(condicional -> AstUtils.sempreRetorna(condicional.getThenStmt()))
-                .anyMatch(condicional -> consultaOCache(condicional.getCondition(), cache));
-    }
-
-    private static boolean consultaOCache(Expression condicao, String cache) {
-        boolean porIndice = condicao.findAll(ArrayAccessExpr.class).stream()
-                .anyMatch(acesso -> AstUtils.referenciaAlguma(acesso.getName(), Set.of(cache)));
-        boolean porConsulta = condicao.findAll(MethodCallExpr.class).stream()
-                .filter(chamada -> CONSULTAS_DE_CACHE.contains(chamada.getNameAsString()))
-                .anyMatch(chamada -> chamada.getScope()
-                        .map(escopo -> escopo instanceof NameExpr nome && nome.getNameAsString().equals(cache))
-                        .orElse(false));
-        return porIndice || porConsulta;
-    }
-
-    private static boolean temEscrita(MethodDeclaration metodo, String cache) {
-        boolean porAtribuicao = metodo.findAll(AssignExpr.class).stream()
-                .anyMatch(atribuicao -> escreveEm(atribuicao.getTarget(), cache));
-        boolean porChamada = metodo.findAll(MethodCallExpr.class).stream()
-                .filter(chamada -> chamada.getNameAsString().equals("put") || chamada.getNameAsString().equals("add"))
-                .anyMatch(chamada -> chamada.getScope()
-                        .map(escopo -> escopo instanceof NameExpr nome && nome.getNameAsString().equals(cache))
-                        .orElse(false));
-        return porAtribuicao || porChamada;
-    }
-
-    private static boolean escreveEm(Expression alvo, String cache) {
-        if (alvo instanceof ArrayAccessExpr acesso) {
-            return AstUtils.referenciaAlguma(acesso.getName(), Set.of(cache));
-        }
-        return alvo instanceof NameExpr nome && nome.getNameAsString().equals(cache);
     }
 }
