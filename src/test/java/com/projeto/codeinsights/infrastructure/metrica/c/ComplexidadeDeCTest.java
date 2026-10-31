@@ -75,6 +75,80 @@ class ComplexidadeDeCTest {
                     """)).isEqualTo("O(1)");
         }
 
+        /**
+         * Revisao da IC-11: a sombra do {@code const int N} global precisa enxergar a redeclaracao
+         * em lista ({@code int i, N = n}), por parametro de tipo do aluno e o {@code volatile const}.
+         * Em todas, {@code N} e a entrada: o laco e O(n), nunca O(1) com confianca.
+         */
+        @Test
+        @DisplayName("sombra do const global por declaracao multipla (int i, N = n) e laco linear")
+        void sombraPorDeclaracaoMultiplaNaoEhConstante() {
+            assertThat(tempo("""
+                    const int N = 100;
+                    void f(int n) {
+                        int i, N = n;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("sombra do const global por parametro de tipo do aluno (typedef) e laco linear")
+        void sombraPorParametroDeTipoDoAlunoNaoEhConstante() {
+            assertThat(tempo("""
+                    typedef int myint;
+                    const int N = 100;
+                    void f(myint N) {
+                        int i;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("sombra por parametro ponteiro de tipo do aluno e por struct (S *N) tambem tira o nome")
+        void sombraPorPonteiroDeTipoDoAluno() {
+            assertThat(ConstantesConstEmC.colher("""
+                    typedef struct { int a; } Reg;
+                    const int N = 100;
+                    void f(Reg *N) { }
+                    """)).doesNotContain("N");
+            assertThat(ConstantesConstEmC.colher("""
+                    struct S { int a; };
+                    const int N = 100;
+                    void f(struct S *N) { }
+                    """)).doesNotContain("N");
+        }
+
+        @Test
+        @DisplayName("volatile const nao e constante: o valor pode mudar fora do programa")
+        void volatileConstNaoEhConstante() {
+            assertThat(tempo("""
+                    volatile const int N = 5;
+                    void f(int n) {
+                        int i;
+                        for (i = 0; i < N; i++) { }
+                    }
+                    """)).isEqualTo("O(n)");
+        }
+
+        @Test
+        @DisplayName("controle: const global lido em varias expressoes, sem redeclaracao, segue constante")
+        void constLidoEmExpressoesSegueConstante() {
+            assertThat(tempo("""
+                    const int N = 100;
+                    int g(int a, int b) { return a + b; }
+                    void f(int n) {
+                        int i, s = 0, v[N];
+                        for (i = 0; i < N; i++) {
+                            s += i * N;
+                            s = g(s, N);
+                            v[i] = (int) N;
+                        }
+                    }
+                    """)).isEqualTo("O(1)");
+        }
+
         @Test
         @DisplayName("indice que dobra e logaritmico")
         void indiceMultiplicativoEhLogaritmico() {
@@ -451,6 +525,56 @@ class ComplexidadeDeCTest {
 
                     int main(void) { return esquerda(n); }
                     """)).isEqualTo("O(n log n)");
+        }
+
+        /**
+         * Revisao da IC-11: a(n) = 2 a(n-1) + b(n-1) e b(n) = a(n/2). Tomar a divisiva "que domina"
+         * dava um polinomio para um real exponencial; entre membros nao ha reducao mista assumida.
+         */
+        @Test
+        @DisplayName("controle: n-c num membro e n/b noutro nao tem recorrencia unica, e a resposta e '?'")
+        void reducoesMistasEntreMembrosSaemIndeterminadas() {
+            assertThat(tempo("""
+                    int b(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1) + a(n - 1) + b(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n / 2);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
+        }
+
+        @Test
+        @DisplayName("controle: a chama b(n/2) e c(n-1); membros de reducao diferente voltam '?'")
+        void reducoesMistasNoTrioSaemIndeterminadas() {
+            assertThat(tempo("""
+                    int b(int n);
+                    int c(int n);
+
+                    int a(int n) {
+                        if (n <= 1) return 1;
+                        return b(n / 2) + c(n - 1);
+                    }
+
+                    int b(int n) {
+                        if (n <= 1) return 1;
+                        return a(n / 2);
+                    }
+
+                    int c(int n) {
+                        if (n <= 1) return 1;
+                        return a(n - 1);
+                    }
+
+                    int main(void) { return a(n); }
+                    """)).isEqualTo("?");
         }
 
         @Test

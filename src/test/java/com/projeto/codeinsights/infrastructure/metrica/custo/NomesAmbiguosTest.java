@@ -16,8 +16,9 @@ import com.github.javaparser.ast.expr.Expression;
 class NomesAmbiguosTest {
 
     private static final String UNIDADE = """
-            class A { B outro; B mesmo; Integer n; }
-            class C { Z outro; B mesmo; void g() { var criado = new B(); } }
+            class A { B outro; B mesmo; Integer n; List<X> lista; List<B> repetida; Map<K, V> mapa; Map<K, V> inverso; }
+            class C { Z outro; B mesmo; void g() { var criado = new B(); }
+                      List<Y> lista; List<B> repetida; Map<K,V> mapa; Map<V, K> inverso; A[] vetor; }
             class D { void f(B b, int n) { var criado = new Z(); } }
             """;
 
@@ -38,6 +39,30 @@ class NomesAmbiguosTest {
     void mesmoTipoRepetido() {
         assertThat(ambiguo("mesmo")).isFalse();
         assertThat(ambiguo("b")).isFalse();
+    }
+
+    @Test
+    @DisplayName("mesmo tipo generico com argumentos distintos e ambiguo, o nome simples nao basta")
+    void genericosDistintos() {
+        assertThat(ambiguo("lista")).isTrue();
+        assertThat(ambiguo("lista.get(0)")).isTrue();
+        assertThat(ambiguo("inverso")).isTrue();
+    }
+
+    @Test
+    @DisplayName("mesmo tipo generico repetido, com ou sem espaco nos argumentos, nao e ambiguo")
+    void genericoRepetido() {
+        assertThat(ambiguo("repetida")).isFalse();
+        assertThat(ambiguo("mapa")).isFalse();
+    }
+
+    @Test
+    @DisplayName("A e A[] seguem distintos")
+    void tipoEVetorDoTipo() {
+        CompilationUnit unidade = StaticJavaParser.parse("class P { A x; } class Q { A[] x; } class R { A y; A[] z; }");
+        NomesAmbiguos nomes = NomesAmbiguos.de(unidade);
+        assertThat(nomes.receptorAmbiguo(StaticJavaParser.parseExpression("x"))).isTrue();
+        assertThat(nomes.receptorAmbiguo(StaticJavaParser.parseExpression("y"))).isFalse();
     }
 
     @Test

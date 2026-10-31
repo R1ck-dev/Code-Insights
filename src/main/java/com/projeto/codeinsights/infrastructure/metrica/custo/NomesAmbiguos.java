@@ -25,7 +25,8 @@ import com.github.javaparser.ast.type.VarType;
  * <p>
  * {@link TiposDeVariavel} e uma tabela plana por nome e guarda um tipo so por nome (o ultimo
  * declarado), entao um receptor {@code outro.m()} cujo nome aparece em duas classes com tipos
- * diferentes resolve para o tipo errado, em silencio. Este conjunto diz <i>quais</i> nomes sofrem
+ * diferentes resolve para o tipo errado, em silencio. Dois tipos contam como distintos pelo
+ * <b>tipo declarado inteiro</b>, com argumentos genericos. Este conjunto diz <i>quais</i> nomes sofrem
  * disso, para que quem monta o grafo de chamadas do tempo possa nao confiar nessas arestas. Nao
  * resolve o homonimo (tipos por escopo e outra frente): so o aponta.
  */
@@ -80,11 +81,16 @@ final class NomesAmbiguos {
                 .ifPresent(tipo -> tiposPorNome.computeIfAbsent(nome, chave -> new HashSet<>()).add(tipo));
     }
 
-    /** O mesmo tipo que {@link TiposDeVariavel} guarda: {@code var x = new X()} e {@code X}. */
+    /**
+     * O tipo que {@link TiposDeVariavel} guarda ({@code var x = new X()} e {@code X}), mas com os
+     * <b>argumentos genericos</b>: o resolvedor segue {@code lista.get(i).g()} pelo tipo declarado
+     * inteiro, entao {@code List<X>} e {@code List<Y>} sao tipos distintos aqui, nao o mesmo
+     * {@code List}. {@code A} e {@code A[]} tambem seguem distintos.
+     */
     private static Optional<String> tipoEfetivo(Type declarado, Expression inicializador) {
         Type tipo = declarado instanceof VarType && inicializador instanceof ObjectCreationExpr criacao
                 ? criacao.getType()
                 : declarado;
-        return TiposDeVariavel.nomeDe(tipo);
+        return TiposDeVariavel.nomeDe(tipo).map(simples -> tipo.asString().replaceAll("\\s+", ""));
     }
 }

@@ -185,6 +185,13 @@
     { "defeito": "IC-11", "arquivo": "ic11-limite-n.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "controle: i < n continua O(n) mesmo com uma constante final declarada no arquivo" },
 
+    { "defeito": "IC-11", "arquivo": "ic11-revisao-reducao-mista.java", "metrica": "tempo", "gabarito": "?", "aberto": false,
+      "nota": "revisao: a(n) = 2 a(n-1) + b(n-1) e b(n) = a(n/2) misturam n-c e n/b entre os membros do ciclo; a divisiva \"dominando\" daria O(n^2) para um real exponencial. Entre membros nao ha reducao mista assumida: ? com motivo" },
+    { "defeito": "IC-11", "arquivo": "ic11-revisao-reducao-mista-trio.java", "metrica": "tempo", "gabarito": "?", "aberto": false,
+      "nota": "revisao: a chama b(n/2) e c(n-1), b e c chamam a; membros de reducao diferente no mesmo ciclo, a resposta honesta e ?" },
+    { "defeito": "IC-11", "arquivo": "ic11-revisao-genericos-falso-ciclo.java", "metrica": "tempo", "gabarito": "?", "aberto": false,
+      "nota": "revisao: lista e List<X> em P e List<Y> em Z; o nome simples (List) escondia a ambiguidade e a tabela plana ligava P.f a Y.g, fabricando o ciclo. O real e O(1) (X.g e folha); a resposta conservadora e ?, nunca um numero errado" },
+
     { "defeito": "IC-11b", "arquivo": "ic11b-par-impar.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
       "nota": "par/impar mutuamente recursivos, sem main (como no corpus): o ciclo par -> impar -> par desce n - 1 por volta, n voltas; hoje responde ?" },
     { "defeito": "IC-11b", "arquivo": "ic11b-par-impar-main.java", "metrica": "tempo", "gabarito": "O(n)", "aberto": false,
