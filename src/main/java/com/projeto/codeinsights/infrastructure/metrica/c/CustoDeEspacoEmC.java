@@ -1,7 +1,5 @@
 package com.projeto.codeinsights.infrastructure.metrica.c;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import com.projeto.codeinsights.infrastructure.metrica.c.ExpressoesDeC.Chamada;
@@ -91,7 +89,7 @@ final class CustoDeEspacoEmC {
                 maior = maior.mais(custoDaPilha(RecursaoEmC.analisar(funcao)));
             }
         }
-        if (!temCicloIndireto(programa)) {
+        if (!GrafoDeChamadasEmC.temCicloIndireto(programa)) {
             return maior;
         }
         return maior.mais(CustoAvaliado.estimado(Custo.LINEAR,
@@ -106,40 +104,5 @@ final class CustoDeEspacoEmC {
                     "profundidade da pilha nao determinada; assumidos n niveis");
             default -> CustoAvaliado.exato(Custo.LINEAR).comNota("pilha de recursao: n niveis");
         };
-    }
-
-    /** Ciclo no grafo de chamadas envolvendo mais de uma funcao ({@code a} chama {@code b}, que chama {@code a}). */
-    private static boolean temCicloIndireto(ProgramaDeC programa) {
-        for (FuncaoDeC funcao : programa.funcoes()) {
-            if (alcanca(programa, funcao.nome(), funcao.nome(), new HashSet<>(), true)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean alcanca(ProgramaDeC programa, String origem, String alvo,
-            Set<String> visitados, boolean primeiroPasso) {
-        if (!visitados.add(origem) && !primeiroPasso) {
-            return false;
-        }
-        List<String> chamados = programa.porNome(origem)
-                .map(funcao -> ExpressoesDeC.chamadasEm(funcao.corpo().textoDaSubarvore()).stream()
-                        .map(Chamada::nome)
-                        .filter(nome -> !nome.equals(origem))
-                        .distinct()
-                        .toList())
-                .orElseGet(List::of);
-
-        for (String chamado : chamados) {
-            if (chamado.equals(alvo)) {
-                return true;
-            }
-            if (programa.porNome(chamado).isPresent()
-                    && alcanca(programa, chamado, alvo, visitados, false)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

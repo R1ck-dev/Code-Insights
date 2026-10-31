@@ -38,14 +38,14 @@ import com.projeto.codeinsights.infrastructure.metrica.custo.SolucionadorDeRecor
  */
 final class CustoDeTempoEmC {
 
-    private final Map<String, FuncaoDeC> funcoes = new HashMap<>();
+    private final ProgramaDeC programa;
     private final Map<String, CustoAvaliado> memo = new HashMap<>();
     private final Deque<String> emAvaliacao = new ArrayDeque<>();
     private final Set<String> constantes;
 
     private CustoDeTempoEmC(ProgramaDeC programa, Set<String> constantes) {
+        this.programa = programa;
         this.constantes = constantes;
-        programa.funcoes().forEach(funcao -> funcoes.put(funcao.chave(), funcao));
     }
 
     static CustoAvaliado doPrograma(ProgramaDeC programa, Set<String> constantes) {
@@ -146,24 +146,12 @@ final class CustoDeTempoEmC {
         if (atual != null && chamada.nome().equals(atual.nome())) {
             return CustoAvaliado.exato(Custo.CONSTANTE);
         }
-        FuncaoDeC alvo = funcoes.get(chamada.nome() + "/" + aridade(chamada));
-        if (alvo == null) {
-            alvo = funcoes.values().stream()
-                    .filter(funcao -> funcao.nome().equals(chamada.nome()))
-                    .findFirst()
-                    .orElse(null);
-        }
-        if (alvo != null) {
-            return custoDaFuncao(alvo);
+        Optional<FuncaoDeC> alvo = GrafoDeChamadasEmC.funcaoChamada(programa, chamada);
+        if (alvo.isPresent()) {
+            return custoDaFuncao(alvo.get());
         }
         return BibliotecaDeC.custo(chamada.nome())
                 .orElseGet(() -> CustoAvaliado.estimado(Custo.CONSTANTE,
                         "chamada externa `%s` desconhecida; assumida O(1)".formatted(chamada.nome())));
-    }
-
-    private static int aridade(Chamada chamada) {
-        return chamada.argumentos().isBlank()
-                ? 0
-                : ParserEstruturalDeC.dividirNoNivelZero(chamada.argumentos(), ',').size();
     }
 }
