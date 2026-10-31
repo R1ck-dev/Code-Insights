@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -42,14 +41,11 @@ final class DesmarcacaoNaVolta {
     private static final Pattern CONSTANTE_NOMEADA = Pattern.compile("[A-Z][A-Z0-9_]*");
     private static final Set<String> ESCRITAS_POR_CHAMADA = Set.of("put", "add", "remove");
 
-    private record Atribuicao(String local, Expression valor) {
-    }
-
     private final String cache;
     private final Set<MethodCallExpr> autoChamadas = ResolvedorDeChamadas.conjuntoPorIdentidade();
     private final List<Node> escritas;
     private final List<Expression> valoresLivres;
-    private final Set<String> locaisDerivadosDaRecursao;
+    private final DerivacaoDaRecursao recursao;
     private final Set<String> locaisQueLeemOCache;
 
     private DesmarcacaoNaVolta(MethodDeclaration metodo, String cache, Collection<MethodCallExpr> autoChamadas) {
@@ -57,9 +53,8 @@ final class DesmarcacaoNaVolta {
         this.autoChamadas.addAll(autoChamadas);
         this.escritas = escritasEm(metodo);
         this.valoresLivres = valoresComparadosNaConsulta(metodo);
-        List<Atribuicao> atribuicoes = atribuicoesALocais(metodo);
-        this.locaisDerivadosDaRecursao = locaisDerivadosDaRecursao(atribuicoes);
-        this.locaisQueLeemOCache = locaisQueLeemOCache(atribuicoes);
+        this.recursao = new DerivacaoDaRecursao(metodo, autoChamadas);
+        this.locaisQueLeemOCache = locaisQueLeemOCache(recursao.atribuicoes());
     }
 
     /** Alguma auto-chamada tem uma escrita no cache antes e uma que restaura o valor livre depois? */
@@ -113,7 +108,7 @@ final class DesmarcacaoNaVolta {
     }
 
     private boolean restauraValorLivre(Expression valor) {
-        if (derivaDaRecursao(valor, locaisDerivadosDaRecursao)) {
+        if (recursao.deriva(valor)) {
             return false;
         }
         return ehFalso(valor)
@@ -154,43 +149,9 @@ final class DesmarcacaoNaVolta {
                 || (valor instanceof NameExpr nome && CONSTANTE_NOMEADA.matcher(nome.getNameAsString()).matches());
     }
 
-    // ----- locais: o que vem da recursao e o que guarda o valor do cache -----
+    // ----- locais que guardam o valor do cache -----
 
-    private static List<Atribuicao> atribuicoesALocais(MethodDeclaration metodo) {
-        List<Atribuicao> atribuicoes = new ArrayList<>();
-        for (VariableDeclarator declarada : metodo.findAll(VariableDeclarator.class)) {
-            declarada.getInitializer()
-                    .ifPresent(inicial -> atribuicoes.add(new Atribuicao(declarada.getNameAsString(), inicial)));
-        }
-        for (AssignExpr atribuicao : metodo.findAll(AssignExpr.class)) {
-            if (atribuicao.getTarget() instanceof NameExpr alvo) {
-                atribuicoes.add(new Atribuicao(alvo.getNameAsString(), atribuicao.getValue()));
-            }
-        }
-        return atribuicoes;
-    }
-
-    /** Locais "resultado": recebem uma auto-chamada ou algo calculado de outra local resultado (ponto fixo). */
-    private Set<String> locaisDerivadosDaRecursao(List<Atribuicao> atribuicoes) {
-        Set<String> derivados = new HashSet<>();
-        boolean cresceu = true;
-        while (cresceu) {
-            cresceu = false;
-            for (Atribuicao atribuicao : atribuicoes) {
-                if (derivaDaRecursao(atribuicao.valor(), derivados) && derivados.add(atribuicao.local())) {
-                    cresceu = true;
-                }
-            }
-        }
-        return derivados;
-    }
-
-    private boolean derivaDaRecursao(Expression valor, Set<String> derivados) {
-        boolean chamaASiMesmo = valor.findAll(MethodCallExpr.class).stream().anyMatch(autoChamadas::contains);
-        return chamaASiMesmo || AstUtils.referenciaAlguma(valor, derivados);
-    }
-
-    private Set<String> locaisQueLeemOCache(List<Atribuicao> atribuicoes) {
+    private Set<String> locaisQueLeemOCache(List<DerivacaoDaRecursao.Atribuicao> atribuicoes) {
         Set<String> locais = new HashSet<>();
         atribuicoes.stream()
                 .filter(atribuicao -> AcessosAoCache.consulta(atribuicao.valor(), cache))

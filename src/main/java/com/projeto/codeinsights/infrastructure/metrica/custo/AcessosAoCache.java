@@ -1,5 +1,6 @@
 package com.projeto.codeinsights.infrastructure.metrica.custo;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
@@ -27,6 +28,34 @@ final class AcessosAoCache {
                 .filter(chamada -> CONSULTAS_DE_CACHE.contains(chamada.getNameAsString()))
                 .anyMatch(chamada -> temEscopo(chamada, cache));
         return porIndice || porConsulta;
+    }
+
+    /**
+     * Os nomes que formam a chave da consulta: {@code i} e {@code j} em {@code grade[i - 1][j]},
+     * {@code n} em {@code memo.containsKey(n)}. O proprio nome do cache fica de fora.
+     */
+    static Set<String> nomesDaChave(Expression expressao, String cache) {
+        Set<String> nomes = new HashSet<>();
+        expressao.findAll(ArrayAccessExpr.class).stream()
+                .filter(acesso -> AstUtils.referenciaAlguma(acesso.getName(), Set.of(cache)))
+                .forEach(acesso -> acrescentarNomes(acesso.getIndex(), nomes));
+        expressao.findAll(MethodCallExpr.class).stream()
+                .filter(chamada -> CONSULTAS_DE_CACHE.contains(chamada.getNameAsString()))
+                .filter(chamada -> temEscopo(chamada, cache))
+                .forEach(chamada -> chamada.getArguments().forEach(argumento -> acrescentarNomes(argumento, nomes)));
+        nomes.remove(cache);
+        return nomes;
+    }
+
+    /** Os nomes que uma expressao menciona, no proprio no e abaixo dele. */
+    static Set<String> nomesEm(Expression expressao) {
+        Set<String> nomes = new HashSet<>();
+        acrescentarNomes(expressao, nomes);
+        return nomes;
+    }
+
+    private static void acrescentarNomes(Expression expressao, Set<String> nomes) {
+        expressao.findAll(NameExpr.class).forEach(nome -> nomes.add(nome.getNameAsString()));
     }
 
     /** O alvo de uma atribuicao e o cache ({@code memo = ...}) ou um elemento dele ({@code memo[n] = ...}). */

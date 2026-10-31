@@ -42,7 +42,7 @@ final class ClassificadorDeCache {
      * cache de maior dimensao.
      *
      * @param autoChamadas as chamadas do metodo a si mesmo; a guarda que retorna nao precisa delas,
-     *                     mas a desmarcacao na volta e as formas de protecao por envolvimento usam cada uma
+     *                     mas a desmarcacao na volta e a protecao por envolvimento usam cada uma
      */
     static UsoDeCache classificar(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas) {
         List<UsoDeCache> usos = candidatosACache(metodo).entrySet().stream()
@@ -66,13 +66,23 @@ final class ClassificadorDeCache {
      */
     private static UsoDeCache classificarCandidato(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas,
             String cache, int dimensoes) {
-        if (!temGuardaDeLeitura(metodo, cache) || !temEscrita(metodo, cache)) {
+        Forma forma = temEscrita(metodo, cache) ? formaDeProtecao(metodo, autoChamadas, cache) : Forma.NENHUMA;
+        if (forma == Forma.NENHUMA) {
             return UsoDeCache.NENHUM;
         }
         Papel papel = DesmarcacaoNaVolta.desfazNaVolta(metodo, cache, autoChamadas)
                 ? Papel.MARCA_DESFEITA
                 : Papel.MEMOIZACAO;
-        return new UsoDeCache(papel, dimensoes, Forma.GUARDA_QUE_RETORNA);
+        return new UsoDeCache(papel, dimensoes, forma);
+    }
+
+    /** A guarda que retorna vale como esta; so sem ela se procura o {@code if} que envolve as chamadas. */
+    private static Forma formaDeProtecao(MethodDeclaration metodo, Collection<MethodCallExpr> autoChamadas,
+            String cache) {
+        if (temGuardaDeLeitura(metodo, cache)) {
+            return Forma.GUARDA_QUE_RETORNA;
+        }
+        return ProtecaoPorEnvolvimento.forma(metodo, cache, autoChamadas);
     }
 
     // ----- candidatos -----

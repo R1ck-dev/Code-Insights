@@ -255,6 +255,183 @@ class ClassificadorDeCacheTest {
         assertThat(classificar(fonte, "conta")).isEqualTo(MEMOIZACAO_2);
     }
 
+    // ----- protecao por if envolvente: a consulta nao retorna, envolve a chamada -----
+
+    @Test
+    @DisplayName("calcula-se-ausente: if (memo[n] == 0) memo[n] = f(n-1) + f(n-2) e memoizacao")
+    void calculaSeAusenteComVetor() {
+        assertThat(classificarDaRodada2("r9-fib-calcula-se-ausente.java", "fib"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CALCULA_SE_AUSENTE));
+    }
+
+    @Test
+    @DisplayName("calcula-se-ausente com HashMap: if (!memo.containsKey(n)) memo.put(n, f(n-1) + f(n-2))")
+    void calculaSeAusenteComMapa() {
+        assertThat(classificarDaRodada2("r9-fib-hashmap.java", "fib"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CALCULA_SE_AUSENTE));
+    }
+
+    @Test
+    @DisplayName("calcula-se-ausente: o resultado passa por uma local antes de ir para o cache")
+    void calculaSeAusenteComLocalResultado() {
+        String fonte = """
+                class Solucao {
+                    static long[] memo = new long[91];
+
+                    static long fib(int n) {
+                        if (n < 2) return n;
+                        if (memo[n] == 0) {
+                            long soma = fib(n - 1) + fib(n - 2);
+                            memo[n] = soma;
+                        }
+                        return memo[n];
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "fib"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CALCULA_SE_AUSENTE));
+    }
+
+    @Test
+    @DisplayName("checa-antes: if (a[u][v] == 1 && !visitado[v]) visita(v) e memoizacao, o indice v vai na chamada")
+    void checaAntesDeChamarNaDfs() {
+        assertThat(classificarDaRodada2("r9-dfs-checa-antes.java", "visita"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    @Test
+    @DisplayName("checa-antes na inundacao: quatro ifs, cada um com a celula consultada nos argumentos")
+    void checaAntesNaInundacao() {
+        assertThat(classificarDaRodada2("e8-ilhas-testa-antes.java", "afunda"))
+                .isEqualTo(new UsoDeCache(Papel.MEMOIZACAO, 2, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    // ----- a protecao precisa valer para todas as chamadas, e a consulta precisa ser da marca -----
+
+    @Test
+    @DisplayName("regra do indice: if (v[i] != v[i+1]) { troca; ordena(v); } nao passa o indice i para a chamada")
+    void regraDoIndiceBarraOrdenacaoQueReescreve() {
+        String fonte = """
+                class Solucao {
+                    static void ordena(int[] v) {
+                        for (int i = 0; i + 1 < v.length; i++)
+                            if (v[i] != v[i + 1]) {
+                                int t = v[i];
+                                v[i] = v[i + 1];
+                                v[i + 1] = t;
+                                ordena(v);
+                            }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "ordena")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("consulta relacional compara dados, nao testa marca: if (v[i] > v[i+1]) { troca; ordena(v, i+1); }")
+    void consultaRelacionalNaoEhMarca() {
+        String fonte = """
+                class Solucao {
+                    static void ordena(int[] v, int i) {
+                        if (i + 1 < v.length && v[i] > v[i + 1]) {
+                            int t = v[i];
+                            v[i] = v[i + 1];
+                            v[i + 1] = t;
+                            ordena(v, i + 1);
+                        }
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "ordena")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("uma auto-chamada fora da protecao basta para nao haver memoizacao")
+    void todasAsChamadasPrecisamEstarProtegidas() {
+        String fonte = """
+                class Solucao {
+                    static long[] memo = new long[91];
+
+                    static long fib(int n) {
+                        if (n < 2) return n;
+                        if (memo[n] == 0) memo[n] = fib(n - 1);
+                        return memo[n] + fib(n - 2);
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "fib")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("consulta num ||: o ramo executa mesmo com a marca livre, entao nao protege")
+    void consultaNumOuNaoProtege() {
+        String fonte = """
+                class Grafo {
+                    void visita(int[][] adj, boolean[] vis, int u) {
+                        vis[u] = true;
+                        for (int v = 0; v < adj.length; v++)
+                            if (adj[u][v] == 1 || !vis[v]) visita(adj, vis, v);
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "visita")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    @Test
+    @DisplayName("chamada na propria condicao por curto-circuito nao e protegida (superestima, documentado)")
+    void chamadaNaCondicaoNaoEhProtegida() {
+        String fonte = """
+                class Grafo {
+                    boolean acha(int[][] adj, boolean[] vis, int u) {
+                        vis[u] = true;
+                        boolean achou = false;
+                        for (int v = 0; v < adj.length; v++)
+                            if (adj[u][v] == 1 && !vis[v] && acha(adj, vis, v)) achou = true;
+                        return achou;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "acha")).isEqualTo(UsoDeCache.NENHUM);
+    }
+
+    // ----- a protecao passa, e quem rejeita a memoizacao e a desmarcacao na volta -----
+
+    @Test
+    @DisplayName("N-rainhas: as marcas protegem a chamada e sao desfeitas, entao e marca desfeita, nao falta de guarda")
+    void nRainhasPassaPelaProtecaoEEhDesfeita() {
+        String fonte = """
+                class Solucao {
+                    static int n;
+                    static boolean[] col, d1, d2;
+
+                    static int resolve(int l) {
+                        if (l == n) return 1;
+                        int total = 0;
+                        for (int c = 0; c < n; c++)
+                            if (!col[c] && !d1[l + c] && !d2[l - c + n - 1]) {
+                                col[c] = true;
+                                d1[l + c] = true;
+                                d2[l - c + n - 1] = true;
+                                total += resolve(l + 1);
+                                col[c] = false;
+                                d1[l + c] = false;
+                                d2[l - c + n - 1] = false;
+                            }
+                        return total;
+                    }
+                }
+                """;
+        assertThat(classificar(fonte, "resolve"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
+    @Test
+    @DisplayName("combinacoes com Map: getOrDefault protege a chamada e put(j, false) desfaz, marca desfeita")
+    void combinacoesComMapaPassaPelaProtecaoEEhDesfeita() {
+        assertThat(classificarDaRodada2("r4-combinacoes-mapa.java", "comb"))
+                .isEqualTo(new UsoDeCache(Papel.MARCA_DESFEITA, 1, Forma.CHECA_ANTES_DE_CHAMAR));
+    }
+
     // ----- escolha entre candidatos -----
 
     @Test
