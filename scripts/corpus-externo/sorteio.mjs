@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const SEMENTE = '20261101';
-const PROFUNDIDADE = 120; // posicoes por plataforma e por linguagem expostas ao coletor
+const PROFUNDIDADE = 400; // posicoes por plataforma e por linguagem expostas ao coletor
 const CATEGORIAS_LEETCODE = new Set(['Algorithms', 'Concurrency']);
 
 const [, , pastaListas, pastaSaida] = process.argv;
