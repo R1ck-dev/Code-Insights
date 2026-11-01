@@ -1,0 +1,5271 @@
+{
+  "issue": "R1ck-dev/Code-Insights-plano#23 (IC-16)",
+  "semente": "20261101",
+  "criterio": {
+    "arquivo": "docs/ifsp-documentacao/criterio-corpus-externo.md (local, fora do git)",
+    "sha256NaGeracao": "98e850486cfc14ef244ff0525f33669290bc277ee7b65d7745f2af7a38664ac0",
+    "sha256DaVersaoCongelada": "a43d1809559bf30ca877736412421cff6ce9ddad55dddbe110f54cab2ee76fce"
+  },
+  "listas": {
+    "codeforces-problemset-2026-11-01.json": "9eb39e4aca929668209d20205feea0009cc36daa817a817270e8de28eaff6c11",
+    "leetcode-questionlist-2026-11-01.json": "acb2772f2e05eba283c6299d2f1bfd3eb69f54afefe68ec925048c09e360e81b"
+  },
+  "sorteio": {
+    "java": "c632257cc3fc74c567b5a39966e1c75afd39fbcd2c90e22957c73d189bc21bf8",
+    "c": "dcd6bb5abd2c4b51d99e7d99f335fa39ebe7ef08155c52aa28cf05f1bc649e81"
+  },
+  "java": {
+    "alvo": 20,
+    "piso": 15,
+    "percorridos": 135,
+    "ultimaOrdem": 135,
+    "aceitos": 20,
+    "exclusoesPorMotivo": {
+      "divergencia": 32,
+      "sem-solucao": 12,
+      "sem-fonte": 62,
+      "inelegivel": 9
+    },
+    "casos": [
+      {
+        "ordem": 5,
+        "plataforma": "leetcode",
+        "id": "3479",
+        "urlProblema": "https://leetcode.com/problems/fruits-into-baskets-iii/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3479/",
+            "titulo": "3479. Fruits Into Baskets III - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3479",
+            "titulo": "3479. Fruits Into Baskets III - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 3479 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/nirvanarsc/CompetitiveProgramming/blob/b999060527ae270d6cc8522d6d7ba1d713483055/Java/leetcode/medium/P_3479.java",
+          "repositorio": "nirvanarsc/CompetitiveProgramming",
+          "autor": "nirvanarsc",
+          "licencaDeclarada": "MIT",
+          "commit": "1e220ba30e5ee5ed40786a8421f7aa67d9896e40",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "005-leetcode-3479.java",
+          "sha256": "23d4a09a857bee719073a23140b0f86cedb763d356ff408119202de13e749c48",
+          "linhas": 82,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 9,
+        "plataforma": "leetcode",
+        "id": "2097",
+        "urlProblema": "https://leetcode.com/problems/valid-arrangement-of-pairs/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2097/",
+            "titulo": "2097. Valid Arrangement of Pairs - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2097",
+            "titulo": "2097. Valid Arrangement of Pairs - In-Depth Explanation (sem complexidade declarada)",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 2097 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Cybersachin07/DSA_PRACTICE/blob/8518a80689add0a9c1f6e29c7bebca1b89a85d8c/Leetcode_DailyChallenge/LeetCode_2097.java",
+          "repositorio": "Cybersachin07/DSA_PRACTICE",
+          "autor": "Cybersachin07",
+          "licencaDeclarada": "sem licenca",
+          "commit": "7414f4012d978e76cbb9926edd1cc463e3b9cb72",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "009-leetcode-2097.java",
+          "sha256": "4db2951a165466614b733e69985ebb461d03a656e2bd0a59136dcfc4a8dfedc9",
+          "linhas": 64,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 13,
+        "plataforma": "leetcode",
+        "id": "2588",
+        "urlProblema": "https://leetcode.com/problems/count-the-number-of-beautiful-subarrays/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2588/",
+            "titulo": "2588. Count the Number of Beautiful Subarrays - LeetCode Solutions (campos de complexidade em branco)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2588",
+            "titulo": "2588. Count the Number of Beautiful Subarrays - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 2588 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/iichen-bycode/leetcode/blob/f1411263b9ef3db04defb2720fd1c728347d35ab/src/常用数据结构/前缀和/leetcode_2588.java",
+          "repositorio": "iichen-bycode/leetcode",
+          "autor": "iichen-bycode",
+          "licencaDeclarada": "sem licenca",
+          "commit": "0b89fe3565b61b473506fb8c88a5a83d9cd1d468",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "013-leetcode-2588.java",
+          "sha256": "1a9525eb943475929cac978e728df6e7d0463559609d970119f6c0b057fee038",
+          "linhas": 102,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 17,
+        "plataforma": "leetcode",
+        "id": "2063",
+        "urlProblema": "https://leetcode.com/problems/vowels-of-all-substrings/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2063/",
+            "titulo": "2063. Vowels of All Substrings - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2063",
+            "titulo": "2063. Vowels of All Substrings - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 2063 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/fishercoder1534/Leetcode/blob/01a1683f2f6fd076f0c966c7dc5170da9af477e3/src/main/java/com/fishercoder/solutions/thirdthousand/_2063.java",
+          "repositorio": "fishercoder1534/Leetcode",
+          "autor": "fishercoder1534",
+          "licencaDeclarada": "Apache-2.0",
+          "commit": "09d9b476f18e498560682296eadcaa96f1b043e3",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "017-leetcode-2063.java",
+          "sha256": "f743d275b80a744c390bd7ea621a76197a4d14d77eca7c9366bb9fb9ce5a5c28",
+          "linhas": 24,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 21,
+        "plataforma": "leetcode",
+        "id": "3022",
+        "urlProblema": "https://leetcode.com/problems/minimize-or-of-remaining-elements-using-operations/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3022/",
+            "titulo": "3022. Minimize OR of Remaining Elements Using Operations - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3022",
+            "titulo": "3022. Minimize OR of Remaining Elements Using Operations - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 3022 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/yuan-fei/Coding/blob/f3fdc678686069e9a0301dd401fb5e491bec65c7/leetcode_java/src/3022.minimize-or-of-remaining-elements-using-operations.java",
+          "repositorio": "yuan-fei/Coding",
+          "autor": "yuan-fei",
+          "licencaDeclarada": "sem licenca",
+          "commit": "66708f55fe9936d1b56367447de972e42c3e1e9b",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "021-leetcode-3022.java",
+          "sha256": "f7e9f651b39b2ac0630812203c754b152929be78c0e03bc306f6877eddefbc49",
+          "linhas": 111,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 25,
+        "plataforma": "leetcode",
+        "id": "3327",
+        "urlProblema": "https://leetcode.com/problems/check-if-dfs-strings-are-palindromes/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3327/",
+            "titulo": "3327. Check if DFS Strings Are Palindromes - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3327",
+            "titulo": "3327. Check if DFS Strings Are Palindromes - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 3327 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/gdut-yy/leetcode-hub-java/blob/aee1524a65c4d6de950d82203c87c8b9199c99b6/leetcode/leetcode-34/src/main/java/Solution3327.java",
+          "repositorio": "gdut-yy/leetcode-hub-java",
+          "autor": "gdut-yy",
+          "licencaDeclarada": "sem licenca",
+          "commit": "933ce9ddf44a3ec0096544f35ef46a281637b7ca",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "025-leetcode-3327.java",
+          "sha256": "75d6718dd3f4351a4b98a60fe07e7a65ecb4eccf22d357cc00f03bf770db02e2",
+          "linhas": 119,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 31,
+        "plataforma": "leetcode",
+        "id": "3679",
+        "urlProblema": "https://leetcode.com/problems/minimum-discards-to-balance-inventory/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3679/",
+            "titulo": "walkccc (HTTP 404, nao abriu)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3679",
+            "titulo": "3679. Minimum Discards to Balance Inventory - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 3679 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/redsun9/leetcode/blob/005fcde7527ad2e3594bd509b45c2f6d7a339443/src/leetcode/leetcode36xx/leetcode3679/Solution.java",
+          "repositorio": "redsun9/leetcode",
+          "autor": "redsun9",
+          "licencaDeclarada": "sem licenca",
+          "commit": "524743e986b0ef054072b120912fb51d7f8e59d5",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "031-leetcode-3679.java",
+          "sha256": "ac38e04714fd2175818f0ac7476d4c33b3477c3561bb6ba3734b9863637aeb10",
+          "linhas": 23,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 33,
+        "plataforma": "leetcode",
+        "id": "1785",
+        "urlProblema": "https://leetcode.com/problems/minimum-elements-to-add-to-form-a-given-sum/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1785/",
+            "titulo": "1785. Minimum Elements to Add to Form a Given Sum - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1785",
+            "titulo": "1785. Minimum Elements to Add to Form a Given Sum - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 1785 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/DonaldY/LeetCode-Practice/blob/2b7e6525840de7ea0aed68a60cdfb1757b183fec/src/main/java/chapter9/topic4/LeetCode_1785.java",
+          "repositorio": "DonaldY/LeetCode-Practice",
+          "autor": "DonaldY",
+          "licencaDeclarada": "MIT",
+          "commit": "85fc9febebd7fe66828792895933efbf4854e964",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "033-leetcode-1785.java",
+          "sha256": "fe807efcaacc9964731aaaef220519f5e0b84f488575863b87a803d22d6dd08e",
+          "linhas": 17,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 35,
+        "plataforma": "leetcode",
+        "id": "3663",
+        "urlProblema": "https://leetcode.com/problems/find-the-least-frequent-digit/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3663/",
+            "titulo": "walkccc (HTTP 404, nao abriu)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3663",
+            "titulo": "3663. Find The Least Frequent Digit - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 3663 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/yashsojitra65/DSA/blob/415afe656ddac3486b9aa7f9ab3a2ca6d3f1c278/LeetCode/LeetCode3663.java",
+          "repositorio": "yashsojitra65/DSA",
+          "autor": "yashsojitra65",
+          "licencaDeclarada": "sem licenca",
+          "commit": "6cddc3189c019702d344c19a0bcddf08b77fb9c2",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "035-leetcode-3663.java",
+          "sha256": "773d37714aa821036ca64d1ab07b9713bb8368c64e5d78e7cfb8bc82dd6d036b",
+          "linhas": 25,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 37,
+        "plataforma": "leetcode",
+        "id": "1482",
+        "urlProblema": "https://leetcode.com/problems/minimum-number-of-days-to-make-m-bouquets/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1482/",
+            "titulo": "1482. Minimum Number of Days to Make m Bouquets - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1482",
+            "titulo": "1482. Minimum Number of Days to Make m Bouquets - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 1482 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/rishabhhh2005/leetcode_Solutions/blob/c5696aff455f22f38ffc2bce61b87fe4bc6d2ba3/ARRAYS/leetcode_1482.java",
+          "repositorio": "rishabhhh2005/leetcode_Solutions",
+          "autor": "rishabhhh2005",
+          "licencaDeclarada": "sem licenca",
+          "commit": "1a46c52a8f4848b1a48006563d430b5cea9d0a85",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "037-leetcode-1482.java",
+          "sha256": "4630579919b63302cdf3e9a01db730acff723082619ad014abecff58938bde0b",
+          "linhas": 58,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 39,
+        "plataforma": "leetcode",
+        "id": "3195",
+        "urlProblema": "https://leetcode.com/problems/find-the-minimum-area-to-cover-all-ones-i/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3195/",
+            "titulo": "3195. Find the Minimum Area to Cover All Ones I - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3195",
+            "titulo": "3195. Find the Minimum Area to Cover All Ones I - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 3195 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Harsh6575/JavaProgramming/blob/dade7d09e8d92b4da283aaa395132de4037da058/src/leetcode/LC3195.java",
+          "repositorio": "Harsh6575/JavaProgramming",
+          "autor": "Harsh6575",
+          "licencaDeclarada": "sem licenca",
+          "commit": "4057529a49afc4462ece247f29557fcbceec2c91",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "039-leetcode-3195.java",
+          "sha256": "fb2052429c247f11fbbdc84c3099a38b921a386e4bca770f9e7c31a2862fd3c9",
+          "linhas": 36,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 41,
+        "plataforma": "leetcode",
+        "id": "1041",
+        "urlProblema": "https://leetcode.com/problems/robot-bounded-in-circle/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1041/",
+            "titulo": "1041. Robot Bounded In Circle - LeetCode Solutions (campos de complexidade em branco)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1041",
+            "titulo": "1041. Robot Bounded In Circle - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 1041 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/JoyneelBose02/Leetcode-Solutions/blob/3343474d9b8cabc4d866370711e12c89c49eee92/LeetCode_Medium/Leetcode_1041.java",
+          "repositorio": "JoyneelBose02/Leetcode-Solutions",
+          "autor": "JoyneelBose02",
+          "licencaDeclarada": "sem licenca",
+          "commit": "521c90fb68b39a2bc4d29a4dd5efa53fcb3bd88e",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "041-leetcode-1041.java",
+          "sha256": "b3980b785110bea06489889626ff264e9e61fd2b5ac17df3a70af6ad1d0d5a14",
+          "linhas": 16,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 45,
+        "plataforma": "leetcode",
+        "id": "885",
+        "urlProblema": "https://leetcode.com/problems/spiral-matrix-iii/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/885/",
+            "titulo": "885. Spiral Matrix III - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/885",
+            "titulo": "885. Spiral Matrix III - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 885 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 4
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/gaohannk/Leetcode/blob/e0e111835b0fae2e27d80ac9e012f5052c6bd1a2/src/leetcode/algo/s/SpiralMatrixIII.java",
+          "repositorio": "gaohannk/Leetcode",
+          "autor": "gaohannk",
+          "licencaDeclarada": "sem licenca",
+          "commit": "0b70affc6c8d44208cf814b6dd2a2c8e7b9bce61",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "045-leetcode-885.java",
+          "sha256": "a889ef330a50b42d62677af0ea898ad4692cf119fef6728229c07184e41521f1",
+          "linhas": 52,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 47,
+        "plataforma": "leetcode",
+        "id": "3722",
+        "urlProblema": "https://leetcode.com/problems/lexicographically-smallest-string-after-reverse/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3722/",
+            "titulo": "walkccc (HTTP 404, nao abriu)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3722",
+            "titulo": "3722. Lexicographically Smallest String After Reverse - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 3722 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 4
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Baltan/leetcode/blob/91eb753de62ccbbacd98d153a3b340d53316b25a/src/leetcode/algorithms/LexSmallest.java",
+          "repositorio": "Baltan/leetcode",
+          "autor": "Baltan",
+          "licencaDeclarada": "sem licenca",
+          "commit": "1953f2e50c84b7e319cf2719eb675f2f59f0b8ca",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "047-leetcode-3722.java",
+          "sha256": "81d03380be067b4ea9d50e1e4ac1012a1c0e10b91d1f1051f9e7b01228109534",
+          "linhas": 61,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 59,
+        "plataforma": "leetcode",
+        "id": "1003",
+        "urlProblema": "https://leetcode.com/problems/check-if-word-is-valid-after-substitutions/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1003/",
+            "titulo": "1003. Check If Word Is Valid After Substitutions - LeetCode Solutions (campos de complexidade em branco)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1003",
+            "titulo": "1003. Check If Word Is Valid After Substitutions - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 1003 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/lydxlx1/LeetCode/blob/516d5f08fc9b1b71b14d43687221a06d07dc51fc/src/_1003.java",
+          "repositorio": "lydxlx1/LeetCode",
+          "autor": "lydxlx1",
+          "licencaDeclarada": "sem licenca",
+          "commit": "7d1a173f3a1ff082695f514dd033e5cba103d1cc",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "059-leetcode-1003.java",
+          "sha256": "131ccc9fe44e7f983e12a91584d4785841d3d12956120b760336d98a7884a721",
+          "linhas": 32,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 85,
+        "plataforma": "leetcode",
+        "id": "2305",
+        "urlProblema": "https://leetcode.com/problems/fair-distribution-of-cookies/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2305/",
+            "titulo": "2305. Fair Distribution of Cookies - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2305",
+            "titulo": "2305. Fair Distribution of Cookies - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 2305 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Roy009/DataStructuresAndAlgorithms-JAVA-/blob/d873bf770edcd21b27546fda02ef7f7bf559e6f8/src/LeetCodeQuestion/LeetCode_2305_FairDistributionOfCookies.java",
+          "repositorio": "Roy009/DataStructuresAndAlgorithms-JAVA-",
+          "autor": "Roy009",
+          "licencaDeclarada": "sem licenca",
+          "commit": "065e0a16f7f0b6f1ef8304bab6fbdea47de02116",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "085-leetcode-2305.java",
+          "sha256": "e84c22c35aa3e39798eae2341a085e4e9c0f52e1d31466c47bcefbfcfd5526ea",
+          "linhas": 30,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 107,
+        "plataforma": "leetcode",
+        "id": "1438",
+        "urlProblema": "https://leetcode.com/problems/longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1438/",
+            "titulo": "1438. Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit - LeetCode Solutions (campos de complexidade em branco)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1438",
+            "titulo": "1438. Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 1438 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 3
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/liveForExperience/LeetCodeStudy/blob/00a8b20d4932342a85f928a237f4f39222a31997/src/main/java/com/bottomlord/week_084/LeetCode_1438_2.java",
+          "repositorio": "liveForExperience/LeetCodeStudy",
+          "autor": "liveForExperience",
+          "licencaDeclarada": "GPL-3.0",
+          "commit": "f6c1ebf358015dcc99ae1111a6d3847ccb1fbe0a",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "107-leetcode-1438.java",
+          "sha256": "30a00e984f7b388d6adf5d4b5c0515950d14933788d3f5830506daf4330afed7",
+          "linhas": 28,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 131,
+        "plataforma": "leetcode",
+        "id": "1513",
+        "urlProblema": "https://leetcode.com/problems/number-of-substrings-with-only-1s/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1513/",
+            "titulo": "1513. Number of Substrings With Only 1s - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1513",
+            "titulo": "1513. Number of Substrings With Only 1s - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 1513 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 3
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/naresh1406/youtube/blob/ec2e7acf7bd911e117202a9cc37d069e78d96c2c/src/main/cp/leetcode/problems/_1513_Number_of_Substrings_With_Only_1s.java",
+          "repositorio": "naresh1406/youtube",
+          "autor": "naresh1406",
+          "licencaDeclarada": "sem licenca",
+          "commit": "6ca0f6d2d74c11e3ed5e5369819e893777e75831",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "131-leetcode-1513.java",
+          "sha256": "fe16532cd821f4c7f80cfaa5802858cc67647e85b486caba0e1188dcbc4833b7",
+          "linhas": 14,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 133,
+        "plataforma": "leetcode",
+        "id": "2997",
+        "urlProblema": "https://leetcode.com/problems/minimum-number-of-operations-to-make-array-xor-equal-to-k/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2997/",
+            "titulo": "2997. Minimum Number of Operations to Make Array XOR Equal to K - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2997",
+            "titulo": "2997. Minimum Number of Operations to Make Array XOR Equal to K - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code leetcode 2997 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/baehoonbae/algorithm/blob/b8b15cd356ec325155511281d5fd5bddf627b720/src/leetcode/LeetCode_2997.java",
+          "repositorio": "baehoonbae/algorithm",
+          "autor": "baehoonbae",
+          "licencaDeclarada": "sem licenca",
+          "commit": "979051f9a65371424c6231d69f25033132d1885f",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "133-leetcode-2997.java",
+          "sha256": "f49800fb25534e760c519c38eb2e27dc7c94bb3f1ce9d656c748132155a25b39",
+          "linhas": 35,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 135,
+        "plataforma": "leetcode",
+        "id": "4066",
+        "urlProblema": "https://leetcode.com/problems/maximum-equal-adjacent-pairs-after-at-most-one-replacement/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/4066/",
+            "titulo": "4066. Maximum Equal Adjacent Pairs After at Most One Replacement - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code leetcode 4066 --language java --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Maulik557-png/DSA-LeetCode/blob/f95fc3dd0ae0eae5afd88f9c696be48f2b95ce14/LeetCode/LeetCode4066.java",
+          "repositorio": "Maulik557-png/DSA-LeetCode",
+          "autor": "Maulik557-png",
+          "licencaDeclarada": "sem licenca",
+          "commit": "c607339e303c91b42200aa197237a839ecdbffc0",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "135-leetcode-4066.java",
+          "sha256": "0b746c03ce222507b3826ad40c9e84ae97c812124e91ab1016b2fce90a551e88",
+          "linhas": 32,
+          "comentarioDeComplexidade": false
+        }
+      }
+    ],
+    "excluidos": [
+      {
+        "ordem": 1,
+        "plataforma": "leetcode",
+        "id": "3360",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 2,
+        "plataforma": "codeforces",
+        "id": "848D",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 3,
+        "plataforma": "leetcode",
+        "id": "653",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 4,
+        "plataforma": "codeforces",
+        "id": "295D",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 6,
+        "plataforma": "codeforces",
+        "id": "2253E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 7,
+        "plataforma": "leetcode",
+        "id": "3471",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 8,
+        "plataforma": "codeforces",
+        "id": "1142A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 10,
+        "plataforma": "codeforces",
+        "id": "573D",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 11,
+        "plataforma": "leetcode",
+        "id": "3600",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 12,
+        "plataforma": "codeforces",
+        "id": "1985E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 14,
+        "plataforma": "codeforces",
+        "id": "2161G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 15,
+        "plataforma": "leetcode",
+        "id": "2287",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 16,
+        "plataforma": "codeforces",
+        "id": "2204F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 18,
+        "plataforma": "codeforces",
+        "id": "1427E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 19,
+        "plataforma": "leetcode",
+        "id": "2152",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 20,
+        "plataforma": "codeforces",
+        "id": "1995E1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 22,
+        "plataforma": "codeforces",
+        "id": "489F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 23,
+        "plataforma": "leetcode",
+        "id": "2425",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 24,
+        "plataforma": "codeforces",
+        "id": "59B",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 26,
+        "plataforma": "codeforces",
+        "id": "1533C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 27,
+        "plataforma": "leetcode",
+        "id": "2831",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 28,
+        "plataforma": "codeforces",
+        "id": "1163C1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 29,
+        "plataforma": "leetcode",
+        "id": "2751",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 30,
+        "plataforma": "codeforces",
+        "id": "1944A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 32,
+        "plataforma": "codeforces",
+        "id": "915G",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 34,
+        "plataforma": "codeforces",
+        "id": "978C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 36,
+        "plataforma": "codeforces",
+        "id": "315B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 38,
+        "plataforma": "codeforces",
+        "id": "1625E1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 40,
+        "plataforma": "codeforces",
+        "id": "1998E1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 42,
+        "plataforma": "codeforces",
+        "id": "1957B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 43,
+        "plataforma": "leetcode",
+        "id": "257",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 44,
+        "plataforma": "codeforces",
+        "id": "1764E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 46,
+        "plataforma": "codeforces",
+        "id": "1494E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 48,
+        "plataforma": "codeforces",
+        "id": "2223D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 49,
+        "plataforma": "leetcode",
+        "id": "2430",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 50,
+        "plataforma": "codeforces",
+        "id": "761F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 51,
+        "plataforma": "leetcode",
+        "id": "3153",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 52,
+        "plataforma": "codeforces",
+        "id": "41E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 53,
+        "plataforma": "leetcode",
+        "id": "562",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 54,
+        "plataforma": "codeforces",
+        "id": "1505A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 55,
+        "plataforma": "leetcode",
+        "id": "1300",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 56,
+        "plataforma": "codeforces",
+        "id": "267B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 57,
+        "plataforma": "leetcode",
+        "id": "3797",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 58,
+        "plataforma": "codeforces",
+        "id": "159D",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 60,
+        "plataforma": "codeforces",
+        "id": "1325C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 61,
+        "plataforma": "leetcode",
+        "id": "1656",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 62,
+        "plataforma": "codeforces",
+        "id": "387C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 63,
+        "plataforma": "leetcode",
+        "id": "2641",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 64,
+        "plataforma": "codeforces",
+        "id": "471B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 65,
+        "plataforma": "leetcode",
+        "id": "1198",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 66,
+        "plataforma": "codeforces",
+        "id": "491A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 67,
+        "plataforma": "leetcode",
+        "id": "3944",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 68,
+        "plataforma": "codeforces",
+        "id": "1031D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 69,
+        "plataforma": "leetcode",
+        "id": "565",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 70,
+        "plataforma": "codeforces",
+        "id": "2238B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 71,
+        "plataforma": "leetcode",
+        "id": "891",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 72,
+        "plataforma": "codeforces",
+        "id": "613C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 73,
+        "plataforma": "leetcode",
+        "id": "2353",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 74,
+        "plataforma": "codeforces",
+        "id": "1385E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 75,
+        "plataforma": "leetcode",
+        "id": "2864",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 76,
+        "plataforma": "codeforces",
+        "id": "526E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 77,
+        "plataforma": "leetcode",
+        "id": "3594",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 78,
+        "plataforma": "codeforces",
+        "id": "250E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 79,
+        "plataforma": "leetcode",
+        "id": "1489",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 80,
+        "plataforma": "codeforces",
+        "id": "764B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 81,
+        "plataforma": "leetcode",
+        "id": "24",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 82,
+        "plataforma": "codeforces",
+        "id": "2107B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 83,
+        "plataforma": "leetcode",
+        "id": "3045",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 84,
+        "plataforma": "codeforces",
+        "id": "540C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 86,
+        "plataforma": "codeforces",
+        "id": "1178H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 87,
+        "plataforma": "leetcode",
+        "id": "2859",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 88,
+        "plataforma": "codeforces",
+        "id": "787B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 89,
+        "plataforma": "leetcode",
+        "id": "1654",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 90,
+        "plataforma": "codeforces",
+        "id": "1793D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 91,
+        "plataforma": "leetcode",
+        "id": "3161",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 92,
+        "plataforma": "codeforces",
+        "id": "1930G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 93,
+        "plataforma": "leetcode",
+        "id": "2409",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 94,
+        "plataforma": "codeforces",
+        "id": "1874A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 95,
+        "plataforma": "leetcode",
+        "id": "3860",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 96,
+        "plataforma": "codeforces",
+        "id": "985F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 97,
+        "plataforma": "leetcode",
+        "id": "3505",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 98,
+        "plataforma": "codeforces",
+        "id": "1116D2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 99,
+        "plataforma": "leetcode",
+        "id": "3187",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 100,
+        "plataforma": "codeforces",
+        "id": "2239F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 101,
+        "plataforma": "leetcode",
+        "id": "769",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 102,
+        "plataforma": "codeforces",
+        "id": "2176A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 103,
+        "plataforma": "leetcode",
+        "id": "1763",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 104,
+        "plataforma": "codeforces",
+        "id": "1763E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 105,
+        "plataforma": "leetcode",
+        "id": "1744",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 106,
+        "plataforma": "codeforces",
+        "id": "81D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 108,
+        "plataforma": "codeforces",
+        "id": "126D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 109,
+        "plataforma": "leetcode",
+        "id": "700",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 110,
+        "plataforma": "codeforces",
+        "id": "64C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 111,
+        "plataforma": "leetcode",
+        "id": "3411",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 112,
+        "plataforma": "codeforces",
+        "id": "83D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 113,
+        "plataforma": "leetcode",
+        "id": "648",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 114,
+        "plataforma": "codeforces",
+        "id": "587F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 115,
+        "plataforma": "leetcode",
+        "id": "277",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 116,
+        "plataforma": "codeforces",
+        "id": "997C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 117,
+        "plataforma": "leetcode",
+        "id": "2289",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 118,
+        "plataforma": "codeforces",
+        "id": "2112D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 119,
+        "plataforma": "leetcode",
+        "id": "2606",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 120,
+        "plataforma": "codeforces",
+        "id": "1537F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 121,
+        "plataforma": "leetcode",
+        "id": "2313",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 122,
+        "plataforma": "codeforces",
+        "id": "1992D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 123,
+        "plataforma": "leetcode",
+        "id": "428",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 124,
+        "plataforma": "codeforces",
+        "id": "270A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 125,
+        "plataforma": "leetcode",
+        "id": "1792",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 126,
+        "plataforma": "codeforces",
+        "id": "1370E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 127,
+        "plataforma": "leetcode",
+        "id": "3859",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 128,
+        "plataforma": "codeforces",
+        "id": "1392E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 129,
+        "plataforma": "leetcode",
+        "id": "3540",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 130,
+        "plataforma": "codeforces",
+        "id": "1272A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 132,
+        "plataforma": "codeforces",
+        "id": "1715B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 134,
+        "plataforma": "codeforces",
+        "id": "45F",
+        "motivo": "sem-fonte"
+      }
+    ]
+  },
+  "c": {
+    "alvo": 20,
+    "piso": 15,
+    "percorridos": 535,
+    "ultimaOrdem": 535,
+    "aceitos": 20,
+    "exclusoesPorMotivo": {
+      "sem-solucao": 120,
+      "sem-fonte": 273,
+      "inelegivel": 42,
+      "divergencia": 80
+    },
+    "casos": [
+      {
+        "ordem": 13,
+        "plataforma": "leetcode",
+        "id": "83",
+        "urlProblema": "https://leetcode.com/problems/remove-duplicates-from-sorted-list/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/83/",
+            "titulo": "83. Remove Duplicates from Sorted List - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/83",
+            "titulo": "83. Remove Duplicates from Sorted List - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 83' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/adilzyphrix/C-Low-Level-Labs/blob/42d8c11cf1fd3e166696fbca62d58095a03ada96/dsa/git_c_dsa_8.c",
+          "repositorio": "adilzyphrix/C-Low-Level-Labs",
+          "autor": "adilzyphrix",
+          "licencaDeclarada": "MIT",
+          "commit": "42d8c11cf1fd3e166696fbca62d58095a03ada96",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "013-leetcode-83.c",
+          "sha256": "bfc31c2d8ec377980cba11e8b920c34c656682bfff10657e443a58f360fd3a6c",
+          "linhas": 96,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 27,
+        "plataforma": "leetcode",
+        "id": "1189",
+        "urlProblema": "https://leetcode.com/problems/maximum-number-of-balloons/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/1189/",
+            "titulo": "1189. Maximum Number of Balloons - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1189",
+            "titulo": "1189. Maximum Number of Balloons - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 1189' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Linloir/LeetCode/blob/40fd88fc271892d947fa71560442e29722904110/1189_Maximum_Number_Of_Balloons/C_Solution_1.c",
+          "repositorio": "Linloir/LeetCode",
+          "autor": "Linloir",
+          "licencaDeclarada": "sem licenca",
+          "commit": "40fd88fc271892d947fa71560442e29722904110",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "027-leetcode-1189.c",
+          "sha256": "790f59562e936cd4ab47bd677e4defc33496186aa931d224f37cff6c021a5331",
+          "linhas": 41,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 49,
+        "plataforma": "leetcode",
+        "id": "1334",
+        "urlProblema": "https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/1334/",
+            "titulo": "1334. Find the City With the Smallest Number of Neighbors at a Threshold Distance - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1334",
+            "titulo": "1334. Find the City With the Smallest Number of Neighbors at a Threshold Distance - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 1334' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Awe31402/ds-algo-in-c/blob/5953869ece74cbc3f185ffe83895c37dcf724629/26-floyd-warshall/leetcode/1334-find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance.c",
+          "repositorio": "Awe31402/ds-algo-in-c",
+          "autor": "Awe31402",
+          "licencaDeclarada": "sem licenca",
+          "commit": "5953869ece74cbc3f185ffe83895c37dcf724629",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "049-leetcode-1334.c",
+          "sha256": "e3c2e25d216cd78ae22b5ef8ed1d5745789c20cffba3e7b271e30ba00c2e1db3",
+          "linhas": 58,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 105,
+        "plataforma": "leetcode",
+        "id": "1344",
+        "urlProblema": "https://leetcode.com/problems/angle-between-hands-of-a-clock/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://algo.monster/liteproblems/1344",
+            "titulo": "1344. Angle Between Hands of a Clock - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1344/",
+            "titulo": "1344. Angle Between Hands of a Clock - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 1344' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/danielPoloWork/coding-challenges/blob/2f3cb133f921d9a4b5b5597fc6c565b2503eb0c9/platforms/leetcode/c/1344-angle-between-hands-of-a-clock/solution.c",
+          "repositorio": "danielPoloWork/coding-challenges",
+          "autor": "danielPoloWork",
+          "licencaDeclarada": "MIT",
+          "commit": "2f3cb133f921d9a4b5b5597fc6c565b2503eb0c9",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "105-leetcode-1344.c",
+          "sha256": "c7d2b0bda9db365f4ece6ecc8280bb5c2f3ac2e0906a3965d633fcba90e80797",
+          "linhas": 20,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 115,
+        "plataforma": "leetcode",
+        "id": "3021",
+        "urlProblema": "https://leetcode.com/problems/alice-and-bob-playing-flower-game/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/3021/",
+            "titulo": "3021. Alice and Bob Playing Flower Game - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3021",
+            "titulo": "3021. Alice and Bob Playing Flower Game - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 3021' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/timwking1/leetcode/blob/b312d9684834ea591762800f018a5f34ae5cd213/3021.c",
+          "repositorio": "timwking1/leetcode",
+          "autor": "timwking1",
+          "licencaDeclarada": "sem licenca",
+          "commit": "b312d9684834ea591762800f018a5f34ae5cd213",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "115-leetcode-3021.c",
+          "sha256": "025346ffad0e337fb1a49c13f3184fb6aec16ab03f7813fb89aa8c2ba2525796",
+          "linhas": 45,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 117,
+        "plataforma": "leetcode",
+        "id": "600",
+        "urlProblema": "https://leetcode.com/problems/non-negative-integers-without-consecutive-ones/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/600/",
+            "titulo": "600. Non-negative Integers without Consecutive Ones - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/600",
+            "titulo": "600. Non-negative Integers without Consecutive Ones - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 600' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/AlvinAYYE/study-code-archive/blob/c3f59376d52988715c542c870045e14d5dc0dc4c/leetcode-c/medium/600_non-negative-integers-without-consecutive-ones.c",
+          "repositorio": "AlvinAYYE/study-code-archive",
+          "autor": "AlvinAYYE",
+          "licencaDeclarada": "sem licenca",
+          "commit": "c3f59376d52988715c542c870045e14d5dc0dc4c",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "117-leetcode-600.c",
+          "sha256": "525c80a390c3ff4f2f59d66d55de084b126cc86a2c55ac99083c85689875a2aa",
+          "linhas": 60,
+          "comentarioDeComplexidade": true
+        }
+      },
+      {
+        "ordem": 145,
+        "plataforma": "leetcode",
+        "id": "821",
+        "urlProblema": "https://leetcode.com/problems/shortest-distance-to-a-character/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://algo.monster/liteproblems/821",
+            "titulo": "821. Shortest Distance to a Character - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://walkccc.me/LeetCode/problems/821/",
+            "titulo": "821. Shortest Distance to a Character - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 821' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/kakack/crush-in-leetcode/blob/5360a4c3ad1d208afb0c86341c2c80c31321fa29/code/821-Shortest%20Distance%20to%20a%20Character/821-Shortest%20Distance%20to%20a%20Character.c",
+          "repositorio": "kakack/crush-in-leetcode",
+          "autor": "kakack",
+          "licencaDeclarada": "sem licenca",
+          "commit": "5360a4c3ad1d208afb0c86341c2c80c31321fa29",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "145-leetcode-821.c",
+          "sha256": "6d56a99e3a6b5462423c565e4c1bb932e344df803f1f53cce45d81fc6e611a1f",
+          "linhas": 65,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 201,
+        "plataforma": "leetcode",
+        "id": "709",
+        "urlProblema": "https://leetcode.com/problems/to-lower-case/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/709/",
+            "titulo": "709. To Lower Case - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/709",
+            "titulo": "709. To Lower Case - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 709' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Lee-Z-Han/2023aaib3/blob/4c9f62e1ca822a11c44addbeeda54896077bc2e3/week05/week05-2.c",
+          "repositorio": "Lee-Z-Han/2023aaib3",
+          "autor": "Lee-Z-Han",
+          "licencaDeclarada": "sem licenca",
+          "commit": "4c9f62e1ca822a11c44addbeeda54896077bc2e3",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "201-leetcode-709.c",
+          "sha256": "9224c727dc1f0bf80942d267280216abfcbe3b99cbd13d944ec1329fc65f1da5",
+          "linhas": 9,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 203,
+        "plataforma": "leetcode",
+        "id": "142",
+        "urlProblema": "https://leetcode.com/problems/linked-list-cycle-ii/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/142/",
+            "titulo": "142. Linked List Cycle II - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/142",
+            "titulo": "142. Linked List Cycle II - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 142' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 1
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/hug567/mylib/blob/9773e072c8810069289ecdb303e0d48e740aef56/c/leetcode/leetcode_0142.c",
+          "repositorio": "hug567/mylib",
+          "autor": "hug567",
+          "licencaDeclarada": "Apache-2.0",
+          "commit": "9773e072c8810069289ecdb303e0d48e740aef56",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "203-leetcode-142.c",
+          "sha256": "b9bdf22738f7a307e6b5acfdd769b6a352ed7eabc1e978b9ee34a9fd50c4e3c2",
+          "linhas": 73,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 235,
+        "plataforma": "leetcode",
+        "id": "171",
+        "urlProblema": "https://leetcode.com/problems/excel-sheet-column-number/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://leetcode.doocs.org/en/lc/171/",
+            "titulo": "171. Excel Sheet Column Number - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/171",
+            "titulo": "171. Excel Sheet Column Number - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 171' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/fenix0111/Algorithm/blob/8a7feafa49a1d41425f61c353142aff2f941db4e/Leetcode/171.%20Excel%20Sheet%20Column%20Number/ExcelSheetColumnNumber.c",
+          "repositorio": "fenix0111/Algorithm",
+          "autor": "fenix0111",
+          "licencaDeclarada": "sem licenca",
+          "commit": "8a7feafa49a1d41425f61c353142aff2f941db4e",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "235-leetcode-171.c",
+          "sha256": "a5e8c7df4e79dfd23237a4533e26b57c5aa743918205f5bbc2ddf1631b9b0fca",
+          "linhas": 18,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 241,
+        "plataforma": "leetcode",
+        "id": "3863",
+        "urlProblema": "https://leetcode.com/problems/minimum-operations-to-sort-a-string/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://algo.monster/liteproblems/3863",
+            "titulo": "3863. Minimum Operations to Sort a String - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://leetcode.doocs.org/en/lc/3863/",
+            "titulo": "3863. Minimum Operations to Sort a String - LeetCode Wiki",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 3863' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/jnarin/lc_c_cplusplus/blob/07be9ff3a94f2dd08812b1700e4f44302c262d9c/3863. Minimum Operations to Sort a String.c",
+          "repositorio": "jnarin/lc_c_cplusplus",
+          "autor": "jnarin",
+          "licencaDeclarada": "sem licenca",
+          "commit": "07be9ff3a94f2dd08812b1700e4f44302c262d9c",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "241-leetcode-3863.c",
+          "sha256": "c6f991d3ed9acb7b9745fb1d49fb6a7966b8a67a163b8b505520294b5cd19d3c",
+          "linhas": 56,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 247,
+        "plataforma": "leetcode",
+        "id": "2125",
+        "urlProblema": "https://leetcode.com/problems/number-of-laser-beams-in-a-bank/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2125/",
+            "titulo": "2125. Number of Laser Beams in a Bank - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2125",
+            "titulo": "2125. Number of Laser Beams in a Bank - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 2125' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/HC-Chang/LeetCode/blob/b141c33750b8839817bc968e01ed740c4c4c8172/complete/2125.number-of-laser-beams-in-a-bank.c",
+          "repositorio": "HC-Chang/LeetCode",
+          "autor": "HC-Chang",
+          "licencaDeclarada": "sem licenca",
+          "commit": "b141c33750b8839817bc968e01ed740c4c4c8172",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "247-leetcode-2125.c",
+          "sha256": "01889ee7bd1c5233fa72d901211251a79e7e5b50a0c7710a3b08de82d003bb5d",
+          "linhas": 67,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 281,
+        "plataforma": "leetcode",
+        "id": "1382",
+        "urlProblema": "https://leetcode.com/problems/balance-a-binary-search-tree/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1382/",
+            "titulo": "1382. Balance a Binary Search Tree - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1382",
+            "titulo": "1382. Balance a Binary Search Tree - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 1382' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 4
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/upesacm/100DaysOfCode-2026/blob/be816b57739a1e341bd575abcb83878889c8eb95/DSA/AnyaMathur_590023134/Day68/Question1_leetcode.c",
+          "repositorio": "upesacm/100DaysOfCode-2026",
+          "autor": "upesacm",
+          "licencaDeclarada": "sem licenca",
+          "commit": "be816b57739a1e341bd575abcb83878889c8eb95",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "281-leetcode-1382.c",
+          "sha256": "47b5e8553d5774e74a35c5d1a1a9a24d0d551fe32789b599f7748cefc377b9f7",
+          "linhas": 39,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 315,
+        "plataforma": "leetcode",
+        "id": "2225",
+        "urlProblema": "https://leetcode.com/problems/find-players-with-zero-or-one-losses/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2225/",
+            "titulo": "2225. Find Players With Zero or One Losses - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2225",
+            "titulo": "2225. Find Players With Zero or One Losses - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 2225' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/hank7z7/leetcode/blob/fb3e7b5b553a1544171a0c0366e93ed39e58e32f/c/2225.find-players-with-zero-or-one-losses.c",
+          "repositorio": "hank7z7/leetcode",
+          "autor": "hank7z7",
+          "licencaDeclarada": "sem licenca",
+          "commit": "fb3e7b5b553a1544171a0c0366e93ed39e58e32f",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "315-leetcode-2225.c",
+          "sha256": "1da0c7153551eb0ea18a6c9c92ace6a26ec5ee55099ff1dc83c7e386377f571f",
+          "linhas": 98,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 373,
+        "plataforma": "leetcode",
+        "id": "392",
+        "urlProblema": "https://leetcode.com/problems/is-subsequence/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/392/",
+            "titulo": "392. Is Subsequence - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/392",
+            "titulo": "392. Is Subsequence - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 392' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/jihuun/mentat/blob/bf20a8efcc2d772c71ea20eb3ca6ee1fb7c9beff/leetcode/392-E-is-subsequence.c",
+          "repositorio": "jihuun/mentat",
+          "autor": "jihuun",
+          "licencaDeclarada": "sem licenca",
+          "commit": "bf20a8efcc2d772c71ea20eb3ca6ee1fb7c9beff",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "373-leetcode-392.c",
+          "sha256": "5d8dbdde824f0f987271d356eb3b0d41efd1d450ca0a9971bc07ee3f77f0c043",
+          "linhas": 14,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 407,
+        "plataforma": "leetcode",
+        "id": "3136",
+        "urlProblema": "https://leetcode.com/problems/valid-word/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/3136/",
+            "titulo": "3136. Valid Word - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/3136",
+            "titulo": "3136. Valid Word - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 3136' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 4
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/eaglemox/LeetCode-Writeups/blob/8f08fad6a7ca196447bb47b928f2f951421203ab/string/3136.valid-word/solution_1.c",
+          "repositorio": "eaglemox/LeetCode-Writeups",
+          "autor": "eaglemox",
+          "licencaDeclarada": "sem licenca",
+          "commit": "8f08fad6a7ca196447bb47b928f2f951421203ab",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "407-leetcode-3136.c",
+          "sha256": "b78140bcf5cafc1e0c2f62ec533e38930d882808ddbfa8f3267b5ad7080a40b6",
+          "linhas": 30,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 409,
+        "plataforma": "leetcode",
+        "id": "406",
+        "urlProblema": "https://leetcode.com/problems/queue-reconstruction-by-height/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/406/",
+            "titulo": "406. Queue Reconstruction by Height - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/406",
+            "titulo": "406. Queue Reconstruction by Height - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 406' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 3
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/yamstudio/leetcode/blob/d9ecd539453d1675236d77948946c80a88ae369e/c/406.queue-reconstruction-by-height.c",
+          "repositorio": "yamstudio/leetcode",
+          "autor": "yamstudio",
+          "licencaDeclarada": "GPL-3.0",
+          "commit": "d9ecd539453d1675236d77948946c80a88ae369e",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "409-leetcode-406.c",
+          "sha256": "e79c347fcab23ce2a6d31185f944267ac5b75947d2e1b9aec50410049e79f413",
+          "linhas": 47,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 499,
+        "plataforma": "leetcode",
+        "id": "892",
+        "urlProblema": "https://leetcode.com/problems/surface-area-of-3d-shapes/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://algo.monster/liteproblems/892",
+            "titulo": "892. Surface Area of 3D Shapes - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://walkccc.me/LeetCode/problems/892/",
+            "titulo": "892. Surface Area of 3D Shapes - LeetCode Solutions (sem complexidade declarada)",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://leetcode.doocs.org/en/lc/892/",
+            "titulo": "892. Surface Area of 3D Shapes - LeetCode Wiki (sem complexidade declarada)",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "fonte-unica",
+        "busca": {
+          "consulta": "gh search code 'leetcode 892' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/toanpi/leetcode/blob/0d45eb40f718a0708d4042aaa7551c5281b6f05d/892.surface-area-of-3-d-shapes.c",
+          "repositorio": "toanpi/leetcode",
+          "autor": "toanpi",
+          "licencaDeclarada": "sem licenca",
+          "commit": "0d45eb40f718a0708d4042aaa7551c5281b6f05d",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "499-leetcode-892.c",
+          "sha256": "168ff8b5c8373ab7892355b248f2e2b92ce8ed46e854d695129ab8f42c0aac04",
+          "linhas": 42,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 505,
+        "plataforma": "leetcode",
+        "id": "1848",
+        "urlProblema": "https://leetcode.com/problems/minimum-distance-to-the-target-element/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/1848/",
+            "titulo": "1848. Minimum Distance to the Target Element - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/1848",
+            "titulo": "1848. Minimum Distance to the Target Element - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 1848' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 2
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/ZouariOmar/code-practice/blob/3f1ad2fa6cc01e9998ab593541b4ec0fd9f85b04/leetcode/easy/1848. Minimum Distance to the Target Element.c",
+          "repositorio": "ZouariOmar/code-practice",
+          "autor": "ZouariOmar",
+          "licencaDeclarada": "NOASSERTION",
+          "commit": "3f1ad2fa6cc01e9998ab593541b4ec0fd9f85b04",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "505-leetcode-1848.c",
+          "sha256": "4450511bf565297c062e4e60aa376a74d383e5ca9eb5b8dded076ba358e70f8c",
+          "linhas": 43,
+          "comentarioDeComplexidade": false
+        }
+      },
+      {
+        "ordem": 535,
+        "plataforma": "leetcode",
+        "id": "2326",
+        "urlProblema": "https://leetcode.com/problems/spiral-matrix-iv/",
+        "fontesDoGabarito": [
+          {
+            "url": "https://walkccc.me/LeetCode/problems/2326/",
+            "titulo": "2326. Spiral Matrix IV - LeetCode Solutions",
+            "acesso": "2026-11-01"
+          },
+          {
+            "url": "https://algo.monster/liteproblems/2326",
+            "titulo": "2326. Spiral Matrix IV - In-Depth Explanation",
+            "acesso": "2026-11-01"
+          }
+        ],
+        "vereditoDasFontes": "concordam",
+        "busca": {
+          "consulta": "gh search code 'leetcode 2326' --language c --limit 5",
+          "data": "2026-11-01",
+          "posicaoEscolhida": 3
+        },
+        "solucao": {
+          "urlPermanente": "https://github.com/Xiaorui-Huang/leetcode/blob/30df5e364769305bcb24008346385b672b991f1e/c/lc_2326_medium_spiral_matrix_iv.c",
+          "repositorio": "Xiaorui-Huang/leetcode",
+          "autor": "Xiaorui-Huang",
+          "licencaDeclarada": "sem licenca",
+          "commit": "30df5e364769305bcb24008346385b672b991f1e",
+          "acesso": "2026-11-01",
+          "arquivoLocal": "535-leetcode-2326.c",
+          "sha256": "ff3426befd49f38acddbeb954ca6980c7a39b608d7e5a7ffd291c1eb998cd4af",
+          "linhas": 196,
+          "comentarioDeComplexidade": false
+        }
+      }
+    ],
+    "excluidos": [
+      {
+        "ordem": 1,
+        "plataforma": "leetcode",
+        "id": "1413",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 2,
+        "plataforma": "codeforces",
+        "id": "648A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 3,
+        "plataforma": "leetcode",
+        "id": "2403",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 4,
+        "plataforma": "codeforces",
+        "id": "2091C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 5,
+        "plataforma": "leetcode",
+        "id": "3770",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 6,
+        "plataforma": "codeforces",
+        "id": "1512F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 7,
+        "plataforma": "leetcode",
+        "id": "1471",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 8,
+        "plataforma": "codeforces",
+        "id": "40B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 9,
+        "plataforma": "leetcode",
+        "id": "635",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 10,
+        "plataforma": "codeforces",
+        "id": "1503D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 11,
+        "plataforma": "leetcode",
+        "id": "1199",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 12,
+        "plataforma": "codeforces",
+        "id": "1070J",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 14,
+        "plataforma": "codeforces",
+        "id": "2042F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 15,
+        "plataforma": "leetcode",
+        "id": "394",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 16,
+        "plataforma": "codeforces",
+        "id": "1599E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 17,
+        "plataforma": "leetcode",
+        "id": "3306",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 18,
+        "plataforma": "codeforces",
+        "id": "292E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 19,
+        "plataforma": "leetcode",
+        "id": "657",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 20,
+        "plataforma": "codeforces",
+        "id": "1714A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 21,
+        "plataforma": "leetcode",
+        "id": "2037",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 22,
+        "plataforma": "codeforces",
+        "id": "325A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 23,
+        "plataforma": "leetcode",
+        "id": "3027",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 24,
+        "plataforma": "codeforces",
+        "id": "727C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 25,
+        "plataforma": "leetcode",
+        "id": "3751",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 26,
+        "plataforma": "codeforces",
+        "id": "2227A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 28,
+        "plataforma": "codeforces",
+        "id": "1872F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 29,
+        "plataforma": "leetcode",
+        "id": "1403",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 30,
+        "plataforma": "codeforces",
+        "id": "110A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 31,
+        "plataforma": "leetcode",
+        "id": "156",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 32,
+        "plataforma": "codeforces",
+        "id": "996A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 33,
+        "plataforma": "leetcode",
+        "id": "3686",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 34,
+        "plataforma": "codeforces",
+        "id": "1505B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 35,
+        "plataforma": "leetcode",
+        "id": "336",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 36,
+        "plataforma": "codeforces",
+        "id": "1312C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 37,
+        "plataforma": "leetcode",
+        "id": "1960",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 38,
+        "plataforma": "codeforces",
+        "id": "720F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 39,
+        "plataforma": "leetcode",
+        "id": "2932",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 40,
+        "plataforma": "codeforces",
+        "id": "1635F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 41,
+        "plataforma": "leetcode",
+        "id": "3258",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 42,
+        "plataforma": "codeforces",
+        "id": "632A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 43,
+        "plataforma": "leetcode",
+        "id": "2334",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 44,
+        "plataforma": "codeforces",
+        "id": "120G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 45,
+        "plataforma": "leetcode",
+        "id": "2655",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 46,
+        "plataforma": "codeforces",
+        "id": "12D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 47,
+        "plataforma": "leetcode",
+        "id": "3240",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 48,
+        "plataforma": "codeforces",
+        "id": "1307C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 50,
+        "plataforma": "codeforces",
+        "id": "873A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 51,
+        "plataforma": "leetcode",
+        "id": "3044",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 52,
+        "plataforma": "codeforces",
+        "id": "1418C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 53,
+        "plataforma": "leetcode",
+        "id": "3167",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 54,
+        "plataforma": "codeforces",
+        "id": "2039B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 55,
+        "plataforma": "leetcode",
+        "id": "1539",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 56,
+        "plataforma": "codeforces",
+        "id": "325C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 57,
+        "plataforma": "leetcode",
+        "id": "798",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 58,
+        "plataforma": "codeforces",
+        "id": "2189E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 59,
+        "plataforma": "leetcode",
+        "id": "2039",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 60,
+        "plataforma": "codeforces",
+        "id": "1639I",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 61,
+        "plataforma": "leetcode",
+        "id": "1533",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 62,
+        "plataforma": "codeforces",
+        "id": "1216D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 63,
+        "plataforma": "leetcode",
+        "id": "1365",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 64,
+        "plataforma": "codeforces",
+        "id": "1430D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 65,
+        "plataforma": "leetcode",
+        "id": "2342",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 66,
+        "plataforma": "codeforces",
+        "id": "808B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 67,
+        "plataforma": "leetcode",
+        "id": "3348",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 68,
+        "plataforma": "codeforces",
+        "id": "992A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 69,
+        "plataforma": "leetcode",
+        "id": "3063",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 70,
+        "plataforma": "codeforces",
+        "id": "977E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 71,
+        "plataforma": "leetcode",
+        "id": "2093",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 72,
+        "plataforma": "codeforces",
+        "id": "847H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 73,
+        "plataforma": "leetcode",
+        "id": "910",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 74,
+        "plataforma": "codeforces",
+        "id": "954A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 75,
+        "plataforma": "leetcode",
+        "id": "2786",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 76,
+        "plataforma": "codeforces",
+        "id": "786A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 77,
+        "plataforma": "leetcode",
+        "id": "2959",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 78,
+        "plataforma": "codeforces",
+        "id": "1466C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 79,
+        "plataforma": "leetcode",
+        "id": "345",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 80,
+        "plataforma": "codeforces",
+        "id": "993A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 81,
+        "plataforma": "leetcode",
+        "id": "2554",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 82,
+        "plataforma": "codeforces",
+        "id": "92112",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 83,
+        "plataforma": "leetcode",
+        "id": "3094",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 84,
+        "plataforma": "codeforces",
+        "id": "208B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 85,
+        "plataforma": "leetcode",
+        "id": "3598",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 86,
+        "plataforma": "codeforces",
+        "id": "336A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 87,
+        "plataforma": "leetcode",
+        "id": "2",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 88,
+        "plataforma": "codeforces",
+        "id": "1938K",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 89,
+        "plataforma": "leetcode",
+        "id": "2181",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 90,
+        "plataforma": "codeforces",
+        "id": "1764G3",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 91,
+        "plataforma": "leetcode",
+        "id": "3335",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 92,
+        "plataforma": "codeforces",
+        "id": "2128D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 93,
+        "plataforma": "leetcode",
+        "id": "1187",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 94,
+        "plataforma": "codeforces",
+        "id": "520A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 95,
+        "plataforma": "leetcode",
+        "id": "73",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 96,
+        "plataforma": "codeforces",
+        "id": "40C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 97,
+        "plataforma": "leetcode",
+        "id": "943",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 98,
+        "plataforma": "codeforces",
+        "id": "1312F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 99,
+        "plataforma": "leetcode",
+        "id": "1791",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 100,
+        "plataforma": "codeforces",
+        "id": "255E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 101,
+        "plataforma": "leetcode",
+        "id": "587",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 102,
+        "plataforma": "codeforces",
+        "id": "1945F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 103,
+        "plataforma": "leetcode",
+        "id": "265",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 104,
+        "plataforma": "codeforces",
+        "id": "687B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 106,
+        "plataforma": "codeforces",
+        "id": "215E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 107,
+        "plataforma": "leetcode",
+        "id": "681",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 108,
+        "plataforma": "codeforces",
+        "id": "1325B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 109,
+        "plataforma": "leetcode",
+        "id": "2023",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 110,
+        "plataforma": "codeforces",
+        "id": "1381C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 111,
+        "plataforma": "leetcode",
+        "id": "1232",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 112,
+        "plataforma": "codeforces",
+        "id": "1056E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 113,
+        "plataforma": "leetcode",
+        "id": "1465",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 114,
+        "plataforma": "codeforces",
+        "id": "363A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 116,
+        "plataforma": "codeforces",
+        "id": "690F1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 118,
+        "plataforma": "codeforces",
+        "id": "34D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 119,
+        "plataforma": "leetcode",
+        "id": "1535",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 120,
+        "plataforma": "codeforces",
+        "id": "265B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 121,
+        "plataforma": "leetcode",
+        "id": "3627",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 122,
+        "plataforma": "codeforces",
+        "id": "1234B2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 123,
+        "plataforma": "leetcode",
+        "id": "2852",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 124,
+        "plataforma": "codeforces",
+        "id": "198E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 125,
+        "plataforma": "leetcode",
+        "id": "3337",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 126,
+        "plataforma": "codeforces",
+        "id": "1574E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 127,
+        "plataforma": "leetcode",
+        "id": "1175",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 128,
+        "plataforma": "codeforces",
+        "id": "568C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 129,
+        "plataforma": "leetcode",
+        "id": "3823",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 130,
+        "plataforma": "codeforces",
+        "id": "1430G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 131,
+        "plataforma": "leetcode",
+        "id": "3624",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 132,
+        "plataforma": "codeforces",
+        "id": "838F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 133,
+        "plataforma": "leetcode",
+        "id": "540",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 134,
+        "plataforma": "codeforces",
+        "id": "1951H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 135,
+        "plataforma": "leetcode",
+        "id": "212",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 136,
+        "plataforma": "codeforces",
+        "id": "1827D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 137,
+        "plataforma": "leetcode",
+        "id": "1272",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 138,
+        "plataforma": "codeforces",
+        "id": "1458F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 139,
+        "plataforma": "leetcode",
+        "id": "2415",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 140,
+        "plataforma": "codeforces",
+        "id": "1117D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 141,
+        "plataforma": "leetcode",
+        "id": "3073",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 142,
+        "plataforma": "codeforces",
+        "id": "2056D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 143,
+        "plataforma": "leetcode",
+        "id": "902",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 144,
+        "plataforma": "codeforces",
+        "id": "832A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 146,
+        "plataforma": "codeforces",
+        "id": "939A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 147,
+        "plataforma": "leetcode",
+        "id": "881",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 148,
+        "plataforma": "codeforces",
+        "id": "898B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 149,
+        "plataforma": "leetcode",
+        "id": "2333",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 150,
+        "plataforma": "codeforces",
+        "id": "1170F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 151,
+        "plataforma": "leetcode",
+        "id": "2207",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 152,
+        "plataforma": "codeforces",
+        "id": "1928E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 153,
+        "plataforma": "leetcode",
+        "id": "1117",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 154,
+        "plataforma": "codeforces",
+        "id": "568D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 155,
+        "plataforma": "leetcode",
+        "id": "2557",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 156,
+        "plataforma": "codeforces",
+        "id": "1779H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 157,
+        "plataforma": "leetcode",
+        "id": "3932",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 158,
+        "plataforma": "codeforces",
+        "id": "666D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 159,
+        "plataforma": "leetcode",
+        "id": "2719",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 160,
+        "plataforma": "codeforces",
+        "id": "1055A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 161,
+        "plataforma": "leetcode",
+        "id": "962",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 162,
+        "plataforma": "codeforces",
+        "id": "442D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 163,
+        "plataforma": "leetcode",
+        "id": "2022",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 164,
+        "plataforma": "codeforces",
+        "id": "764A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 165,
+        "plataforma": "leetcode",
+        "id": "491",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 166,
+        "plataforma": "codeforces",
+        "id": "659F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 167,
+        "plataforma": "leetcode",
+        "id": "1520",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 168,
+        "plataforma": "codeforces",
+        "id": "1257A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 169,
+        "plataforma": "leetcode",
+        "id": "3689",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 170,
+        "plataforma": "codeforces",
+        "id": "290F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 171,
+        "plataforma": "leetcode",
+        "id": "4033",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 172,
+        "plataforma": "codeforces",
+        "id": "1091H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 173,
+        "plataforma": "leetcode",
+        "id": "2909",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 174,
+        "plataforma": "codeforces",
+        "id": "248A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 175,
+        "plataforma": "leetcode",
+        "id": "2919",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 176,
+        "plataforma": "codeforces",
+        "id": "19E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 177,
+        "plataforma": "leetcode",
+        "id": "486",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 178,
+        "plataforma": "codeforces",
+        "id": "2192B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 179,
+        "plataforma": "leetcode",
+        "id": "356",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 180,
+        "plataforma": "codeforces",
+        "id": "659D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 181,
+        "plataforma": "leetcode",
+        "id": "738",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 182,
+        "plataforma": "codeforces",
+        "id": "799E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 183,
+        "plataforma": "leetcode",
+        "id": "4091",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 184,
+        "plataforma": "codeforces",
+        "id": "1739B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 185,
+        "plataforma": "leetcode",
+        "id": "4084",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 186,
+        "plataforma": "codeforces",
+        "id": "1607F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 187,
+        "plataforma": "leetcode",
+        "id": "1698",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 188,
+        "plataforma": "codeforces",
+        "id": "1607B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 189,
+        "plataforma": "leetcode",
+        "id": "903",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 190,
+        "plataforma": "codeforces",
+        "id": "931C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 191,
+        "plataforma": "leetcode",
+        "id": "62",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 192,
+        "plataforma": "codeforces",
+        "id": "666B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 193,
+        "plataforma": "leetcode",
+        "id": "1015",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 194,
+        "plataforma": "codeforces",
+        "id": "682E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 195,
+        "plataforma": "leetcode",
+        "id": "1351",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 196,
+        "plataforma": "codeforces",
+        "id": "2075B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 197,
+        "plataforma": "leetcode",
+        "id": "3468",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 198,
+        "plataforma": "codeforces",
+        "id": "1990D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 199,
+        "plataforma": "leetcode",
+        "id": "1839",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 200,
+        "plataforma": "codeforces",
+        "id": "154B",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 202,
+        "plataforma": "codeforces",
+        "id": "2021E3",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 204,
+        "plataforma": "codeforces",
+        "id": "2050F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 205,
+        "plataforma": "leetcode",
+        "id": "1695",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 206,
+        "plataforma": "codeforces",
+        "id": "1227A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 207,
+        "plataforma": "leetcode",
+        "id": "1536",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 208,
+        "plataforma": "codeforces",
+        "id": "1323A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 209,
+        "plataforma": "leetcode",
+        "id": "3416",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 210,
+        "plataforma": "codeforces",
+        "id": "1765E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 211,
+        "plataforma": "leetcode",
+        "id": "831",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 212,
+        "plataforma": "codeforces",
+        "id": "1431C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 213,
+        "plataforma": "leetcode",
+        "id": "379",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 214,
+        "plataforma": "codeforces",
+        "id": "2043F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 215,
+        "plataforma": "leetcode",
+        "id": "4049",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 216,
+        "plataforma": "codeforces",
+        "id": "1379B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 217,
+        "plataforma": "leetcode",
+        "id": "91",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 218,
+        "plataforma": "codeforces",
+        "id": "1623D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 219,
+        "plataforma": "leetcode",
+        "id": "1817",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 220,
+        "plataforma": "codeforces",
+        "id": "173C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 221,
+        "plataforma": "leetcode",
+        "id": "2268",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 222,
+        "plataforma": "codeforces",
+        "id": "95A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 223,
+        "plataforma": "leetcode",
+        "id": "3928",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 224,
+        "plataforma": "codeforces",
+        "id": "1060D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 225,
+        "plataforma": "leetcode",
+        "id": "1049",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 226,
+        "plataforma": "codeforces",
+        "id": "1379A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 227,
+        "plataforma": "leetcode",
+        "id": "3466",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 228,
+        "plataforma": "codeforces",
+        "id": "809E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 229,
+        "plataforma": "leetcode",
+        "id": "1925",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 230,
+        "plataforma": "codeforces",
+        "id": "1920F2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 231,
+        "plataforma": "leetcode",
+        "id": "1616",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 232,
+        "plataforma": "codeforces",
+        "id": "667A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 233,
+        "plataforma": "leetcode",
+        "id": "1856",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 234,
+        "plataforma": "codeforces",
+        "id": "2111E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 236,
+        "plataforma": "codeforces",
+        "id": "2273D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 237,
+        "plataforma": "leetcode",
+        "id": "1787",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 238,
+        "plataforma": "codeforces",
+        "id": "935C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 239,
+        "plataforma": "leetcode",
+        "id": "3154",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 240,
+        "plataforma": "codeforces",
+        "id": "1678A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 242,
+        "plataforma": "codeforces",
+        "id": "676A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 243,
+        "plataforma": "leetcode",
+        "id": "3066",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 244,
+        "plataforma": "codeforces",
+        "id": "1776E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 245,
+        "plataforma": "leetcode",
+        "id": "813",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 246,
+        "plataforma": "codeforces",
+        "id": "552E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 248,
+        "plataforma": "codeforces",
+        "id": "1140G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 249,
+        "plataforma": "leetcode",
+        "id": "1192",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 250,
+        "plataforma": "codeforces",
+        "id": "838C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 251,
+        "plataforma": "leetcode",
+        "id": "408",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 252,
+        "plataforma": "codeforces",
+        "id": "1015F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 253,
+        "plataforma": "leetcode",
+        "id": "3218",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 254,
+        "plataforma": "codeforces",
+        "id": "1357A4",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 255,
+        "plataforma": "leetcode",
+        "id": "3922",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 256,
+        "plataforma": "codeforces",
+        "id": "2126C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 257,
+        "plataforma": "leetcode",
+        "id": "2969",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 258,
+        "plataforma": "codeforces",
+        "id": "1093D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 259,
+        "plataforma": "leetcode",
+        "id": "3046",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 260,
+        "plataforma": "codeforces",
+        "id": "1767A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 261,
+        "plataforma": "leetcode",
+        "id": "3917",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 262,
+        "plataforma": "codeforces",
+        "id": "1328E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 263,
+        "plataforma": "leetcode",
+        "id": "3318",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 264,
+        "plataforma": "codeforces",
+        "id": "1607E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 265,
+        "plataforma": "leetcode",
+        "id": "499",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 266,
+        "plataforma": "codeforces",
+        "id": "1940B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 267,
+        "plataforma": "leetcode",
+        "id": "56",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 268,
+        "plataforma": "codeforces",
+        "id": "652D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 269,
+        "plataforma": "leetcode",
+        "id": "3644",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 270,
+        "plataforma": "codeforces",
+        "id": "1700D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 271,
+        "plataforma": "leetcode",
+        "id": "611",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 272,
+        "plataforma": "codeforces",
+        "id": "1406B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 273,
+        "plataforma": "leetcode",
+        "id": "1825",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 274,
+        "plataforma": "codeforces",
+        "id": "1252K",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 275,
+        "plataforma": "leetcode",
+        "id": "2954",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 276,
+        "plataforma": "codeforces",
+        "id": "1902A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 277,
+        "plataforma": "leetcode",
+        "id": "2787",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 278,
+        "plataforma": "codeforces",
+        "id": "1666K",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 279,
+        "plataforma": "leetcode",
+        "id": "820",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 280,
+        "plataforma": "codeforces",
+        "id": "906B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 282,
+        "plataforma": "codeforces",
+        "id": "2176C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 283,
+        "plataforma": "leetcode",
+        "id": "1897",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 284,
+        "plataforma": "codeforces",
+        "id": "1500D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 285,
+        "plataforma": "leetcode",
+        "id": "100",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 286,
+        "plataforma": "codeforces",
+        "id": "1901A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 287,
+        "plataforma": "leetcode",
+        "id": "814",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 288,
+        "plataforma": "codeforces",
+        "id": "964B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 289,
+        "plataforma": "leetcode",
+        "id": "3513",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 290,
+        "plataforma": "codeforces",
+        "id": "1284G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 291,
+        "plataforma": "leetcode",
+        "id": "2689",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 292,
+        "plataforma": "codeforces",
+        "id": "1967F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 293,
+        "plataforma": "leetcode",
+        "id": "294",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 294,
+        "plataforma": "codeforces",
+        "id": "153E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 295,
+        "plataforma": "leetcode",
+        "id": "3173",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 296,
+        "plataforma": "codeforces",
+        "id": "902B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 297,
+        "plataforma": "leetcode",
+        "id": "1537",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 298,
+        "plataforma": "codeforces",
+        "id": "1092F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 299,
+        "plataforma": "leetcode",
+        "id": "479",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 300,
+        "plataforma": "codeforces",
+        "id": "2055C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 301,
+        "plataforma": "leetcode",
+        "id": "2598",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 302,
+        "plataforma": "codeforces",
+        "id": "2053E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 303,
+        "plataforma": "leetcode",
+        "id": "3775",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 304,
+        "plataforma": "codeforces",
+        "id": "1999G1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 305,
+        "plataforma": "leetcode",
+        "id": "866",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 306,
+        "plataforma": "codeforces",
+        "id": "1375H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 307,
+        "plataforma": "leetcode",
+        "id": "2079",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 308,
+        "plataforma": "codeforces",
+        "id": "868E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 309,
+        "plataforma": "leetcode",
+        "id": "790",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 310,
+        "plataforma": "codeforces",
+        "id": "1392C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 311,
+        "plataforma": "leetcode",
+        "id": "3271",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 312,
+        "plataforma": "codeforces",
+        "id": "1119E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 313,
+        "plataforma": "leetcode",
+        "id": "494",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 314,
+        "plataforma": "codeforces",
+        "id": "372C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 316,
+        "plataforma": "codeforces",
+        "id": "2232C1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 317,
+        "plataforma": "leetcode",
+        "id": "3095",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 318,
+        "plataforma": "codeforces",
+        "id": "585D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 319,
+        "plataforma": "leetcode",
+        "id": "2318",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 320,
+        "plataforma": "codeforces",
+        "id": "908H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 321,
+        "plataforma": "leetcode",
+        "id": "4096",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 322,
+        "plataforma": "codeforces",
+        "id": "1761A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 323,
+        "plataforma": "leetcode",
+        "id": "2856",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 324,
+        "plataforma": "codeforces",
+        "id": "979E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 325,
+        "plataforma": "leetcode",
+        "id": "3895",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 326,
+        "plataforma": "codeforces",
+        "id": "793A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 327,
+        "plataforma": "leetcode",
+        "id": "2953",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 328,
+        "plataforma": "codeforces",
+        "id": "168B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 329,
+        "plataforma": "leetcode",
+        "id": "1330",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 330,
+        "plataforma": "codeforces",
+        "id": "2231E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 331,
+        "plataforma": "leetcode",
+        "id": "3441",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 332,
+        "plataforma": "codeforces",
+        "id": "278B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 333,
+        "plataforma": "leetcode",
+        "id": "3285",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 334,
+        "plataforma": "codeforces",
+        "id": "2264F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 335,
+        "plataforma": "leetcode",
+        "id": "662",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 336,
+        "plataforma": "codeforces",
+        "id": "1227D2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 337,
+        "plataforma": "leetcode",
+        "id": "3610",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 338,
+        "plataforma": "codeforces",
+        "id": "224B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 339,
+        "plataforma": "leetcode",
+        "id": "877",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 340,
+        "plataforma": "codeforces",
+        "id": "1613A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 341,
+        "plataforma": "leetcode",
+        "id": "2280",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 342,
+        "plataforma": "codeforces",
+        "id": "2169F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 343,
+        "plataforma": "leetcode",
+        "id": "3364",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 344,
+        "plataforma": "codeforces",
+        "id": "35C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 345,
+        "plataforma": "leetcode",
+        "id": "3319",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 346,
+        "plataforma": "codeforces",
+        "id": "852B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 347,
+        "plataforma": "leetcode",
+        "id": "3563",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 348,
+        "plataforma": "codeforces",
+        "id": "2084H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 349,
+        "plataforma": "leetcode",
+        "id": "302",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 350,
+        "plataforma": "codeforces",
+        "id": "2035F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 351,
+        "plataforma": "leetcode",
+        "id": "841",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 352,
+        "plataforma": "codeforces",
+        "id": "618F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 353,
+        "plataforma": "leetcode",
+        "id": "3949",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 354,
+        "plataforma": "codeforces",
+        "id": "1622E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 355,
+        "plataforma": "leetcode",
+        "id": "3129",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 356,
+        "plataforma": "codeforces",
+        "id": "546C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 357,
+        "plataforma": "leetcode",
+        "id": "2709",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 358,
+        "plataforma": "codeforces",
+        "id": "682C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 359,
+        "plataforma": "leetcode",
+        "id": "1",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 360,
+        "plataforma": "codeforces",
+        "id": "1355C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 361,
+        "plataforma": "leetcode",
+        "id": "3911",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 362,
+        "plataforma": "codeforces",
+        "id": "1668B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 363,
+        "plataforma": "leetcode",
+        "id": "4086",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 364,
+        "plataforma": "codeforces",
+        "id": "1978F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 365,
+        "plataforma": "leetcode",
+        "id": "3389",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 366,
+        "plataforma": "codeforces",
+        "id": "1367F2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 367,
+        "plataforma": "leetcode",
+        "id": "3254",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 368,
+        "plataforma": "codeforces",
+        "id": "730I",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 369,
+        "plataforma": "leetcode",
+        "id": "3014",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 370,
+        "plataforma": "codeforces",
+        "id": "1776B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 371,
+        "plataforma": "leetcode",
+        "id": "3605",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 372,
+        "plataforma": "codeforces",
+        "id": "612E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 374,
+        "plataforma": "codeforces",
+        "id": "217D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 375,
+        "plataforma": "leetcode",
+        "id": "4080",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 376,
+        "plataforma": "codeforces",
+        "id": "2031E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 377,
+        "plataforma": "leetcode",
+        "id": "3519",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 378,
+        "plataforma": "codeforces",
+        "id": "142E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 379,
+        "plataforma": "leetcode",
+        "id": "1561",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 380,
+        "plataforma": "codeforces",
+        "id": "1479C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 381,
+        "plataforma": "leetcode",
+        "id": "2341",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 382,
+        "plataforma": "codeforces",
+        "id": "404E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 383,
+        "plataforma": "leetcode",
+        "id": "2198",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 384,
+        "plataforma": "codeforces",
+        "id": "993C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 385,
+        "plataforma": "leetcode",
+        "id": "1366",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 386,
+        "plataforma": "codeforces",
+        "id": "1166B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 387,
+        "plataforma": "leetcode",
+        "id": "2567",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 388,
+        "plataforma": "codeforces",
+        "id": "1791G1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 389,
+        "plataforma": "leetcode",
+        "id": "1668",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 390,
+        "plataforma": "codeforces",
+        "id": "1107D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 391,
+        "plataforma": "leetcode",
+        "id": "1181",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 392,
+        "plataforma": "codeforces",
+        "id": "1942C1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 393,
+        "plataforma": "leetcode",
+        "id": "2395",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 394,
+        "plataforma": "codeforces",
+        "id": "261B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 395,
+        "plataforma": "leetcode",
+        "id": "2101",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 396,
+        "plataforma": "codeforces",
+        "id": "933B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 397,
+        "plataforma": "leetcode",
+        "id": "517",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 398,
+        "plataforma": "codeforces",
+        "id": "570E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 399,
+        "plataforma": "leetcode",
+        "id": "492",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 400,
+        "plataforma": "codeforces",
+        "id": "1965C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 401,
+        "plataforma": "leetcode",
+        "id": "3132",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 402,
+        "plataforma": "codeforces",
+        "id": "2199B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 403,
+        "plataforma": "leetcode",
+        "id": "380",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 404,
+        "plataforma": "codeforces",
+        "id": "1498B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 405,
+        "plataforma": "leetcode",
+        "id": "2197",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 406,
+        "plataforma": "codeforces",
+        "id": "754A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 408,
+        "plataforma": "codeforces",
+        "id": "1539E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 410,
+        "plataforma": "codeforces",
+        "id": "2258F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 411,
+        "plataforma": "leetcode",
+        "id": "1380",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 412,
+        "plataforma": "codeforces",
+        "id": "2159D1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 413,
+        "plataforma": "leetcode",
+        "id": "3283",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 414,
+        "plataforma": "codeforces",
+        "id": "1250A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 415,
+        "plataforma": "leetcode",
+        "id": "1252",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 416,
+        "plataforma": "codeforces",
+        "id": "1689B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 417,
+        "plataforma": "leetcode",
+        "id": "4026",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 418,
+        "plataforma": "codeforces",
+        "id": "1517A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 419,
+        "plataforma": "leetcode",
+        "id": "4055",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 420,
+        "plataforma": "codeforces",
+        "id": "42D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 421,
+        "plataforma": "leetcode",
+        "id": "2078",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 422,
+        "plataforma": "codeforces",
+        "id": "1365A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 423,
+        "plataforma": "leetcode",
+        "id": "3516",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 424,
+        "plataforma": "codeforces",
+        "id": "1983F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 425,
+        "plataforma": "leetcode",
+        "id": "1220",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 426,
+        "plataforma": "codeforces",
+        "id": "1288B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 427,
+        "plataforma": "leetcode",
+        "id": "2530",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 428,
+        "plataforma": "codeforces",
+        "id": "284A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 429,
+        "plataforma": "leetcode",
+        "id": "761",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 430,
+        "plataforma": "codeforces",
+        "id": "1216B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 431,
+        "plataforma": "leetcode",
+        "id": "2206",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 432,
+        "plataforma": "codeforces",
+        "id": "1284F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 433,
+        "plataforma": "leetcode",
+        "id": "3709",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 434,
+        "plataforma": "codeforces",
+        "id": "707A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 435,
+        "plataforma": "leetcode",
+        "id": "1046",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 436,
+        "plataforma": "codeforces",
+        "id": "2121G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 437,
+        "plataforma": "leetcode",
+        "id": "459",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 438,
+        "plataforma": "codeforces",
+        "id": "1879E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 439,
+        "plataforma": "leetcode",
+        "id": "3009",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 440,
+        "plataforma": "codeforces",
+        "id": "445B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 441,
+        "plataforma": "leetcode",
+        "id": "1125",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 442,
+        "plataforma": "codeforces",
+        "id": "983D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 443,
+        "plataforma": "leetcode",
+        "id": "99",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 444,
+        "plataforma": "codeforces",
+        "id": "452B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 445,
+        "plataforma": "leetcode",
+        "id": "2190",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 446,
+        "plataforma": "codeforces",
+        "id": "1936B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 447,
+        "plataforma": "leetcode",
+        "id": "1458",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 448,
+        "plataforma": "codeforces",
+        "id": "659G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 449,
+        "plataforma": "leetcode",
+        "id": "1681",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 450,
+        "plataforma": "codeforces",
+        "id": "558A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 451,
+        "plataforma": "leetcode",
+        "id": "3990",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 452,
+        "plataforma": "codeforces",
+        "id": "567F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 453,
+        "plataforma": "leetcode",
+        "id": "689",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 454,
+        "plataforma": "codeforces",
+        "id": "1989C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 455,
+        "plataforma": "leetcode",
+        "id": "3559",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 456,
+        "plataforma": "codeforces",
+        "id": "1384B2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 457,
+        "plataforma": "leetcode",
+        "id": "4020",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 458,
+        "plataforma": "codeforces",
+        "id": "1404A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 459,
+        "plataforma": "leetcode",
+        "id": "1563",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 460,
+        "plataforma": "codeforces",
+        "id": "887D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 461,
+        "plataforma": "leetcode",
+        "id": "3357",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 462,
+        "plataforma": "codeforces",
+        "id": "1904D2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 463,
+        "plataforma": "leetcode",
+        "id": "1043",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 464,
+        "plataforma": "codeforces",
+        "id": "1361D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 465,
+        "plataforma": "leetcode",
+        "id": "1089",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 466,
+        "plataforma": "codeforces",
+        "id": "2258A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 467,
+        "plataforma": "leetcode",
+        "id": "1417",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 468,
+        "plataforma": "codeforces",
+        "id": "990A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 469,
+        "plataforma": "leetcode",
+        "id": "3704",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 470,
+        "plataforma": "codeforces",
+        "id": "369B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 471,
+        "plataforma": "leetcode",
+        "id": "395",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 472,
+        "plataforma": "codeforces",
+        "id": "2168B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 473,
+        "plataforma": "leetcode",
+        "id": "649",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 474,
+        "plataforma": "codeforces",
+        "id": "1920D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 475,
+        "plataforma": "leetcode",
+        "id": "3212",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 476,
+        "plataforma": "codeforces",
+        "id": "1567F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 477,
+        "plataforma": "leetcode",
+        "id": "2760",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 478,
+        "plataforma": "codeforces",
+        "id": "2150B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 479,
+        "plataforma": "leetcode",
+        "id": "3400",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 480,
+        "plataforma": "codeforces",
+        "id": "729E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 481,
+        "plataforma": "leetcode",
+        "id": "2117",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 482,
+        "plataforma": "codeforces",
+        "id": "1005E2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 483,
+        "plataforma": "leetcode",
+        "id": "3267",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 484,
+        "plataforma": "codeforces",
+        "id": "1178B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 485,
+        "plataforma": "leetcode",
+        "id": "3549",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 486,
+        "plataforma": "codeforces",
+        "id": "673A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 487,
+        "plataforma": "leetcode",
+        "id": "3747",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 488,
+        "plataforma": "codeforces",
+        "id": "1187E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 489,
+        "plataforma": "leetcode",
+        "id": "853",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 490,
+        "plataforma": "codeforces",
+        "id": "1129A2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 491,
+        "plataforma": "leetcode",
+        "id": "3803",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 492,
+        "plataforma": "codeforces",
+        "id": "215C",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 493,
+        "plataforma": "leetcode",
+        "id": "2930",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 494,
+        "plataforma": "codeforces",
+        "id": "1217F",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 495,
+        "plataforma": "leetcode",
+        "id": "2744",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 496,
+        "plataforma": "codeforces",
+        "id": "1510J",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 497,
+        "plataforma": "leetcode",
+        "id": "2585",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 498,
+        "plataforma": "codeforces",
+        "id": "1472E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 500,
+        "plataforma": "codeforces",
+        "id": "717H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 501,
+        "plataforma": "leetcode",
+        "id": "348",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 502,
+        "plataforma": "codeforces",
+        "id": "18B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 503,
+        "plataforma": "leetcode",
+        "id": "480",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 504,
+        "plataforma": "codeforces",
+        "id": "124A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 506,
+        "plataforma": "codeforces",
+        "id": "509A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 507,
+        "plataforma": "leetcode",
+        "id": "1584",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 508,
+        "plataforma": "codeforces",
+        "id": "137B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 509,
+        "plataforma": "leetcode",
+        "id": "3264",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 510,
+        "plataforma": "codeforces",
+        "id": "367A",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 511,
+        "plataforma": "leetcode",
+        "id": "1980",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 512,
+        "plataforma": "codeforces",
+        "id": "1227D1",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 513,
+        "plataforma": "leetcode",
+        "id": "965",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 514,
+        "plataforma": "codeforces",
+        "id": "39H",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 515,
+        "plataforma": "leetcode",
+        "id": "2923",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 516,
+        "plataforma": "codeforces",
+        "id": "1499B",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 517,
+        "plataforma": "leetcode",
+        "id": "250",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 518,
+        "plataforma": "codeforces",
+        "id": "2271H2",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 519,
+        "plataforma": "leetcode",
+        "id": "1592",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 520,
+        "plataforma": "codeforces",
+        "id": "587E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 521,
+        "plataforma": "leetcode",
+        "id": "2355",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 522,
+        "plataforma": "codeforces",
+        "id": "1740E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 523,
+        "plataforma": "leetcode",
+        "id": "1696",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 524,
+        "plataforma": "codeforces",
+        "id": "56E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 525,
+        "plataforma": "leetcode",
+        "id": "1304",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 526,
+        "plataforma": "codeforces",
+        "id": "10D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 527,
+        "plataforma": "leetcode",
+        "id": "1288",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 528,
+        "plataforma": "codeforces",
+        "id": "1926G",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 529,
+        "plataforma": "leetcode",
+        "id": "14",
+        "motivo": "divergencia"
+      },
+      {
+        "ordem": 530,
+        "plataforma": "codeforces",
+        "id": "1748E",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 531,
+        "plataforma": "leetcode",
+        "id": "3491",
+        "motivo": "inelegivel"
+      },
+      {
+        "ordem": 532,
+        "plataforma": "codeforces",
+        "id": "1268D",
+        "motivo": "sem-fonte"
+      },
+      {
+        "ordem": 533,
+        "plataforma": "leetcode",
+        "id": "3419",
+        "motivo": "sem-solucao"
+      },
+      {
+        "ordem": 534,
+        "plataforma": "codeforces",
+        "id": "1250E",
+        "motivo": "sem-fonte"
+      }
+    ]
+  }
+}
