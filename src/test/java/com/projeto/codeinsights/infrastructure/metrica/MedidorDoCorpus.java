@@ -39,7 +39,7 @@ final class MedidorDoCorpus {
     private static final UUID DESAFIO = UUID.fromString("00000000-0000-0000-0000-0000000000d1");
 
     /** Fora da escala do motor: o que ele responde quando nao gerou a metrica de todo. */
-    private static final String AUSENTE = "-";
+    static final String AUSENTE = "-";
 
     private MedidorDoCorpus() {
     }
