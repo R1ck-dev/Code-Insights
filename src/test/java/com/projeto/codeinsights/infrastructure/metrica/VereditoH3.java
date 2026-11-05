@@ -28,6 +28,12 @@ enum VereditoH3 {
     /** Produto cruzado em vez de divisao: e/nE < a/nP sem passar por {@code double}. */
     private static boolean taxaExternaMenor(long acertosProprio, long nProprio, long acertosExterno,
             long nExterno) {
-        return acertosExterno * nProprio < acertosProprio * nExterno;
+        return compararExternaComProprio(acertosProprio, nProprio, acertosExterno, nExterno) < 0;
+    }
+
+    /** Negativo se a taxa externa e menor que a do proprio, zero se iguais, positivo se maior. */
+    static int compararExternaComProprio(long acertosProprio, long nProprio, long acertosExterno,
+            long nExterno) {
+        return Long.compare(acertosExterno * nProprio, acertosProprio * nExterno);
     }
 }

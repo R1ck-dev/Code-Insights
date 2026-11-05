@@ -39,7 +39,7 @@ final class RelatorioDeAcuracia {
      * mas seguro); <b>subestimar</b> diz que a solucao e melhor do que e, que e o erro perigoso
      * numa ferramenta de ensino.
      */
-    private enum Direcao {
+    enum Direcao {
         ACERTO("acerto"),
         SUPERESTIMOU("superestimou"),
         SUBESTIMOU("subestimou"),
@@ -51,6 +51,10 @@ final class RelatorioDeAcuracia {
         Direcao(String rotulo) {
             this.rotulo = rotulo;
         }
+
+        String rotulo() {
+            return rotulo;
+        }
     }
 
     private RelatorioDeAcuracia() {
@@ -58,15 +62,15 @@ final class RelatorioDeAcuracia {
 
     // ---------------------------------------------------------------- classificacao
 
-    private static Direcao direcaoDoTempo(Medida medida) {
+    static Direcao direcaoDoTempo(Medida medida) {
         return direcao(medida.caso().tempoGabarito(), medida.tempoObtido());
     }
 
-    private static Direcao direcaoDoEspaco(Medida medida) {
+    static Direcao direcaoDoEspaco(Medida medida) {
         return direcao(medida.caso().espacoGabarito(), medida.espacoObtido());
     }
 
-    private static Direcao direcao(String gabarito, String obtido) {
+    static Direcao direcao(String gabarito, String obtido) {
         if (!CasoDeCorpus.estaNaEscala(gabarito)) {
             return Direcao.FORA_DA_ESCALA;
         }
@@ -90,11 +94,11 @@ final class RelatorioDeAcuracia {
     }
 
     /** Um caso so entra no denominador da acuracia se o gabarito for representavel pelo motor. */
-    private static boolean mensuravelNoTempo(Medida medida) {
+    static boolean mensuravelNoTempo(Medida medida) {
         return CasoDeCorpus.estaNaEscala(medida.caso().tempoGabarito());
     }
 
-    private static boolean mensuravelNoEspaco(Medida medida) {
+    static boolean mensuravelNoEspaco(Medida medida) {
         return medida.caso().espacoGabarito() != null
                 && CasoDeCorpus.estaNaEscala(medida.caso().espacoGabarito());
     }
@@ -162,17 +166,19 @@ final class RelatorioDeAcuracia {
         md.append("# Acuracia do motor de metricas\n\n");
         md.append("> **Arquivo gerado automaticamente — nao edite a mao.**\n");
         md.append("> Regenere com `./mvnw test -Dtest=RelatorioDeAcuraciaTest`.\n");
-        md.append("> Ultima geracao: ").append(data).append(". Corpus: ")
+        md.append("> A secao **Categoria EXTERNO**, no fim do arquivo, vem de outra medicao e nao e tocada ");
+        md.append("por esta regeracao.\n");
+        md.append("> Ultima geracao: ").append(data).append(". Corpus proprio: ")
                 .append(medidas.size()).append(" casos.\n\n");
 
         md.append("## Como ler estes numeros\n\n");
         md.append("O corpus e o instrumento de validacao do motor: cada caso traz a complexidade correta ");
         md.append("segundo a literatura (o **gabarito**) e o motor e medido contra ela. ");
         md.append("Tres ressalvas mudam a leitura:\n\n");
-        md.append("1. **Vies de autoria.** O corpus foi escrito por quem escreveu o motor. ");
+        md.append("1. **Vies de autoria.** O corpus proprio foi escrito por quem escreveu o motor. ");
         md.append("Um corpus assim conhece os pontos cegos do instrumento e tende a produzir acuracia ");
-        md.append("otimista. O numero so vira evidencia forte quando houver solucoes reais de terceiros ");
-        md.append("(Beecrowd, LeetCode, Codeforces) com Big O publicamente conhecido.\n");
+        md.append("otimista. Solucoes reais de terceiros sao medidas a parte, na secao **Categoria EXTERNO** ");
+        md.append("no fim deste arquivo; nenhum numero desta parte as inclui.\n");
         md.append("2. **A categoria importa mais que o total.** Acerto alto em `CANONICO` diz pouco — ");
         md.append("sao os algoritmos para os quais o motor foi desenhado. O numero que vale para o piloto ");
         md.append("e o de `ALUNO`.\n");
