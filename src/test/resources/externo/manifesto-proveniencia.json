@@ -3,7 +3,7 @@
   "semente": "20261101",
   "criterio": {
     "arquivo": "docs/ifsp-documentacao/criterio-corpus-externo.md (local, fora do git)",
-    "sha256NaGeracao": "98e850486cfc14ef244ff0525f33669290bc277ee7b65d7745f2af7a38664ac0",
+    "sha256NaGeracao": "f7476587ca3ced6625f1f1150ffa6429fd67b9cba42c001c47dad06e46b2f41c",
     "sha256DaVersaoCongelada": "a43d1809559bf30ca877736412421cff6ce9ddad55dddbe110f54cab2ee76fce"
   },
   "listas": {
@@ -335,20 +335,27 @@
         "vereditoDasFontes": "fonte-unica",
         "busca": {
           "consulta": "gh search code leetcode 3663 --language java --limit 5",
-          "data": "2026-11-01",
-          "posicaoEscolhida": 1
+          "data": "2026-11-05",
+          "posicaoEscolhida": 4
         },
         "solucao": {
-          "urlPermanente": "https://github.com/yashsojitra65/DSA/blob/415afe656ddac3486b9aa7f9ab3a2ca6d3f1c278/LeetCode/LeetCode3663.java",
-          "repositorio": "yashsojitra65/DSA",
-          "autor": "yashsojitra65",
+          "urlPermanente": "https://github.com/aqwertyuiop48/leetcode_programming/blob/da59edebb05b42b203cea0628b34f0c84593428e/java_solutions/3663.find-the-least-frequent-digit.java",
+          "repositorio": "aqwertyuiop48/leetcode_programming",
+          "autor": "aqwertyuiop48",
           "licencaDeclarada": "sem licenca",
-          "commit": "6cddc3189c019702d344c19a0bcddf08b77fb9c2",
-          "acesso": "2026-11-01",
+          "commit": "a5a9bc5ab6f862008b9c31840d6d28857371fd78",
+          "acesso": "2026-11-05",
           "arquivoLocal": "035-leetcode-3663.java",
-          "sha256": "773d37714aa821036ca64d1ab07b9713bb8368c64e5d78e7cfb8bc82dd6d036b",
-          "linhas": 25,
+          "sha256": "2a89c480f0c1178934354ec54c3d90d8a7609a74bf6289f72b0f44055d32c06e",
+          "linhas": 23,
           "comentarioDeComplexidade": false
+        },
+        "solucaoAnterior": {
+          "motivo": "implementa-nao",
+          "urlPermanente": "https://github.com/yashsojitra65/DSA/blob/415afe656ddac3486b9aa7f9ab3a2ca6d3f1c278/LeetCode/LeetCode3663.java",
+          "autor": "yashsojitra65",
+          "commit": "6cddc3189c019702d344c19a0bcddf08b77fb9c2",
+          "sha256": "773d37714aa821036ca64d1ab07b9713bb8368c64e5d78e7cfb8bc82dd6d036b"
         }
       },
       {

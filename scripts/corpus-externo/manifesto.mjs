@@ -42,6 +42,18 @@ function caso(l) {
       linhas: s.linhas,
       comentarioDeComplexidade: Boolean(s.comentario_de_complexidade),
     },
+    ...(l.solucao_anterior && { solucaoAnterior: solucaoAnterior(l.solucao_anterior) }),
+  };
+}
+
+// Solucao trocada antes da medicao (criterio, Adendo 5): so proveniencia e um motivo codificado, sem texto livre.
+function solucaoAnterior(a) {
+  return {
+    motivo: a.motivo,
+    urlPermanente: a.url_blob,
+    autor: a.autor,
+    commit: a.commit,
+    sha256: a.sha256,
   };
 }
 

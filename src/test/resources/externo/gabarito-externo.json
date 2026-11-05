@@ -1,0 +1,1062 @@
+{
+  "issue": "R1ck-dev/Code-Insights-plano#24 (IC-17)",
+  "data": "2026-11-01",
+  "protocolo": "docs/ifsp-documentacao/criterio-corpus-externo.md, Adendos 4 e 5",
+  "leitores": "quatro agentes Claude (Sonnet), duas leituras independentes por linguagem, sem acesso ao motor, ao manifesto, as fontes do gabarito nem a outra leitura; consolidacao pela sessao (Claude Sonnet 5.5). Gabarito NAO e humano.",
+  "convencoes": {
+    "tempo": "pior caso; esperado/amortizado marcado em tipoTempo",
+    "espaco": "E-11: memoria que o programa aloca (inclui estruturas auxiliares, saida construida e pilha); entrada por parametro nao conta",
+    "notacao": "livre, fora da escala de 8 classes do motor quando assim for",
+    "limites_fixos": "Constante literal fixa (tamanho de vetor, limite de laco) nao e variavel de entrada: o que cresce com a entrada define a classe; buffer de capacidade fixa usado como estrutura cujo uso cresce com a entrada (d[100][100] em 1334, arr[10000] em 1382) conta pelo uso (O(n^2), O(n))."
+  },
+  "casos": {
+    "java": [
+      {
+        "arquivo": "005-leetcode-3479.java",
+        "plataforma": "leetcode",
+        "problema": "3479",
+        "variaveis": "n = fruits.length = baskets.length",
+        "tempoGabarito": "O(n log n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n log n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n log n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "009-leetcode-2097.java",
+        "plataforma": "leetcode",
+        "problema": "2097",
+        "variaveis": "n = pairs.length (arestas); V <= n+1, logo O(V + E) = O(n)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "esperado",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(V + E)",
+          "espaco": "O(V + E)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: as duas leituras descrevem o mesmo custo (V <= E+1 faz O(V + E) = O(E)). Adotada a forma em n = arestas.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "013-leetcode-2588.java",
+        "plataforma": "leetcode",
+        "problema": "2588",
+        "variaveis": "n = nums.length",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "esperado",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "017-leetcode-2063.java",
+        "plataforma": "leetcode",
+        "problema": "2063",
+        "variaveis": "n = word.length()",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "021-leetcode-3022.java",
+        "plataforma": "leetcode",
+        "problema": "3022",
+        "variaveis": "n = nums.length; B = numero de bits (31, constante pela restricao nums[i] < 2^30)",
+        "tempoGabarito": "O(n * B)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n * B)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n * B)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "025-leetcode-3327.java",
+        "plataforma": "leetcode",
+        "problema": "3327",
+        "variaveis": "n = parent.length = s.length()",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "031-leetcode-3679.java",
+        "plataforma": "leetcode",
+        "problema": "3679",
+        "variaveis": "n = arrivals.length (w e m so entram como constantes de comparacao)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "esperado",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "033-leetcode-1785.java",
+        "plataforma": "leetcode",
+        "problema": "1785",
+        "variaveis": "n = nums.length",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "035-leetcode-3663.java",
+        "plataforma": "leetcode",
+        "problema": "3663",
+        "variaveis": "n = valor do inteiro; d = digitos de n = O(log n); alfabeto de 10 digitos e constante",
+        "tempoGabarito": "O(log n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(d) = O(log n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(d) = O(log n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem. Caso trocado pelo Adendo 5: leituras novas, cegas, da solucao nova; quem consolidou conhecia a leitura da solucao anterior.",
+        "pendenteDoDono": false,
+        "solucaoAnterior": {
+          "motivo": "implementa-nao",
+          "sha256": "773d37714aa821036ca64d1ab07b9713bb8368c64e5d78e7cfb8bc82dd6d036b",
+          "tempoGabarito": "O(log n)",
+          "espacoGabarito": "O(1)",
+          "leitura1": {
+            "tempo": "O(d)",
+            "espaco": "O(1)",
+            "implementa": "nao",
+            "confianca": "media"
+          },
+          "leitura2": {
+            "tempo": "O(log n)",
+            "espaco": "O(1)",
+            "implementa": "nao",
+            "confianca": "media"
+          }
+        }
+      },
+      {
+        "arquivo": "037-leetcode-1482.java",
+        "plataforma": "leetcode",
+        "problema": "1482",
+        "variaveis": "n = bloomDay.length; D = max(bloomDay)",
+        "tempoGabarito": "O(n log D)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n log D)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n log D)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "039-leetcode-3195.java",
+        "plataforma": "leetcode",
+        "problema": "3195",
+        "variaveis": "m = grid.length; n = grid[0].length",
+        "tempoGabarito": "O(m*n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(m*n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(m*n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "041-leetcode-1041.java",
+        "plataforma": "leetcode",
+        "problema": "1041",
+        "variaveis": "n = ins.length()",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "045-leetcode-885.java",
+        "plataforma": "leetcode",
+        "problema": "885",
+        "variaveis": "R = linhas; C = colunas",
+        "tempoGabarito": "O(max(R,C)^2)",
+        "espacoGabarito": "O(R*C)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O((R + C)^2)",
+          "espaco": "O(R*C)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(M^2)",
+          "espaco": "O(R*C)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: O((R+C)^2) e O(max(R,C)^2) sao a mesma classe. Releitura do codigo: o laco corre ate cobrir as R*C celulas, mas a espiral percorre um quadrado de lado ~max(R,C) quando a partida esta num canto e a grade e alongada (ex.: R=1); pior caso O(max(R,C)^2). Espaco: matriz de saida R*C construida pelo programa.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "047-leetcode-3722.java",
+        "plataforma": "leetcode",
+        "problema": "3722",
+        "variaveis": "n = s.length()",
+        "tempoGabarito": "O(n^2)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n^2)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n^2)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "059-leetcode-1003.java",
+        "plataforma": "leetcode",
+        "problema": "1003",
+        "variaveis": "n = S.length()",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "085-leetcode-2305.java",
+        "plataforma": "leetcode",
+        "problema": "2305",
+        "variaveis": "n = cookies.length; k = criancas",
+        "tempoGabarito": "O(k^(n+1))",
+        "espacoGabarito": "O(n + k)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(k^n * k)",
+          "espaco": "O(n + k)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(k^(n+1))",
+          "espaco": "O(n + k)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: O(k^n * k) = O(k^(n+1)). Backtracking sem poda, k^n folhas, O(k) por folha.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "107-leetcode-1438.java",
+        "plataforma": "leetcode",
+        "problema": "1438",
+        "variaveis": "n = nums.length",
+        "tempoGabarito": "O(n log n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n log n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n log n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "131-leetcode-1513.java",
+        "plataforma": "leetcode",
+        "problema": "1513",
+        "variaveis": "n = s.length()",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "133-leetcode-2997.java",
+        "plataforma": "leetcode",
+        "problema": "2997",
+        "variaveis": "n = nums.length",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "135-leetcode-4066.java",
+        "plataforma": "leetcode",
+        "problema": "4066",
+        "variaveis": "n = nums.length",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "esperado",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "baixa"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "baixa"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      }
+    ],
+    "c": [
+      {
+        "arquivo": "013-leetcode-83.c",
+        "plataforma": "leetcode",
+        "problema": "83",
+        "variaveis": "n = numero de nos da lista",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Divergencia real (L1 O(n), L2 O(1)). Releitura: create() aloca n nos com calloc a partir de arr e o programa os mantem ate free_ll; pela convencao E-11 (conta o que o programa aloca; precedente: Kadane lendo o vetor no main sai O(n)) o espaco do arquivo e O(n). A funcao remove_dupli isolada seria O(1).",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "027-leetcode-1189.c",
+        "plataforma": "leetcode",
+        "problema": "1189",
+        "variaveis": "n = strlen(text)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "049-leetcode-1334.c",
+        "plataforma": "leetcode",
+        "problema": "1334",
+        "variaveis": "n = numero de cidades; e = edgesSize",
+        "tempoGabarito": "O(n^3 + e)",
+        "espacoGabarito": "O(n^2)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n^3 + e)",
+          "espaco": "O(n^2)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(n^3 + E)",
+          "espaco": "O(n^2)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "105-leetcode-1344.c",
+        "plataforma": "leetcode",
+        "problema": "1344",
+        "variaveis": "entrada = (hour, minutes), escalares",
+        "tempoGabarito": "O(1)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "115-leetcode-3021.c",
+        "plataforma": "leetcode",
+        "problema": "3021",
+        "variaveis": "n, m = numeros de flores nas duas pistas (escalares)",
+        "tempoGabarito": "O(1)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "117-leetcode-600.c",
+        "plataforma": "leetcode",
+        "problema": "600",
+        "variaveis": "n = valor de entrada inteiro (largura de 31 bits)",
+        "tempoGabarito": "O(1)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(1)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "145-leetcode-821.c",
+        "plataforma": "leetcode",
+        "problema": "821",
+        "variaveis": "n = strlen(s)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "201-leetcode-709.c",
+        "plataforma": "leetcode",
+        "problema": "709",
+        "variaveis": "n = strlen(s)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "203-leetcode-142.c",
+        "plataforma": "leetcode",
+        "problema": "142",
+        "variaveis": "n = numero de nos da lista",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "235-leetcode-171.c",
+        "plataforma": "leetcode",
+        "problema": "171",
+        "variaveis": "n = strlen(s)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(L)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: n e L sao o mesmo comprimento. pow tratado como custo constante.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "241-leetcode-3863.c",
+        "plataforma": "leetcode",
+        "problema": "3863",
+        "variaveis": "n = strlen(s)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "247-leetcode-2125.c",
+        "plataforma": "leetcode",
+        "problema": "2125",
+        "variaveis": "m = linhas (bankSize); n = comprimento de cada linha",
+        "tempoGabarito": "O(m*n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(r*c)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(m*n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: O(r*c) = O(m*n).",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "281-leetcode-1382.c",
+        "plataforma": "leetcode",
+        "problema": "1382",
+        "variaveis": "n = numero de nos da arvore",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "315-leetcode-2225.c",
+        "plataforma": "leetcode",
+        "problema": "2225",
+        "variaveis": "m = matchesSize",
+        "tempoGabarito": "O(m log m)",
+        "espacoGabarito": "O(m)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(m log m)",
+          "espaco": "O(m + P)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(m log m + U)",
+          "espaco": "O(m + U)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Divergencia real (L1 espaco O(m + P); L2 tempo O(m log m + U) e espaco O(m + U), com P/U = 100000 fixo). Regra de consolidacao: constante literal fixa nao e variavel de entrada; zerar losers[100001] e custo O(1). O que cresce com a entrada (listas de resultado e qsort) e O(m) e O(m log m).",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "373-leetcode-392.c",
+        "plataforma": "leetcode",
+        "problema": "392",
+        "variaveis": "m = strlen(t)",
+        "tempoGabarito": "O(m)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(m)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(|t|)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": false,
+        "decisao": "Notacao: m = |t|; o laco corre sobre t.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "407-leetcode-3136.c",
+        "plataforma": "leetcode",
+        "problema": "3136",
+        "variaveis": "n = strlen(word)",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "409-leetcode-406.c",
+        "plataforma": "leetcode",
+        "problema": "406",
+        "variaveis": "n = peopleRowSize",
+        "tempoGabarito": "O(n^2)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n^2)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "leitura2": {
+          "tempo": "O(n^2)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "media"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "499-leetcode-892.c",
+        "plataforma": "leetcode",
+        "problema": "892",
+        "variaveis": "n = gridSize (grade n x n)",
+        "tempoGabarito": "O(n^2)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n^2)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(N^2)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "505-leetcode-1848.c",
+        "plataforma": "leetcode",
+        "problema": "1848",
+        "variaveis": "n = numsSize",
+        "tempoGabarito": "O(n)",
+        "espacoGabarito": "O(1)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(n)",
+          "espaco": "O(1)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      },
+      {
+        "arquivo": "535-leetcode-2326.c",
+        "plataforma": "leetcode",
+        "problema": "2326",
+        "variaveis": "m, n = dimensoes da matriz; L = nos da lista (<= m*n)",
+        "tempoGabarito": "O(m*n)",
+        "espacoGabarito": "O(m*n)",
+        "tipoTempo": "pior-caso",
+        "implementa": "sim",
+        "leitura1": {
+          "tempo": "O(m*n)",
+          "espaco": "O(m*n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "leitura2": {
+          "tempo": "O(m*n)",
+          "espaco": "O(m*n)",
+          "implementa": "sim",
+          "confianca": "alta"
+        },
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem.",
+        "pendenteDoDono": false
+      }
+    ]
+  },
+  "concordancia": {
+    "java": {
+      "casos": 20,
+      "concordanciaLiteral": 17,
+      "concordanciaSemantica": 20,
+      "divergenciasReais": []
+    },
+    "c": {
+      "casos": 20,
+      "concordanciaLiteral": 15,
+      "concordanciaSemantica": 18,
+      "divergenciasReais": [
+        "013-leetcode-83.c",
+        "315-leetcode-2225.c"
+      ]
+    }
+  },
+  "revisoes": [
+    {
+      "data": "2026-11-05",
+      "adendo": 5,
+      "caso": "035-leetcode-3663.java",
+      "resumo": "Solucao trocada por decisao do dono, antes de qualquer medicao; duas leituras cegas novas (agentes Claude Sonnet), consolidacao pela sessao (Claude Opus 5.5).",
+      "concordanciaLiteralJavaAntes": 16
+    }
+  ]
+}
