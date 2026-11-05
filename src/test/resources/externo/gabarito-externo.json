@@ -1,7 +1,7 @@
 {
   "issue": "R1ck-dev/Code-Insights-plano#24 (IC-17)",
   "data": "2026-11-01",
-  "protocolo": "docs/ifsp-documentacao/criterio-corpus-externo.md, Adendo 4",
+  "protocolo": "docs/ifsp-documentacao/criterio-corpus-externo.md, Adendos 4 e 5",
   "leitores": "quatro agentes Claude (Sonnet), duas leituras independentes por linguagem, sem acesso ao motor, ao manifesto, as fontes do gabarito nem a outra leitura; consolidacao pela sessao (Claude Sonnet 5.5). Gabarito NAO e humano.",
   "convencoes": {
     "tempo": "pior caso; esperado/amortizado marcado em tipoTempo",
@@ -215,26 +215,44 @@
         "arquivo": "035-leetcode-3663.java",
         "plataforma": "leetcode",
         "problema": "3663",
-        "variaveis": "n = valor do inteiro; d = digitos = O(log n)",
+        "variaveis": "n = valor do inteiro; d = digitos de n = O(log n); alfabeto de 10 digitos e constante",
         "tempoGabarito": "O(log n)",
         "espacoGabarito": "O(1)",
         "tipoTempo": "pior-caso",
-        "implementa": "nao",
+        "implementa": "sim",
         "leitura1": {
-          "tempo": "O(d)",
+          "tempo": "O(d) = O(log n)",
           "espaco": "O(1)",
-          "implementa": "nao",
-          "confianca": "media"
+          "implementa": "sim",
+          "confianca": "alta"
         },
         "leitura2": {
-          "tempo": "O(log n)",
+          "tempo": "O(d) = O(log n)",
           "espaco": "O(1)",
-          "implementa": "nao",
-          "confianca": "media"
+          "implementa": "sim",
+          "confianca": "alta"
         },
-        "concordanciaLiteral": false,
-        "decisao": "PENDENTE DO DONO (Adendo 4, item 5): as duas leituras dizem implementa=nao (main com n fixo, sem metodo de solucao). O valor aqui e o das leituras, que concordam; a decisao de manter, trocar ou excluir o caso e do dono.",
-        "pendenteDoDono": true
+        "concordanciaLiteral": true,
+        "decisao": "As duas leituras coincidem. Caso trocado pelo Adendo 5: leituras novas, cegas, da solucao nova; quem consolidou conhecia a leitura da solucao anterior.",
+        "pendenteDoDono": false,
+        "solucaoAnterior": {
+          "motivo": "implementa-nao",
+          "sha256": "773d37714aa821036ca64d1ab07b9713bb8368c64e5d78e7cfb8bc82dd6d036b",
+          "tempoGabarito": "O(log n)",
+          "espacoGabarito": "O(1)",
+          "leitura1": {
+            "tempo": "O(d)",
+            "espaco": "O(1)",
+            "implementa": "nao",
+            "confianca": "media"
+          },
+          "leitura2": {
+            "tempo": "O(log n)",
+            "espaco": "O(1)",
+            "implementa": "nao",
+            "confianca": "media"
+          }
+        }
       },
       {
         "arquivo": "037-leetcode-1482.java",
@@ -1018,7 +1036,7 @@
   "concordancia": {
     "java": {
       "casos": 20,
-      "concordanciaLiteral": 16,
+      "concordanciaLiteral": 17,
       "concordanciaSemantica": 20,
       "divergenciasReais": []
     },
@@ -1031,5 +1049,14 @@
         "315-leetcode-2225.c"
       ]
     }
-  }
+  },
+  "revisoes": [
+    {
+      "data": "2026-11-05",
+      "adendo": 5,
+      "caso": "035-leetcode-3663.java",
+      "resumo": "Solucao trocada por decisao do dono, antes de qualquer medicao; duas leituras cegas novas (agentes Claude Sonnet), consolidacao pela sessao (Claude Opus 5.5).",
+      "concordanciaLiteralJavaAntes": 16
+    }
+  ]
 }
