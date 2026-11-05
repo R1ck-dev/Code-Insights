@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import com.projeto.codeinsights.domain.knowledge.enums.LinguagemProgramacao;
+import com.projeto.codeinsights.infrastructure.metrica.ExecucaoDoExterno.Modo;
 import com.projeto.codeinsights.infrastructure.metrica.ExecucaoDoExterno.Resultado;
 import com.projeto.codeinsights.infrastructure.metrica.RelatorioDeAcuracia.Medida;
 
@@ -70,7 +71,12 @@ class ExecucaoDoExternoSinteticaTest {
     }
 
     private Resultado executar(Supplier<List<Medida>> proprio, MedidorExterno medidor) {
-        return ExecucaoDoExterno.executar(fontes(), gabarito(), manifesto(), relatorio(), proprio, medidor, DATA);
+        return executar(proprio, medidor, Modo.MEDIR);
+    }
+
+    private Resultado executar(Supplier<List<Medida>> proprio, MedidorExterno medidor, Modo modo) {
+        return ExecucaoDoExterno.executar(fontes(), gabarito(), manifesto(), relatorio(), proprio, medidor, DATA,
+                modo);
     }
 
     private static MedidorExterno medidorQueConta(AtomicInteger chamadas) {
@@ -126,15 +132,113 @@ class ExecucaoDoExternoSinteticaTest {
     }
 
     @Test
-    void rodarDeNovoSubstituiOBlocoEMantemOProprio() throws IOException {
+    void oBlocoVaiParaASaidaPadraoAntesDeGravar() throws IOException {
+        prepararFontesERelatorio();
+        ByteArrayOutputStream saida = new ByteArrayOutputStream();
+        PrintStream original = System.out;
+        Resultado resultado;
+        try {
+            System.setOut(new PrintStream(saida, true, StandardCharsets.UTF_8));
+            resultado = executar(proprioNaBase(), new MedidorExterno());
+        } finally {
+            System.setOut(original);
+        }
+
+        assertThat(saida.toString(StandardCharsets.UTF_8)).contains(resultado.bloco());
+    }
+
+    @Test
+    void remedirExplicitamenteSubstituiOBlocoEMantemOProprio() throws IOException {
         prepararFontesERelatorio();
         executar(proprioNaBase(), new MedidorExterno());
         String primeira = lerRelatorio();
 
-        executar(proprioNaBase(), new MedidorExterno());
+        executar(proprioNaBase(), new MedidorExterno(), Modo.REMEDIR);
 
         assertThat(lerRelatorio()).isEqualTo(primeira);
         assertThat(primeira.indexOf(BlocosDoRelatorio.INICIO)).isEqualTo(primeira.lastIndexOf(BlocosDoRelatorio.INICIO));
+    }
+
+    @Test
+    void medirDeNovoSobreUmBlocoMedidoRecusaSemMedirNemTocarNosFontesNemApagarNada() throws IOException {
+        prepararFontesERelatorio();
+        executar(proprioNaBase(), new MedidorExterno());
+        byte[] medido = Files.readAllBytes(relatorio());
+        AtomicInteger proprioChamado = new AtomicInteger();
+        AtomicInteger chamadas = new AtomicInteger();
+        ManifestoExterno hashErrado = ManifestoExterno.de(
+                CorpusExternoSintetico.manifesto(PADRAO, Map.of(SEGUNDO_JAVA.nome(), "0".repeat(64))));
+
+        assertThatThrownBy(() -> ExecucaoDoExterno.executar(pasta.resolve("nao-existe"), gabarito(), hashErrado,
+                relatorio(), () -> {
+                    proprioChamado.incrementAndGet();
+                    return MedidasSinteticas.proprio(54, 55, 37, 40);
+                }, medidorQueConta(chamadas), DATA))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("medicao e unica")
+                .hasMessageContaining("Adendo 6, item 9")
+                .hasMessageContaining("corpus.externo=remedir")
+                .hasMessageNotContaining("Pasta da linguagem ausente")
+                .hasMessageNotContaining("SHA-256");
+
+        assertThat(proprioChamado).as("nao mediu o proprio").hasValue(0);
+        assertThat(chamadas).as("nao mediu o externo").hasValue(0);
+        assertThat(Files.readAllBytes(relatorio())).as("nada foi apagado").isEqualTo(medido);
+    }
+
+    @Test
+    void medirSobreOAvisoDeNaoMedidoNaoPrecisaDePermissao() throws IOException {
+        prepararFontesERelatorio();
+        assertThat(lerRelatorio()).contains("externo: nao medido");
+
+        Resultado resultado = executar(proprioNaBase(), new MedidorExterno());
+
+        assertThat(resultado.medidas()).hasSize(3);
+        assertThat(lerRelatorio()).doesNotContain("externo: nao medido");
+    }
+
+    @Test
+    void relatorioSemBlocoTambemContaComoNaoMedido() throws IOException {
+        CorpusExternoSintetico.gravar(fontes(), PADRAO);
+        Files.createDirectories(relatorio().getParent());
+        Files.writeString(relatorio(), PROPRIO, StandardCharsets.UTF_8);
+
+        Resultado resultado = executar(proprioNaBase(), new MedidorExterno());
+
+        assertThat(resultado.medidas()).hasSize(3);
+        assertThat(lerRelatorio()).startsWith(PROPRIO).contains(resultado.bloco());
+    }
+
+    @Test
+    void avisoComCrlfNaoEReconhecidoERecusaMedirMasRemedirExplicitoDeixaPassar() throws IOException {
+        CorpusExternoSintetico.gravar(fontes(), PADRAO);
+        BlocosDoRelatorio.regenerarProprio(relatorio(), PROPRIO);
+        String comCrlf = lerRelatorio().replace("\n", "\r\n");
+        Files.writeString(relatorio(), comCrlf, StandardCharsets.UTF_8);
+        byte[] antes = Files.readAllBytes(relatorio());
+        AtomicInteger proprioChamado = new AtomicInteger();
+
+        assertThatThrownBy(() -> executar(() -> {
+            proprioChamado.incrementAndGet();
+            return MedidasSinteticas.proprio(54, 55, 37, 40);
+        }, new MedidorExterno())).isInstanceOf(IllegalStateException.class).hasMessageContaining("medicao e unica");
+
+        assertThat(proprioChamado).hasValue(0);
+        assertThat(Files.readAllBytes(relatorio())).isEqualTo(antes);
+        assertThat(executar(proprioNaBase(), new MedidorExterno(), Modo.REMEDIR).medidas()).hasSize(3);
+    }
+
+    @Test
+    void remedirNaoPermiteMarcadorTruncado() throws IOException {
+        CorpusExternoSintetico.gravar(fontes(), PADRAO);
+        Files.createDirectories(relatorio().getParent());
+        Files.writeString(relatorio(), PROPRIO + BlocosDoRelatorio.INICIO + "\nincompleto\n", StandardCharsets.UTF_8);
+        byte[] antes = Files.readAllBytes(relatorio());
+
+        assertThatThrownBy(() -> executar(proprioNaBase(), new MedidorExterno(), Modo.REMEDIR))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("truncados");
+
+        assertThat(Files.readAllBytes(relatorio())).isEqualTo(antes);
     }
 
     @Test

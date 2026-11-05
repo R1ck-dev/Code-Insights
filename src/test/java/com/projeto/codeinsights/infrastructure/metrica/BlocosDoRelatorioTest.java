@@ -5,13 +5,24 @@ import static com.projeto.codeinsights.infrastructure.metrica.BlocosDoRelatorio.
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import com.projeto.codeinsights.infrastructure.metrica.BlocosDoRelatorio.Movedor;
 
 /**
  * As duas regioes do relatorio: o proprio e regenerado a cada suite sem encostar no bloco externo, e
@@ -202,8 +213,192 @@ class BlocosDoRelatorioTest {
         byte[] antes = bytes();
 
         assertThatThrownBy(() -> BlocosDoRelatorio.regenerarProprio(relatorio(), PROPRIO_NOVO))
-                .isInstanceOf(java.io.UncheckedIOException.class);
+                .isInstanceOf(UncheckedIOException.class);
 
         assertThat(bytes()).isEqualTo(antes);
+    }
+
+    // ---------------------------------------------------------------- gravacao sem truncar o original (R1)
+
+    private static final Movedor QUE_FALHA = (origem, destino, opcoes) -> {
+        throw new IOException("falha simulada ao mover");
+    };
+
+    private List<String> nomesNaPasta() throws IOException {
+        try (Stream<Path> arquivos = Files.list(relatorio().getParent())) {
+            return arquivos.map(a -> a.getFileName().toString()).sorted().toList();
+        }
+    }
+
+    private static String capturarSaida(Runnable acao) {
+        ByteArrayOutputStream saida = new ByteArrayOutputStream();
+        PrintStream original = System.out;
+        try {
+            System.setOut(new PrintStream(saida, true, StandardCharsets.UTF_8));
+            acao.run();
+        } finally {
+            System.setOut(original);
+        }
+        return saida.toString(StandardCharsets.UTF_8);
+    }
+
+    @Test
+    void falhaAoGravarDeixaOOriginalIntactoESemTemporarioEComOBlocoNaSaida() throws IOException {
+        gravarBruto(arquivoComBloco(PROPRIO_ANTIGO, CORPO_MEDIDO));
+        byte[] antes = bytes();
+        List<Throwable> falha = new ArrayList<>();
+
+        String saida = capturarSaida(() -> {
+            try {
+                BlocosDoRelatorio.substituirExterno(relatorio(), "## Categoria EXTERNO\n\nnovo\n", QUE_FALHA);
+            } catch (UncheckedIOException e) {
+                falha.add(e);
+            }
+        });
+
+        assertThat(falha).hasSize(1);
+        assertThat(falha.get(0)).hasMessageContaining("original ficou como estava");
+        assertThat(bytes()).as("o original continua byte a byte").isEqualTo(antes);
+        assertThat(nomesNaPasta()).as("o temporario some").containsExactly("acuracia.md");
+        assertThat(saida).as("o bloco ja estava na saida quando a gravacao falhou")
+                .contains("## Categoria EXTERNO").contains("novo");
+    }
+
+    @Test
+    void falhaAoGravarOProprioTambemNaoTocaNoOriginal() throws IOException {
+        gravarBruto(arquivoComBloco(PROPRIO_ANTIGO, CORPO_MEDIDO));
+        byte[] antes = bytes();
+
+        assertThatThrownBy(() -> BlocosDoRelatorio.gravar(relatorio(), PROPRIO_NOVO, QUE_FALHA))
+                .isInstanceOf(UncheckedIOException.class);
+
+        assertThat(bytes()).isEqualTo(antes);
+        assertThat(nomesNaPasta()).containsExactly("acuracia.md");
+    }
+
+    @Test
+    void marcadorTruncadoNaoImprimeNadaEFalhaAntesDeGravar() throws IOException {
+        gravarBruto(PROPRIO_ANTIGO + INICIO + "\n" + CORPO_MEDIDO);
+        byte[] antes = bytes();
+
+        String saida = capturarSaida(() -> assertThatThrownBy(
+                () -> BlocosDoRelatorio.substituirExterno(relatorio(), "corpo\n", QUE_FALHA))
+                .isInstanceOf(IllegalStateException.class));
+
+        assertThat(saida).doesNotContain("corpo");
+        assertThat(bytes()).isEqualTo(antes);
+    }
+
+    @Test
+    void movimentoAtomicoEOPrimeiroEOUnicoQuandoFunciona() throws IOException {
+        gravarBruto(arquivoComBloco(PROPRIO_ANTIGO, CORPO_MEDIDO));
+        List<List<CopyOption>> chamadas = new ArrayList<>();
+        Movedor registrador = (origem, destino, opcoes) -> {
+            chamadas.add(List.of(opcoes));
+            Files.move(origem, destino, opcoes);
+        };
+
+        BlocosDoRelatorio.gravar(relatorio(), PROPRIO_NOVO, registrador);
+
+        assertThat(chamadas).containsExactly(List.of(StandardCopyOption.ATOMIC_MOVE));
+        assertThat(Files.readString(relatorio(), StandardCharsets.UTF_8)).isEqualTo(PROPRIO_NOVO);
+        assertThat(nomesNaPasta()).containsExactly("acuracia.md");
+    }
+
+    @Test
+    void semMovimentoAtomicoCaiParaSubstituirPorCima() throws IOException {
+        gravarBruto(arquivoComBloco(PROPRIO_ANTIGO, CORPO_MEDIDO));
+        List<List<CopyOption>> chamadas = new ArrayList<>();
+        Movedor semAtomico = (origem, destino, opcoes) -> {
+            chamadas.add(List.of(opcoes));
+            if (List.of(opcoes).contains(StandardCopyOption.ATOMIC_MOVE)) {
+                throw new AtomicMoveNotSupportedException(origem.toString(), destino.toString(), "simulado");
+            }
+            Files.move(origem, destino, opcoes);
+        };
+
+        BlocosDoRelatorio.gravar(relatorio(), PROPRIO_NOVO, semAtomico);
+
+        assertThat(chamadas).containsExactly(List.of(StandardCopyOption.ATOMIC_MOVE),
+                List.of(StandardCopyOption.REPLACE_EXISTING));
+        assertThat(Files.readString(relatorio(), StandardCharsets.UTF_8)).isEqualTo(PROPRIO_NOVO);
+        assertThat(nomesNaPasta()).containsExactly("acuracia.md");
+    }
+
+    @Test
+    void seOFallbackTambemFalharOOriginalFicaIntactoESemTemporario() throws IOException {
+        gravarBruto(arquivoComBloco(PROPRIO_ANTIGO, CORPO_MEDIDO));
+        byte[] antes = bytes();
+        Movedor semNada = (origem, destino, opcoes) -> {
+            throw new AtomicMoveNotSupportedException(origem.toString(), destino.toString(), "simulado");
+        };
+
+        assertThatThrownBy(() -> BlocosDoRelatorio.gravar(relatorio(), PROPRIO_NOVO, semNada))
+                .isInstanceOf(UncheckedIOException.class);
+
+        assertThat(bytes()).isEqualTo(antes);
+        assertThat(nomesNaPasta()).containsExactly("acuracia.md");
+    }
+
+    @Test
+    void gravacaoNormalCriaAPastaEDeixaSoOArquivo() throws IOException {
+        BlocosDoRelatorio.regenerarProprio(relatorio(), PROPRIO_NOVO);
+
+        assertThat(nomesNaPasta()).containsExactly("acuracia.md");
+    }
+
+    // ---------------------------------------------------------------- deteccao exata do aviso de nao medido (R2)
+
+    @Test
+    void arquivoSemBlocoOuComOAvisoExatoContaComoNaoMedido() throws IOException {
+        assertThat(BlocosDoRelatorio.externoNaoMedido(PROPRIO_NOVO)).isTrue();
+
+        BlocosDoRelatorio.regenerarProprio(relatorio(), PROPRIO_NOVO);
+
+        assertThat(BlocosDoRelatorio.externoNaoMedido(relatorio())).isTrue();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(Files.readString(relatorio(), StandardCharsets.UTF_8))).isTrue();
+    }
+
+    @Test
+    void blocoMedidoNaoContaComoNaoMedido() {
+        assertThat(BlocosDoRelatorio.externoNaoMedido(arquivoComBloco(PROPRIO_NOVO, CORPO_MEDIDO))).isFalse();
+    }
+
+    @Test
+    void avisoComUmaDiferencaQualquerNaoContaComoNaoMedido() {
+        String aviso = BlocosDoRelatorio.NAO_MEDIDO;
+
+        assertThat(BlocosDoRelatorio.externoNaoMedido(arquivoComBloco(PROPRIO_NOVO, aviso + "medido\n"))).isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(
+                arquivoComBloco(PROPRIO_NOVO, aviso.replace("nao medido", "medido")))).isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(arquivoComBloco(PROPRIO_NOVO, aviso.trim()))).isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(arquivoComBloco(PROPRIO_NOVO, aviso + "\n"))).isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(arquivoComBloco(PROPRIO_NOVO, ""))).isFalse();
+    }
+
+    @Test
+    void avisoComQuebraDeLinhaCrlfNaoContaComoNaoMedido() {
+        String aviso = BlocosDoRelatorio.NAO_MEDIDO;
+        String avisoCrlf = aviso.replace("\n", "\r\n");
+
+        assertThat(BlocosDoRelatorio.externoNaoMedido(PROPRIO_NOVO + INICIO + "\n" + avisoCrlf + FIM + "\n"))
+                .as("so o corpo do aviso com CRLF").isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(PROPRIO_NOVO + INICIO + "\r\n" + aviso + FIM + "\r\n"))
+                .as("so o marcador de inicio com CRLF").isFalse();
+        assertThat(BlocosDoRelatorio.externoNaoMedido(
+                (PROPRIO_NOVO + INICIO + "\n" + aviso + FIM + "\n").replace("\n", "\r\n")))
+                .as("o arquivo inteiro com CRLF").isFalse();
+    }
+
+    @Test
+    void marcadorTruncadoFalhaEmVezDeContarComoNaoMedido() {
+        assertThatThrownBy(() -> BlocosDoRelatorio.externoNaoMedido(PROPRIO_NOVO + INICIO + "\n"))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void relatorioAusenteFalhaEmVezDeContarComoNaoMedido() {
+        assertThatThrownBy(() -> BlocosDoRelatorio.externoNaoMedido(relatorio()))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("nao existe");
     }
 }

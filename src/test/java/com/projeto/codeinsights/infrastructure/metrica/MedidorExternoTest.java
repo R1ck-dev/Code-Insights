@@ -109,6 +109,31 @@ class MedidorExternoTest {
     }
 
     @Test
+    void assertionErrorViraRecusaPorFalhaSemGuardarAMensagem() {
+        MedidaExterna medida = medidorQue((codigo, linguagem) -> {
+            throw new AssertionError("trecho do fonte: " + TOKEN);
+        }).medir(fonte(CorpusExternoSintetico.PRIMEIRO_JAVA, JAVA_VALIDO));
+
+        assertThat(medida.recusaTempo()).isEqualTo(MotivoRecusa.FALHA);
+        assertThat(medida.recusaEspaco()).isEqualTo(MotivoRecusa.FALHA);
+        assertThat(medida.classeDaFalha()).isEqualTo("AssertionError");
+        assertThat(medida.toString()).doesNotContain(TOKEN);
+    }
+
+    @Test
+    void linkageErrorAbortaSemCitarAMensagem() {
+        MedidorExterno medidor = medidorQue((codigo, linguagem) -> {
+            throw new LinkageError(TOKEN);
+        });
+
+        assertThatThrownBy(() -> medidor.medir(fonte(CorpusExternoSintetico.PRIMEIRO_JAVA, JAVA_VALIDO)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("LinkageError")
+                .hasMessageNotContaining(TOKEN)
+                .hasNoCause();
+    }
+
+    @Test
     void outroErroDaJvmAbortaSemCitarAMensagem() {
         MedidorExterno medidor = medidorQue((codigo, linguagem) -> {
             throw new OutOfMemoryError(TOKEN);

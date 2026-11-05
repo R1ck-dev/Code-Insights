@@ -59,9 +59,13 @@ final class MedidorExterno {
         }
     }
 
-    /** Excecao e estouro de pilha viram recusa; qualquer outro erro da JVM aborta, sem a causa. */
+    /**
+     * Excecao, estouro de pilha e {@link AssertionError} (as assercoes do motor ficam ligadas no surefire,
+     * e uma delas e defeito do caso, nao do ambiente) viram recusa; {@link OutOfMemoryError},
+     * {@link LinkageError} e qualquer outro erro da JVM abortam, sem a causa (Adendo 7, item 1).
+     */
     private static MedidaExterna recusadaPorFalha(CasoExterno caso, Throwable causa) {
-        if (causa instanceof Exception || causa instanceof StackOverflowError) {
+        if (causa instanceof Exception || causa instanceof StackOverflowError || causa instanceof AssertionError) {
             return MedidaExterna.recusada(caso, MotivoRecusa.FALHA, causa.getClass().getSimpleName());
         }
         throw new IllegalStateException(

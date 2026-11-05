@@ -3,8 +3,11 @@ package com.projeto.codeinsights.infrastructure.metrica;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /**
  * As duas regioes de {@code acuracia-do-motor.md}: a parte do corpus proprio, que o
@@ -14,6 +17,10 @@ import java.nio.file.Path;
  * O arquivo nao esta no git, entao um erro aqui perde a medicao. Por isso cada gravacao monta a
  * string inteira antes de abrir o arquivo, e um marcador truncado, repetido ou fora de ordem falha
  * sem tocar nele. A regiao do bloco, do primeiro marcador ao ultimo, e copiada como esta: byte a byte.
+ * <p>
+ * A gravacao nao trunca o original: o texto vai para um temporario na mesma pasta e so entao o
+ * temporario e movido por cima do arquivo (atomico quando o sistema de arquivos deixa). Se qualquer
+ * passo falha, o original fica como estava e o temporario some.
  */
 final class BlocosDoRelatorio {
 
@@ -24,6 +31,14 @@ final class BlocosDoRelatorio {
     static final String NAO_MEDIDO = "## Categoria EXTERNO\n\n"
             + "**externo: nao medido.** Esta secao e preenchida pela medicao unica do corpus externo "
             + "(Adendo 6, item 9). Enquanto ela nao rodar, todos os numeros deste arquivo sao do corpus proprio.\n";
+
+    /** Como o temporario vira o arquivo; e o que o teste troca para simular uma falha ao gravar. */
+    @FunctionalInterface
+    interface Movedor {
+        void mover(Path origem, Path destino, CopyOption... opcoes) throws IOException;
+    }
+
+    static final Movedor DO_SISTEMA = Files::move;
 
     private BlocosDoRelatorio() {
     }
@@ -60,12 +75,35 @@ final class BlocosDoRelatorio {
     /** Regenera a parte do proprio e preserva o bloco externo; cria o arquivo se ele nao existe. */
     static void regenerarProprio(Path arquivo, String proprio) {
         String novo = comProprio(lerOuNulo(arquivo), proprio);
-        gravar(arquivo, novo);
+        gravar(arquivo, novo, DO_SISTEMA);
     }
 
-    /** Troca so o bloco externo. O arquivo tem de existir: a parte do proprio e quem o cria. */
+    /**
+     * Troca so o bloco externo. O arquivo tem de existir: a parte do proprio e quem o cria. O corpo vai
+     * para a saida padrao <b>antes</b> de gravar, para que uma falha na gravacao nao perca a medicao.
+     */
     static void substituirExterno(Path arquivo, String corpo) {
-        gravar(arquivo, comExterno(lerExistente(arquivo), corpo));
+        substituirExterno(arquivo, corpo, DO_SISTEMA);
+    }
+
+    static void substituirExterno(Path arquivo, String corpo, Movedor movedor) {
+        String novo = comExterno(lerExistente(arquivo), corpo);
+        System.out.println(corpo);
+        gravar(arquivo, novo, movedor);
+    }
+
+    /**
+     * Verdadeiro se o arquivo nao tem bloco externo ou se o bloco e <b>exatamente</b> o aviso de nao
+     * medido, byte a byte: qualquer outra coisa (inclusive o aviso com quebra de linha CRLF) conta como
+     * medida, porque errar para esse lado so recusa uma medicao, nunca sobrescreve uma.
+     */
+    static boolean externoNaoMedido(String existente) {
+        int inicio = validar(existente);
+        return inicio < 0 || regiao(existente, inicio).equals(envolver(NAO_MEDIDO));
+    }
+
+    static boolean externoNaoMedido(Path arquivo) {
+        return externoNaoMedido(lerExistente(arquivo));
     }
 
     /** Confere, sem escrever, que o arquivo existe e que a troca do bloco e possivel. */
@@ -93,14 +131,38 @@ final class BlocosDoRelatorio {
         }
     }
 
-    private static void gravar(Path arquivo, String conteudo) {
+    static void gravar(Path arquivo, String conteudo, Movedor movedor) {
+        Path temporario = null;
         try {
-            if (arquivo.getParent() != null) {
-                Files.createDirectories(arquivo.getParent());
-            }
-            Files.writeString(arquivo, conteudo, StandardCharsets.UTF_8);
+            Path pasta = arquivo.toAbsolutePath().getParent();
+            Files.createDirectories(pasta);
+            temporario = Files.createTempFile(pasta, "relatorio-", ".tmp");
+            Files.writeString(temporario, conteudo, StandardCharsets.UTF_8);
+            moverPorCima(movedor, temporario, arquivo);
         } catch (IOException e) {
-            throw new UncheckedIOException("Nao foi possivel gravar o relatorio.", e);
+            throw new UncheckedIOException("Nao foi possivel gravar o relatorio; o original ficou como estava.", e);
+        } finally {
+            apagar(temporario);
+        }
+    }
+
+    /** Move atomico; se o sistema de arquivos nao suporta (pasta sincronizada, por exemplo), troca por cima. */
+    private static void moverPorCima(Movedor movedor, Path temporario, Path arquivo) throws IOException {
+        try {
+            movedor.mover(temporario, arquivo, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            movedor.mover(temporario, arquivo, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static void apagar(Path temporario) {
+        if (temporario == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(temporario);
+        } catch (IOException e) {
+            // o original ja esta a salvo; sobra so um temporario com o prefixo relatorio-
         }
     }
 
@@ -112,8 +174,11 @@ final class BlocosDoRelatorio {
 
     private static String regiaoOuNaoMedido(String existente) {
         int inicio = validar(existente);
-        return inicio < 0 ? envolver(NAO_MEDIDO)
-                : existente.substring(inicio, existente.indexOf(FIM) + FIM.length());
+        return inicio < 0 ? envolver(NAO_MEDIDO) : regiao(existente, inicio);
+    }
+
+    private static String regiao(String existente, int inicio) {
+        return existente.substring(inicio, existente.indexOf(FIM) + FIM.length());
     }
 
     /**
