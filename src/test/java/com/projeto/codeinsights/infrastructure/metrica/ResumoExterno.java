@@ -84,6 +84,29 @@ final class ResumoExterno {
         return medidas.stream().filter(m -> direcaoDoTempo(m) == direcao).count();
     }
 
+    // ---------------------------------------------------------------- linha de contagens
+
+    /**
+     * Uma linha so de numeros, para o console da medicao: casos, taxa principal do tempo e do espaco,
+     * direcao do tempo, recusas por motivo. Nada do fonte nem da anotacao alem de contagens.
+     */
+    String linhaDeContagens() {
+        StringBuilder linha = new StringBuilder();
+        linha.append(linguagem).append(": ").append(medidas.size()).append(" casos");
+        linha.append(" | tempo ").append(tempo().principal().texto());
+        linha.append(" | espaco ").append(espaco().principal().texto());
+        linha.append(" | direcao do tempo");
+        for (Direcao direcao : Direcao.values()) {
+            linha.append(' ').append(direcao.name()).append('=').append(contarNoTempo(direcao));
+        }
+        linha.append(" | recusas");
+        for (MotivoRecusa motivo : MotivoRecusa.values()) {
+            linha.append(' ').append(motivo.name()).append('=')
+                    .append(medidas.stream().filter(m -> m.recusaTempo() == motivo).count());
+        }
+        return linha.toString();
+    }
+
     // ---------------------------------------------------------------- recusas
 
     /** Recusas do tempo, com o motivo, entre os casos do denominador principal. */

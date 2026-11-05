@@ -175,4 +175,17 @@ class ResumoExternoTest {
         assertThat(resumo.tempoComConfianca(NivelConfianca.ALTA).principal().texto())
                 .isEqualTo(TaxaDeAcerto.SEM_CASOS);
     }
+
+    @Test
+    void linhaDeContagensTraSoNumerosPorLinguagem() {
+        List<MedidaExterna> medidas = new ArrayList<>(MedidasSinteticas.lote(JAVA, 3, 4, 1));
+        medidas.add(recusada(caso(JAVA, "300"), MotivoRecusa.FALHA, "ClasseDeFalhaQualquer"));
+
+        String linha = resumoDe(medidas, JAVA).linhaDeContagens();
+
+        assertThat(linha).isEqualTo("JAVA: 6 casos | tempo 3/5 (60.0%) | espaco 5/6 (83.3%) | direcao do tempo "
+                + "ACERTO=3 SUPERESTIMOU=1 SUBESTIMOU=0 RECUSOU=1 FORA_DA_ESCALA=1 | recusas "
+                + "SEM_METRICA=0 FALHA=1 TEMPO_ESGOTADO=0");
+        assertThat(linha).doesNotContain("ClasseDeFalhaQualquer").doesNotContain("leetcode");
+    }
 }
