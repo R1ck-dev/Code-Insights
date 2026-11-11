@@ -31,9 +31,7 @@ class RelatorioDeAcuraciaTest {
     void mediaOCorpusEGravaORelatorio() throws IOException {
         List<Medida> medidas = CorpusDeAlgoritmos.casos().stream().map(this::medir).toList();
 
-        Files.createDirectories(DESTINO.getParent());
-        Files.writeString(DESTINO, RelatorioDeAcuracia.renderizar(medidas, LocalDate.now()),
-                StandardCharsets.UTF_8);
+        BlocosDoRelatorio.regenerarProprio(DESTINO, RelatorioDeAcuracia.renderizar(medidas, LocalDate.now()));
 
         System.out.println(RelatorioDeAcuracia.resumoDeUmaLinha(medidas));
 
@@ -46,6 +44,9 @@ class RelatorioDeAcuraciaTest {
                     assertThat(medida.confiancaTempo()).isNotNull();
                 });
         assertThat(DESTINO).exists();
+        assertThat(Files.readString(DESTINO, StandardCharsets.UTF_8))
+                .as("o relatorio tem sempre a secao externa, medida ou com o aviso de nao medido")
+                .contains(BlocosDoRelatorio.INICIO, BlocosDoRelatorio.FIM, "Categoria EXTERNO");
     }
 
     private Medida medir(CasoDeCorpus caso) {
